@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TankGuard — Project Proposal</title>
+<style>
+  /* ---------- Page setup ---------- */
+  @page {
+    size: A4;
+    margin: 2.1cm 1.9cm 2.2cm 1.9cm;
+    @bottom-left  { content: "TankGuard \2014  Project Proposal"; font-size: 8.5pt; color: #7a8aa3; }
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font-size: 8.5pt; color: #7a8aa3; }
+  }
+  @page cover {
+    margin: 0;
+    @bottom-left  { content: none; }
+    @bottom-right { content: none; }
+  }
+  .cover { page: cover; }
+
+  html { font-size: 10pt; }
+  body {
+    font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: #1c2733;
+    line-height: 1.5;
+    margin: 0;
+  }
+
+  /* ---------- Typography ---------- */
+  h1, h2, h3, h4 { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #0e2a47; }
+  h2 {
+    font-size: 14pt;
+    margin: 0 0 8pt 0;
+    padding-bottom: 4pt;
+    border-bottom: 2px solid #0f766e;
+    page-break-after: avoid;
+  }
+  h2 .secnum { color: #0f766e; }
+  h3 { font-size: 11.5pt; margin: 12pt 0 4pt 0; page-break-after: avoid; }
+  p { margin: 0 0 7pt 0; text-align: justify; }
+  ul, ol { margin: 0 0 8pt 0; padding-left: 18pt; }
+  li { margin-bottom: 3pt; }
+  blockquote {
+    margin: 8pt 0; padding: 6pt 12pt;
+    border-left: 3px solid #0f766e; background: #f1f7f6;
+    font-style: italic; color: #33505e;
+  }
+  .small { font-size: 8.5pt; color: #55697c; }
+  .note {
+    background: #fff7e6; border-left: 3px solid #d97706;
+    padding: 6pt 10pt; font-size: 9pt; margin: 8pt 0;
+  }
+
+  /* ---------- Cover ---------- */
+  .cover {
+    height: 29.7cm;
+    display: flex;
+    flex-flow: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    background: linear-gradient(160deg, #0e2a47 0%, #0f766e 100%);
+    color: #ffffff;
+    padding: 2cm;
+    box-sizing: border-box;
+  }
+  .cover .logo {
+    width: 64pt; height: 64pt; border-radius: 50%;
+    border: 2.5px solid rgba(255,255,255,.85);
+    background: rgba(255,255,255,.12);
+    font-size: 34pt; line-height: 64pt; margin-bottom: 18pt;
+  }
+  .cover .dept { font-size: 11pt; letter-spacing: .16em; text-transform: uppercase; opacity: .85; margin-bottom: 26pt; }
+  .cover .doctype {
+    font-size: 10pt; letter-spacing: .3em; text-transform: uppercase;
+    border: 1px solid rgba(255,255,255,.6); display: inline-block;
+    padding: 4pt 14pt; border-radius: 999px; margin-bottom: 16pt;
+  }
+  .cover h1 { color: #ffffff; font-size: 26pt; line-height: 1.22; margin: 0 0 8pt 0; }
+  .cover .subtitle { font-size: 12.5pt; opacity: .92; max-width: 13cm; margin: 0 auto 30pt auto; }
+  .cover .tags span { display: inline-block; font-size: 9.5pt; margin: 0 4pt 6pt; background: rgba(255,255,255,.16); padding: 3pt 10pt; border-radius: 999px; }
+  .cover table.info { margin: 26pt auto 0 auto; border-collapse: collapse; text-align: left; font-size: 10.5pt; }
+  .cover table.info td { padding: 3pt 6pt; color: #ffffff; }
+  .cover table.info td.k { opacity: .75; padding-right: 14pt; text-align: right; }
+
+  /* ---------- Tables ---------- */
+  table { width: 100%; border-collapse: collapse; margin: 8pt 0 12pt 0; font-size: 9pt; }
+  th, td { border: 1px solid #c9d4e0; padding: 4.5pt 6pt; vertical-align: top; text-align: left; }
+  th { background: #eaf3f2; color: #0e2a47; font-weight: bold; }
+  tbody tr:nth-child(even) { background: #f7fafc; }
+  td.num, th.num { text-align: right; }
+  .totalrow td { font-weight: bold; background: #eef4f3; }
+  .modhead td { background: #dfecea; color: #0e2a47; font-weight: bold; text-align: left; border-top: 1.5px solid #9fb8b2; padding: 5pt 6pt; }
+  caption { caption-side: bottom; font-size: 8pt; color: #66788b; padding-top: 4pt; text-align: left; }
+
+  /* ---------- TOC ---------- */
+  .toc { page-break-before: always; }
+  .toc h2 { border-bottom: none; }
+  .toc ol { list-style: none; padding-left: 0; counter-reset: toc; }
+  .toc li { margin: 5pt 0; font-size: 10.5pt; }
+  .toc li a { text-decoration: none; color: #1c2733; }
+  .toc li a::after { content: leader(". ") target-counter(attr(href), page); color: #55697c; }
+  .toc .l2 { padding-left: 18pt; font-size: 9.5pt; color: #33505e; }
+
+  .pagebreak { page-break-before: always; }
+  .avoidbrk { page-break-inside: avoid; }
+
+  /* ---------- Block diagram ---------- */
+  .dia { margin: 10pt auto; text-align: center; }
+  .db {
+    display: inline-block;
+    border: 1.4px solid #0f766e;
+    background: #eef7f6;
+    border-radius: 4pt;
+    padding: 5pt 10pt;
+    font-size: 8.8pt;
+    font-weight: bold;
+    color: #0e2a47;
+    margin: 2pt;
+  }
+  .db.solar { background: #fff7e0; border-color: #d97706; }
+  .db.power { background: #eef3fb; border-color: #2563eb; }
+  .db.esp   { background: #0e2a47; border-color: #0e2a47; color: #ffffff; }
+  .db.probe { background: #eafaf3; border-color: #059669; }
+  .db.aut   { background: #fdf2f8; border-color: #db2777; }
+  .db.phone { background: #efeaf9; border-color: #6d28d9; }
+  .arr { font-size: 13pt; color: #0f766e; line-height: 1.05; margin: 0; }
+</style>
+</head>
+<body>
+
+<!-- ================= COVER ================= -->
+<section class="cover">
+  <div class="logo">TG</div>
+  <div class="doctype">Undergraduate Project Proposal</div>
+  <h1>TankGuard</h1>
+  <p class="subtitle">An IoT-Enabled Solar-Powered Water Quality Monitoring System for Household Water Storage Tanks</p>
+  <div class="tags">
+    <span>ESP32</span><span>IoT Sensors</span><span>Solar Power</span><span>Local Web Dashboard</span>
+  </div>
+  
+</section>
+
+<!-- ================= TOC ================= -->
+<section class="toc">
+  <h2>Table of Contents</h2>
+  <ol>
+    <li><a href="#abstract">Abstract</a></li>
+    <li><a href="#intro">Introduction and Motivation</a></li>
+    <li><a href="#problem">Problem Statement</a></li>
+    <li><a href="#objectives">Objectives</a></li>
+    <li><a href="#litreview">Literature Review</a></li>
+    <li><a href="#scope">Scope and Justification</a></li>
+    <li><a href="#design">System Design Overview</a></li>
+    <li class="l2"><a href="#design-modular">Modular System Product Line</a></li>
+    <li class="l2"><a href="#design-mon">Monitoring Node</a></li>
+    <li class="l2"><a href="#design-engine">"When to Clean" Quality Engine</a></li>
+    <li class="l2"><a href="#design-ui">Local Data and Web Dashboard</a></li>
+    <li class="l2"><a href="#design-power">Power and Energy Management</a></li>
+    <li><a href="#arch">Hardware Architecture</a></li>
+    <li><a href="#firmware">Software and Firmware Architecture</a></li>
+    <li><a href="#bom">Bill of Materials (BOM)</a></li>
+    <li><a href="#budget">Power Budget and Solar Sizing</a></li>
+    <li><a href="#outcomes">Expected Outcomes</a></li>
+    <li><a href="#timeline">Work Plan and Timeline</a></li>
+    <li><a href="#risks">Risks and Mitigations</a></li>
+    <li><a href="#conclusion">Conclusion</a></li>
+    <li><a href="#refs">References</a></li>
+  </ol>
+</section>
+
+<!-- ================= ABSTRACT ================= -->
+<h2 id="abstract"><span class="secnum">1.</span> Abstract</h2>
+<p>Rooftop and ground-level water storage tanks are the most neglected link in the household drinking-water chain. Although the water entering them from the municipal supply is treated and disinfected, the water that <em>sits</em> in a tank degrades over time: the chlorine residual dissipates, sediment settles on the floor, biofilm grows on the walls, and microbial populations rise&mdash;so the water coming out of the tap is frequently very different from the water that came in. Because tanks are often forgotten, this degradation is discovered only after it affects health or causes foul odour and taste.</p>
+<p>This proposal presents <strong>TankGuard</strong>, an IoT-enabled, solar-powered system that continuously measures the key water-quality parameters of water stored in a household tank&mdash;pH, turbidity, total dissolved solids (TDS) and temperature, together with water level&mdash;and computes a single <em>TankScore</em> that answers one question conclusively: <strong>&ldquo;is it time to clean this tank?&rdquo;</strong> The device is wall/lid mounted, powered by a solar panel and Li-ion battery, stores ninety days of history locally, and exposes a phone-friendly web dashboard over the household WiFi network with no cloud service required. The prototype targets a single household tank from low-cost, off-the-shelf analogue sensor modules within a tight budget, with a design that scales to multiple tanks and a custom PCB in a later stage.</p>
+<p><strong>Keywords:</strong> IoT, water quality, ESP32, open-source hardware, smart home, turbidity sensor, solar power, sustainable development.</p>
+
+<!-- ================= INTRODUCTION ================= -->
+<h2 id="intro"><span class="secnum">2.</span> Introduction and Motivation</h2>
+<p>Safe drinking water is a fundamental requirement for public health, but its safety is not guaranteed solely at the treatment plant. In urban and semi-urban homes, water is typically stored in overhead or underground tanks that are topped up irregularly from municipal lines or borewells. WHO identifies storage as a critical recontamination point: "the safe water chain breaks at the point of storage" unless tanks are kept clean and covered [1][2]. Practically, household tanks are opened rarely&mdash;cleanings happen on the order of months to years&mdash;and by the time the water smells or tastes bad, the tank has already become a growth reservoir.</p>
+<p>The motivation for this project is straightforward: <strong>tank cleaning is forgotten because there is no cheap, automatic way to know when cleaning is due</strong>. Current practice is calendar-based guesswork ("clean every N months") or reactive (clean only after the water becomes unusable). A low-cost sensor node that monitors the actual chemical and biological state of the stored water converts guesswork into evidence, and can alert the owner precisely when the tank needs attention&mdash;so that cleaning effort is spent exactly when it is needed.</p>
+<p>TankGuard is designed around three principles:</p>
+<ul>
+  <li><strong>In-tank, not in-pipe:</strong> the sensors sit in the stored water, because the problem to measure is what happens while water is stored.</li>
+  <li><strong>Local and private:</strong> all data, history and alerts live on the device and are served on the home WiFi&mdash;no cloud account, no subscription, no data leaving the home.</li>
+  <li><strong>Self-powered and low-maintenance:</strong> solar panel + battery, deep-sleep power management, cost-effective calibrated analogue probes, and a cleaning recommendation engine.</li>
+</ul>
+
+<!-- ================= PROBLEM ================= -->
+<h2 id="problem"><span class="secnum">3.</span> Problem Statement</h2>
+<p>Household water storage tanks are rarely cleaned in time because there is no practical, affordable and automatic indicator of when cleaning is required. As a result:</p>
+<ul>
+  <li>Stored water loses disinfectant residual and becomes biologically re-contaminated during storage.</li>
+  <li>Sediment and sludge accumulate on the tank floor; biofilm forms on submerged surfaces.</li>
+  <li>Consumers detect the problem only through odour, taste, or visible discolouration&mdash;after contamination has already occurred.</li>
+  <li>Manual cleaning is irregular, inconsistent, and wastes large volumes of water because it cannot be scheduled against actual tank condition.</li>
+</ul>
+<p>Cleaning is a manual, labour-intensive chore with no widely available, safe way to carry it out automatically <em>once</em> the need is detected. This project therefore focuses on the first, decisive problem: bringing evidence to the decision. <strong>(P1)</strong> continuous, evidence-based detection of "tank needs cleaning".</p>
+
+<!-- ================= OBJECTIVES ================= -->
+<h2 id="objectives"><span class="secnum">4.</span> Objectives</h2>
+<ol>
+  <li>Design a solar-powered, wall/lid-mounted IoT node based on an ESP32 that measures pH, turbidity, TDS, temperature and water level of stored tank water.</li>
+  <li>Develop a reproducible calibration procedure for each sensor so that readings remain accurate over months of continuous submersion.</li>
+  <li>Implement a deep-sleep based power-management scheme that allows the node to run indefinitely from a solar panel and a Li-ion battery.</li>
+  <li>Design the <em>TankScore</em> decision engine&mdash;a weighted, trend-aware indicator that classifies tank state as GOOD, WATCH or CLEAN-REQUIRED, and tracks days since the last confirmed cleaning.</li>
+  <li>Build a local, phone-accessible web dashboard (no cloud) showing live readings, history graphs, status and a "Tank cleaned" confirmation control.</li>
+  <li>Validate the complete system on a real household tank through a multi-week soak test, and document calibration drift and maintenance.</li>
+</ol>
+
+<!-- ================= LIT REVIEW ================= -->
+<h2 id="litreview"><span class="secnum">5.</span> Literature Review</h2>
+<p>IoT water-quality monitoring is an active research area. Sharma et al. describe an ESP32-based system integrating pH, turbidity, TDS and temperature sensors with on-device machine learning and cloud integration, reporting stable readings over 24-hour operation and low repeatability error for pH; notably, the sensing array is assembled from discrete analog probes [3]. The work reported in the <em>International Journal of Computer Science and Publication</em> demonstrates an ESP32 + Adafruit.IO design measuring the same four parameters, and provides a useful calibration methodology with buffer solutions (pH 4.0, 7.0, 10.0) and standard TDS/turbidity samples [4]. Chavhan et al. extend this to industrial wastewater with a multi-parameter suite including dissolved oxygen, electrical conductivity and water level, validated against laboratory instruments [5]. The <em>HydroSense</em> framework proposes a dual-microcontroller topology&mdash;an Arduino dedicated to precision analog capture (pH, DO) and an ESP32 handling connectivity&mdash;with dissolved oxygen probes of the galvanic type that require no polarisation time [6].</p>
+<p>First, most systems transmit to public clouds and offer no local storage or offline dashboard. Second, the analogue probe modules that keep a prototype cheap drift and benefit from regular recalibration; production hardening would migrate to industrial RS485/Modbus probes with automatic temperature compensation and IP68 enclosures [7]. Third, none of the surveyed systems addresses the <em>cleaning</em> decision itself&mdash;they report quality values but not an actionable "clean now" trigger. This proposal directly targets those gaps: an in-tank ESP32 node built from low-cost analogue sensor modules, with a local web dashboard and a decision engine that turns continuous readings into a single, conclusive cleaning verdict.</p>
+<p>Several open-source projects already exist online and validate the ESP32 + pH/TDS/turbidity approach this proposal adopts: <em>water-quality-monitor</em> (ESP32 with pH, EC, TDS, turbidity and temperature feeding a Blynk dashboard) [11], an end-to-end ESP32 + Python web-dashboard system [12], a ThingSpeak-based TDS/turbidity monitor with SMS alerts built for under &#8377;2,000 [13], a tank-specific water-level + pH + turbidity monitor with pump control [14], and a cloud (AWS)-based monitor with ML-gated alerts [15]. None of them couples solar autonomy with a fully local dashboard and a cleaning-decision engine, which is exactly the gap TankGuard fills.</p>
+
+<!-- ================= SCOPE ================= -->
+<h2 id="scope"><span class="secnum">6.</span> Scope and Justification</h2>
+<p>The project scope is a <strong>single prototype system for one household tank</strong>, built first from off-the-shelf modules on a breadboard to validate sensing and firmware, with a later custom PCB and IP65 enclosure. The design deliberately chooses:</p>
+<ul>
+  <li><strong>Low-cost analogue sensor modules</strong> (Gravity/Dual-head-class) in place of industrial RS485/Modbus probes: they are a fraction of the price, breadboard-friendly, and accurate enough for a validated prototype when calibrated against handheld meters. Drift is handled by a quarterly recalibration procedure, and production hardening can drop in industrial probes later.</li>
+  <li><strong>Local-only connectivity.</strong> Data never leaves the home; the ESP32 serves a web app over WiFi (mDNS hostname). This avoids recurring costs, privacy concerns and dependence on a commercial cloud.</li>
+  <li><strong>Single-node architecture.</strong> One device measures, decides, stores and serves the dashboard; no separate actuator module is within this project&rsquo;s scope, though the decision output is designed to drive one in a future extension.</li>
+</ul>
+
+<!-- ================= SYSTEM DESIGN ================= -->
+<h2 id="design"><span class="secnum">7.</span> System Design Overview</h2>
+<p>TankGuard is a single node installed on the tank lid/wall with probes hanging below the water line (Figure 1). It measures the stored water, evaluates whether cleaning is due, keeps a rolling local history, and surfaces everything on a phone dashboard.</p>
+
+<div class="dia">
+  <div class="db solar">10&nbsp;W / 12&nbsp;V Solar Panel</div>
+  <div class="arr">&#8595;</div>
+  <div class="db power">CN3791 MPPT Charge Controller</div>
+  <div class="arr">&#8595;</div>
+  <div class="db power">4&nbsp;&times;&nbsp;18650 Li-ion Pack (12&nbsp;V) &mdash; 12&nbsp;V Bus</div>
+  <div class="arr">&#8595;</div>
+  <div class="db esp">ESP32 &mdash; TankGuard Node</div>
+  <div class="arr">&#8595;&#8593;</div>
+  <div class="db probe">Analog sensor probes (Gravity / interface boards): &nbsp; pH &middot; TDS/EC &middot; Turbidity</div>
+  <div class="arr">&#8595;&#8593;</div>
+  <div class="db probe">ADS1115 16-bit ADC &nbsp;&middot;&nbsp; 1-Wire: DS18B20 &nbsp;&middot;&nbsp; GPIO: JSN-SR04T</div>
+  <div class="arr">&#8596;&nbsp;WiFi&nbsp;&#8596;</div>
+  <div class="db phone">Phone / Laptop &mdash; Local Web Dashboard (tankmon.local)</div>
+</div>
+<p class="small" style="text-align:center;">Figure 1 &mdash; TankGuard system architecture (solar battery node + local dashboard).</p>
+
+<h3 id="design-modular">7.1 Modular System Product Line</h3>
+<p>TankGuard is architected as a <strong>three-module product family around a single base unit</strong>, so each household buys only the features it actually needs: the base unit (M1) monitors water quality, and two optional plug-in modules (M2, M3) add drain-flushing and pump control. The customer selects the combination at purchase.</p>
+<table class="avoidbrk">
+  <caption>Module options for the TankGuard product line (customer-selectable).</caption>
+  <tr><th style="width:22%">Module</th><th>What it does</th><th>When a customer chooses it</th></tr>
+  <tr><td><strong>M1 &mdash; Water-Quality Monitoring Module</strong> (base unit)</td><td>Continuous in-tank sensing of pH, turbidity, TDS, temperature and water level; computes the TankScore; serves the local dashboard, history and cleaning alerts.</td><td><strong>Every system</strong> &mdash; this is the core around which the others plug in, and the scope of this prototype.</td></tr>
+  <tr><td><strong>M2 &mdash; Drain &amp; Sludge-Flush Module</strong></td><td>A solenoid valve fitted to the tank drain line; on CLEAN-REQUIRED (or a dashboard tap) it opens briefly to flush settled sludge without emptying the whole tank.</td><td>Wanted: scheduled sludge removal without climbing to the tank or draining water manually.</td></tr>
+  <tr><td><strong>M3 &mdash; Auto-Off / Auto-On Pump Module</strong></td><td>Motor contactor with relay logic; cuts the pump when the tank is full (level trigger) or water quality is unsafe, restarts on demand, and protects the motor from dry-running.</td><td>Wanted: pump automation driven by the same monitoring verdict.</td></tr>
+</table>
+<p>Modules M2 and M3 are <strong>outside this prototype&rsquo;s build scope</strong> (the prototype covers the M1 base only, preserving the single-node guarantee in Section 6). The base still provides the <em>decision signals</em> for them today: the TankScore, level and alert triggers are exposed on an expansion header and emitted as dashboard/POST events, so M2 and M3 can be added later by plugging in a board and enabling the module in the configuration file&mdash;no sensor changes required.</p>
+
+<h3 id="design-mon">7.2 Monitoring Node</h3>
+<p>The node is a wall/lid-mounted <strong>waterproof, heat-protected enclosure</strong> (IP66 box with a foil-foam thermal liner and a reflective heat shield for exposed rooftop mounting in Indian sun) containing the ESP32, the ADS1115 ADC, power electronics, and a humidity-sealed cable gland through which the probe cables pass to the water. A full table of sensor choices and their rationale is given in Table 1. All three primary liquid sensors are low-cost analogue modules: pH, TDS/EC and turbidity are read as small analogue voltages by their interface boards and digitised by a dedicated ADS1115 16-bit ADC, which keeps them well clear of the ESP32&rsquo;s native ADC nonlinearity. This is the key prototype trade-off&mdash;analogue modules cost a fraction of industrial RS485 probes, and accuracy is secured by a reproducible calibration procedure validated against a handheld meter during bring-up.</p>
+<table class="avoidbrk">
+  <caption>Table 1 &mdash; Parameter selection and rationale.</caption>
+  <tr><th>Parameter</th><th>Sensor / Interface</th><th>Safe range (WHO)</th><th>Why it matters in-tank</th></tr>
+  <tr><td>Turbidity</td><td>Analog optical (SEN0189/Gravity), via ADC</td><td>&lt; 1 NTU</td><td><strong>Primary sludge indicator;</strong> rises with sediment and biofilm release.</td></tr>
+  <tr><td>pH</td><td>Analog glass electrode (SEN0161/Gravity), via ADC</td><td>6.5&ndash;8.5</td><td>Drift signals algae, decay, seepage or corrosion.</td></tr>
+  <tr><td>TDS / EC</td><td>Analog conductivity (SEN0244/Gravity), via ADC</td><td>&lt; 500 ppm</td><td>Dissolved solids leach from settled debris and scale.</td></tr>
+  <tr><td>Temperature</td><td>DS18B20 waterproof, 1-Wire</td><td>&mdash;</td><td>Biological activity clock; temp-compensates other readings.</td></tr>
+  <tr><td>Water level</td><td>JSN-SR04T ultrasonic, waterproof</td><td>&mdash;</td><td>Water age since refill; empty/full detection.</td></tr>
+  <tr><td>Battery / solar</td><td>ADC voltage divider</td><td>&mdash;</td><td>State-of-charge and solar health for self-diagnostics.</td></tr>
+</table>
+
+<h3 id="design-engine">7.3 The "When to Clean" Quality Engine (TankScore)</h3>
+<p>The decision engine converts raw readings into one actionable status. It combines two signals:</p>
+<ol>
+  <li><strong>Interval counter:</strong> days since the last confirmed cleaning (set via the dashboard) versus a configurable interval (default 90 days, adjustable 30&ndash;180). Expiry alone raises a WATCH flag.</li>
+  <li><strong>Water-quality score (0&ndash;100):</strong> each parameter contributes a sub-score based on how far the reading is from its safe band (Table 2), weighted by importance. A 14-day slope of turbidity, TDS and pH detects <em>deterioration in progress</em> even before a hard threshold is breached (e.g. turbidity climbing steadily but still under 1 NTU).</li>
+</ol>
+<div class="diagram-table">
+<table class="avoidbrk">
+  <caption>Table 2 &mdash; Quality thresholds driving the TankScore.</caption>
+  <tr><th>Parameter</th><th>GOOD</th><th>WATCH</th><th>CLEAN-REQUIRED flag</th></tr>
+  <tr><td>Turbidity (NTU)</td><td>&lt; 1</td><td>1&ndash;5</td><td>&gt; 5</td></tr>
+  <tr><td>TDS (ppm)</td><td>&lt; 300</td><td>300&ndash;500</td><td>&gt; 500</td></tr>
+  <tr><td>pH</td><td>6.5&ndash;8.5</td><td>6.0&ndash;6.5 / 8.5&ndash;9.0</td><td>&lt; 6.0 or &gt; 9.0</td></tr>
+  <tr><td>Water temperature</td><td colspan="3" style="text-align:left;">Not flagged directly; warm water (&gt; 30 &deg;C) raises the risk weight of the biological indicators.</td></tr>
+</table>
+</div>
+<p>The weighted result is a single status: <strong>GOOD</strong> (no action), <strong>WATCH</strong> (deteriorating or near thresholds), or <strong>CLEAN-REQUIRED</strong> (recommends that the tank be cleaned). The status is displayed prominently on the dashboard. When CLEAN-REQUIRED is reached, a persistent alert is raised; the dashboard&rsquo;s one-tap "Tank cleaned" control logs the completed cleaning and restarts the interval counter, so the next "due" alert begins a fresh period.</p>
+
+<h3 id="design-ui">7.4 Local Data and Web Dashboard</h3>
+<p>All history is stored on the ESP32 in its flash filesystem (approximately 90 days at a 3-hour sampling interval in a ring buffer). The ESP32 serves a single-page web application&mdash;gauge cards per parameter, history charts, battery/solar status, the TankScore banner, a "Tank cleaned &#10003;" button, and calibration screens. The phone simply opens <code>http://tankmon.local</code> when on the same WiFi network. On first boot, the device opens a captive-portal access point so the owner can enter WiFi credentials once. No cloud service, account, or subscription is required.</p>
+
+<h3 id="design-power">7.5 Power and Energy Management</h3>
+<p>The 12 V solar bus powers the sensor probes; a buck converter and a low-quiescent LDO feed a clean 3.3 V rail for the ESP32. To keep average consumption low, the node spends most of its time in deep sleep (timer wake), waking every 3 hours to power the sensor rail, let probes settle, sample, store, and publish over WiFi, then sleeping again. The RTC and a battery-monitor ADC stay alive. This measure&ndash;sleep&ndash;publish loop is the enabler for a fully solar-autonomous node (Section 11 gives the numbers).</p>
+
+<!-- ================= ARCHITECTURE + WIRING ================= -->
+<h2 id="arch"><span class="secnum">8.</span> Hardware Architecture</h2>
+<p>The detailed wiring follows a small number of buses (Table 3). A printed schematic and a KiCad/Fritzing prototype layout will accompany the firmware repository; the breadboard bring-up plan verifies each sensor in isolation before integration.</p>
+<table class="avoidbrk">
+  <caption>Table 3 &mdash; Preliminary pin and bus plan (ESP32-WROOM-32).</caption>
+  <tr><th>Interface</th><th>ESP32 pins</th><th>Connected device</th></tr>
+  <tr><td>I2C</td><td>GPIO21 / GPIO22</td><td>ADS1115 16-bit ADC &mdash; pH, TDS and turbidity analogue channels</td></tr>
+  <tr><td>1-Wire</td><td>GPIO4</td><td>DS18B20 waterproof probe</td></tr>
+  <tr><td>Ultrasonic trigger / echo</td><td>GPIO25 / GPIO26</td><td>JSN-SR04T water-level sensor</td></tr>
+  <tr><td>ADC (attenuated)</td><td>GPIO34 (channel)</td><td>Battery voltage divider</td></tr>
+  <tr><td>Power switch (sensor rail)</td><td>GPIO27</td><td>High-side MOSFET on 5&nbsp;V analogue sensing rail</td></tr>
+  <tr><td>RTC wake source</td><td>&mdash;</td><td>Timer wake from deep sleep (3 h default)</td></tr>
+  <tr><td>Expansion header (M2 / M3)</td><td>GPIO32 / GPIO33 / GPIO14</td><td>Trigger outputs for optional Drain-Flush (M2) and Pump-Control (M3) modules</td></tr>
+</table>
+<p class="note"><strong>Prototype build strategy:</strong> Stage A &mdash; breadboard the ESP32 + ADS1115 + independent drivers for each analogue sensor and validate range/calibration against a handheld meter; Stage B &mdash; integrate all probes and interfaces inside the single waterproof, heat-protected enclosure; Stage C &mdash; add solar power train and deep-sleep; Stage D &mdash; on-tank validation, then optional custom PCB.</p>
+
+<!-- ================= FIRMWARE ================= -->
+<h2 id="firmware"><span class="secnum">9.</span> Software and Firmware Architecture</h2>
+<p>The firmware is written for the Arduino core under PlatformIO (ESP32), organised in modules so each sensor and service can be developed and tested independently:</p>
+<pre style="font-size:8pt; background:#f4f7fa; border:1px solid #d8e0ea; padding:8pt; border-radius:4pt; overflow-x:auto;">
+  main:  measure &rarr; compute TankScore &rarr; store &rarr; serve &rarr; deep sleep
+  &#9500;&#9472;&#9472; sensors/    ph, tds, turbidity, temp, level, battery drivers
+  &#9500;&#9472;&#9472; power/      battery ADC, sensor-rail enable, deep-sleep scheduler
+  &#9500;&#9472;&#9472; wifi/       station + mDNS + captive-portal first-boot provisioning
+  &#9500;&#9472;&#9472; server/     HTTP REST + WebSocket + LittleFS static web app
+  &#9500;&#9472;&#9472; storage/    LittleFS config, calibration, 90-day history ring buffer
+  &#9492;&#9472;&#9472; quality/    TankScore engine, trend detection, alert rules
+</pre>
+<p>Key engineering details:</p>
+<ul>
+  <li><strong>Noise rejection:</strong> the three analogue probes are sampled as &sim;100 samples each through the ADS1115, sorted, and the median used; pH and TDS are temperature-compensated in software against the DS18B20.</li>
+  <li><strong>Calibration:</strong> pH via two/three-point buffer calibration (4.0/6.86/9.18), turbidity via 0 NTU and 1000 NTU formazin standards, TDS via standard conductivity solutions; offsets are persisted in a calibration file and re-applied on every boot. A maintenance reminder re-runs calibration every 3 months.</li>
+  <li><strong>Time:</strong> NTP synchronisation whenever WiFi is online; the RTC keeps time in deep sleep.</li>
+  <li><strong>Analogue channels:</strong> pH, TDS and turbidity are sampled through the ADS1115 to bypass the ESP32&rsquo;s native ADC nonlinearity; like every channel, they are median-filtered and temperature-compensated, and gated by the sensor-rail power switch so they draw current only during the measurement window.</li>
+</ul>
+
+<!-- ================= BOM ================= -->
+<div class="pagebreak"></div>
+<h2 id="bom"><span class="secnum">10.</span> Bill of Materials (BOM)</h2>
+
+<h3>10.1 Product-Line Bill of Materials (three modular kits)</h3>
+<p>All parts for the complete three-module product line&mdash;the M1 base unit plus the optional M2 drain-flush and M3 pump-control kits&mdash;are listed in one bill (Table 4) with Indian-market prices in rupees (items marked &lsquo;est.&rsquo; are typical street estimates). The full family sums to <strong>&#8377;15,300, deliberately under the &#8377;15,346 budget cap</strong>, so no module added later breaks the plan. The prototype build purchases the M1 base kit only (items 1&ndash;20, &#8377;13,550); M2 and M3 are add-on kits (items 21&ndash;26) a customer buys only when ticking those options. The enclosure is specified as <strong>waterproof and heat-protected</strong> for exposed rooftop mounting in Indian sun. ORP, dissolved-oxygen and free-chlorine probes (roughly &#8377;22,000 together at current street prices) are deliberately <em>deferred</em> and marked as future expansion, keeping the build affordable without compromising the core five-parameter verdict.</p>
+<table>
+  <caption>Table 4 &mdash; Product-line BOM by module (verified Indian-market pricing, parts only; &lsquo;est.&rsquo; = street estimate).</caption>
+  <tr><th style="width:3%">#</th><th style="width:12%">Category</th><th style="width:20%">Component</th><th style="width:26%">Note / SKU</th><th class="num" style="width:5%">Qty</th><th class="num" style="width:10%">Unit (&#8377;)</th><th class="num" style="width:10%">Total (&#8377;)</th></tr>
+  <tr class="modhead"><td colspan="7">M1 &mdash; Water-Quality Monitoring Module (base kit; prototype scope)</td></tr>
+  <tr><td>1</td><td>Compute</td><td>Microcontroller board</td><td>ESP32-WROOM-32 dev board (FireBeetle-class, DFR0478)</td><td class="num">1</td><td class="num">1,237</td><td class="num">1,237</td></tr>
+  <tr><td>2</td><td>Compute</td><td>16-bit ADC</td><td>ADS1115 module (4-analogue-channel expansion)</td><td class="num">1</td><td class="num">145</td><td class="num">145</td></tr>
+  <tr><td>3</td><td>Sensing</td><td>pH sensor kit</td><td>Gravity analogue pH (SEN0161-V2), probe + interface board</td><td class="num">1</td><td class="num">2,669</td><td class="num">2,669</td></tr>
+  <tr><td>4</td><td>Sensing</td><td>TDS / EC sensor</td><td>Gravity analogue TDS (SEN0244)</td><td class="num">1</td><td class="num">1,489</td><td class="num">1,489</td></tr>
+  <tr><td>5</td><td>Sensing</td><td>Turbidity sensor</td><td>Gravity analogue turbidity (SEN0189)</td><td class="num">1</td><td class="num">600</td><td class="num">600</td></tr>
+  <tr><td>6</td><td>Sensing</td><td>Temperature probe</td><td>Waterproof DS18B20 (stainless, 1&nbsp;m cable)</td><td class="num">1</td><td class="num">44</td><td class="num">44</td></tr>
+  <tr><td>7</td><td>Sensing</td><td>Water-level sensor</td><td>JSN-SR04T waterproof ultrasonic</td><td class="num">1</td><td class="num">270</td><td class="num">270</td></tr>
+  <tr><td>8</td><td>Power</td><td>Buck converter</td><td>12&nbsp;V &rarr; 5&nbsp;V DC-DC (LM2596S)</td><td class="num">1</td><td class="num">78</td><td class="num">78</td></tr>
+  <tr><td>9</td><td>Power</td><td>3.3 V LDO</td><td>Low-quiescent HT7333 (ESP32 rail)</td><td class="num">1</td><td class="num">65&nbsp;<span class="small">est.</span></td><td class="num">65</td></tr>
+  <tr><td>10</td><td>Power</td><td>Sensor-rail switch</td><td>MOSFET high-side enable boards (IRF520)</td><td class="num">2</td><td class="num">42</td><td class="num">84</td></tr>
+  <tr><td>11</td><td>Power</td><td>MPPT charge controller</td><td>CN3791 solar module</td><td class="num">1</td><td class="num">420</td><td class="num">420</td></tr>
+  <tr><td>12</td><td>Power</td><td>Solar panel</td><td>10&nbsp;W / 12&nbsp;V polycrystalline</td><td class="num">1</td><td class="num">950&nbsp;<span class="small">est.</span></td><td class="num">950</td></tr>
+  <tr><td>13</td><td>Power</td><td>Battery cells</td><td>18650 Li-ion (~3000 mAh each)</td><td class="num">4</td><td class="num">190&nbsp;<span class="small">est.</span></td><td class="num">760</td></tr>
+  <tr><td>14</td><td>Power</td><td>Battery protection</td><td>3S BMS with balance</td><td class="num">1</td><td class="num">420&nbsp;<span class="small">est.</span></td><td class="num">420</td></tr>
+  <tr><td>15</td><td>Enclosure</td><td>Waterproof housing</td><td>IP66 weatherproof box, cable glands, mounting plate, sealed cable entry</td><td class="num">1</td><td class="num">900&nbsp;<span class="small">est.</span></td><td class="num">900</td></tr>
+  <tr><td>16</td><td>Enclosure</td><td>Heat-protection set</td><td>Foil-foam thermal liner, reflective heat shield, desiccant, vented baffle</td><td class="num">1</td><td class="num">620&nbsp;<span class="small">est.</span></td><td class="num">620</td></tr>
+  <tr><td>17</td><td>Build</td><td>Wiring &amp; misc</td><td>Connectors, divider resistors, fasteners, potting compound</td><td class="num">1</td><td class="num">739&nbsp;<span class="small">est.</span></td><td class="num">739</td></tr>
+  <tr><td>18</td><td>Calibration</td><td>pH buffers</td><td>4.00 / 6.86 / 9.18 buffer solutions (set)</td><td class="num">1</td><td class="num">580&nbsp;<span class="small">est.</span></td><td class="num">580</td></tr>
+  <tr><td>19</td><td>Calibration</td><td>Turbidity standards</td><td>0 NTU (DI water) + 1000 NTU formazin (set)</td><td class="num">1</td><td class="num">480&nbsp;<span class="small">est.</span></td><td class="num">480</td></tr>
+  <tr><td>20</td><td>Spares</td><td>Probe care &amp; spares kit</td><td>KCl storage solution, spare caps and seals, backup electrode</td><td class="num">1</td><td class="num">1,000&nbsp;<span class="small">est.</span></td><td class="num">1,000</td></tr>
+  <tr class="totalrow"><td colspan="6">M1 subtotal (base kit, prototype)</td><td class="num"><strong>13,550</strong></td></tr>
+  <tr class="modhead"><td colspan="7">M2 &mdash; Drain &amp; Sludge-Flush Module (optional add-on kit)</td></tr>
+  <tr><td>21</td><td>M2</td><td>Drain valve</td><td>12&nbsp;V normally-closed solenoid valve (1/2&Prime; line)</td><td class="num">1</td><td class="num">450&nbsp;<span class="small">est.</span></td><td class="num">450</td></tr>
+  <tr><td>22</td><td>M2</td><td>Drain plumbing</td><td>PVC drain fittings, tubing and adapters</td><td class="num">1</td><td class="num">200&nbsp;<span class="small">est.</span></td><td class="num">200</td></tr>
+  <tr><td>23</td><td>M2</td><td>Valve mounting</td><td>Bracket, clamps and fasteners</td><td class="num">1</td><td class="num">100&nbsp;<span class="small">est.</span></td><td class="num">100</td></tr>
+  <tr class="totalrow"><td colspan="6">M2 subtotal (optional kit)</td><td class="num"><strong>750</strong></td></tr>
+  <tr class="modhead"><td colspan="7">M3 &mdash; Auto-Off / Auto-On Pump Module (optional add-on kit)</td></tr>
+  <tr><td>24</td><td>M3</td><td>Pump relay kit</td><td>12&nbsp;V relay/contactor kit for pump switching</td><td class="num">1</td><td class="num">550&nbsp;<span class="small">est.</span></td><td class="num">550</td></tr>
+  <tr><td>25</td><td>M3</td><td>Mains wiring</td><td>Mains-grade terminal block and rated flex wire</td><td class="num">1</td><td class="num">250&nbsp;<span class="small">est.</span></td><td class="num">250</td></tr>
+  <tr><td>26</td><td>M3</td><td>Dry-run protection</td><td>Current-sense clamp (CT) for pump dry-run guard</td><td class="num">1</td><td class="num">200&nbsp;<span class="small">est.</span></td><td class="num">200</td></tr>
+  <tr class="totalrow"><td colspan="6">M3 subtotal (optional kit)</td><td class="num"><strong>1,000</strong></td></tr>
+  <tr class="totalrow"><td colspan="6">Total parts cost &mdash; full three-module product line</td><td class="num"><strong>15,300</strong></td></tr>
+</table>
+
+<table class="avoidbrk">
+  <caption>Table 5 &mdash; Budget summary by module.</caption>
+  <tr><th>Module</th><th class="num">Amount (&#8377;)</th></tr>
+  <tr><td>M1 &mdash; Water-Quality Monitoring Module (base kit, prototype)</td><td class="num">13,550</td></tr>
+  <tr><td>M2 &mdash; Drain &amp; Sludge-Flush Module (optional kit, items 21&ndash;23)</td><td class="num">750</td></tr>
+  <tr><td>M3 &mdash; Auto-Off / Auto-On Pump Module (optional kit, items 24&ndash;26)</td><td class="num">1,000</td></tr>
+  <tr class="totalrow"><td>Total parts cost (full three-module product line)</td><td class="num">15,300</td></tr>
+</table>
+<p class="small">The total is <strong>parts-only</strong>&mdash;the sum of the 26 items above, excluding labour, GST, freight and import duties. At &#8377;15,300 it sits <strong>under the &#8377;15,346 budget cap</strong>, and the prototype&rsquo;s build scope (M1 base kit) costs just &#8377;13,550. Prices marked &lsquo;est.&rsquo; are typical Indian street estimates and should be confirmed at purchase; the remainder are verified prices compiled from Indian electronics retailers during the market survey. A nominal contingency of ~10% (&#8776; &#8377;1,530) would bring the delivered full-family unit to about &#8377;16,830. ORP, dissolved-oxygen and free-chlorine probes remain a future expansion and are excluded from this budget.</p>
+
+<!-- ================= POWER BUDGET ================= -->
+<h2 id="budget"><span class="secnum">11.</span> Power Budget and Solar Sizing</h2>
+<p>Energy autonomy is the most important reliability requirement. Table 8 summarises the projected consumption of the measure&ndash;sleep&ndash;publish loop.</p>
+<table class="avoidbrk">
+  <caption>Table 8 &mdash; Power budget (Monitoring Node).</caption>
+  <tr><th>State</th><th>Current (avg)</th><th>Duty / day</th><th class="num">Charge used / day</th></tr>
+  <tr><td>Deep sleep (ESP32 + RTC only, rail off)</td><td>~0.1 mA</td><td>22 h</td><td class="num">2.2 mAh</td></tr>
+  <tr><td>Measure window (analogue probes settle, ADS1115 sampling)</td><td>~90 mA</td><td>1.33 h (4 min &times; 8 wake-ups)</td><td class="num">120 mAh</td></tr>
+  <tr><td>WiFi publish + NTP</td><td>~250 mA</td><td>1.5 h (approx. 12 min/wake-up)</td><td class="num">375 mAh</td></tr>
+  <tr class="totalrow"><td colspan="3">Total average daily consumption</td><td class="num">~500 mAh @ 12 V</td></tr>
+</table>
+<p>With a 4&times;18650 pack (~10.8 Ah usable at 12 V), the node has roughly <strong>3 weeks of autonomy with zero sun</strong>&mdash;far exceeding the worst realistic cloud cover. A 10 W panel yields ~50 Wh/day at 5 peak-sun-hours, comfortably recharging a 6 Wh/day draw even in winter. The analogue probe boards (pH, TDS, turbidity) draw only a few mA each and are switched with the rest of the sensor rail, so the daily budget is essentially unchanged.</p>
+
+<h2 id="outcomes"><span class="secnum">12.</span> Expected Outcomes</h2>
+<ul>
+  <li>A working, solar-powered prototype Monitoring Node producing calibrated readings for pH, turbidity, TDS, temperature and water level, with &le;3-minute settle time per measurement window.</li>
+  <li>A base module exposing TankScore and level triggers on an expansion header so optional drain-flush (M2) and pump-control (M3) modules bolt on without sensor changes.</li>
+  <li>A validated TankScore engine that correctly identifies GOOD / WATCH / CLEAN-REQUIRED states on a real tank, including trend-based early warnings.</li>
+  <li>A local web dashboard (no cloud) with live gauges, 90-day history graphs, battery/solar telemetry, and one-tap "Tank cleaned" confirmation.</li>
+  <li>Documented calibration procedure, probe-drift measurements from a multi-week soak test, and a maintenance guide (membrane/KCl care, quarterly recalibration).</li>
+</ul>
+
+<h2 id="timeline"><span class="secnum">13.</span> Work Plan and Timeline</h2>
+<table class="avoidbrk">
+  <caption>Table 9 &mdash; 12-week indicative schedule.</caption>
+  <tr><th>Weeks</th><th>Activity</th><th>Milestone / Deliverable</th></tr>
+  <tr><td>1&ndash;2</td><td>Literature review; vendor survey; finalise BOM; order parts</td><td>Approved BOM; parts received</td></tr>
+  <tr><td>3&ndash;4</td><td>Breadboard bring-up: validate each sensor standalone; calibrate with standards</td><td>Per-sensor calibration records</td></tr>
+  <tr><td>5&ndash;6</td><td>Firmware skeleton: deep-sleep scheduler, battery monitor, solar charge train</td><td>Sustained solar-only operation</td></tr>
+  <tr><td>7&ndash;8</td><td>All sensor drivers; median filtering; temperature compensation; TankScore engine</td><td>Complete reading + scoring</td></tr>
+  <tr><td>9</td><td>Captive-portal WiFi provisioning; HTTP/WebSocket server; LittleFS history; dashboard</td><td>Remote dashboard live at tankmon.local</td></tr>
+  <tr><td>10&ndash;11</td><td>On-tank installation and commissioning; multi-week soak test with drift logging</td><td>Validated field performance</td></tr>
+  <tr><td>12</td><td>Drift analysis, validation report, documentation, demo and defence</td><td>Final report and presentation</td></tr>
+</table>
+
+<h2 id="risks"><span class="secnum">14.</span> Risks and Mitigations</h2>
+<table class="avoidbrk">
+  <caption>Table 10 &mdash; Key engineering risks.</caption>
+  <tr><th style="width:26%">Risk</th><th>Likelihood</th><th>Impact</th><th>Mitigation</th></tr>
+  <tr><td>Probe fouling / calibration drift over weeks</td><td>High</td><td>Medium</td><td>Waterproof probe heads, quarterly recalibration, probe-care (KCl storage), drift logging.</td></tr>
+  <tr><td>Solar variability (winter / cloudy periods)</td><td>Medium</td><td>Medium</td><td>Over-sized battery (~3&nbsp;weeks autonomy), deep-sleep economy, optional panel upgrade path.</td></tr>
+  <tr><td>ESP32 ADC non-linearity on analogue channels</td><td>Medium</td><td>Low</td><td>Dedicated ADS1115 16-bit ADC for all analogue probe channels, calibrated against a handheld meter.</td></tr>
+  <tr><td>WiFi not reachable at tank location</td><td>Medium</td><td>Low</td><td>Captive-portal fallback access point; data is never lost (local flash ring buffer).</td></tr>
+  <tr><td>Enclosure condensation / moisture and peak-sun heat</td><td>Medium</td><td>Medium</td><td>IP66 box + glands, heat-reflective housing and foam insulation, desiccant, sealed cable entry.</td></tr>
+</table>
+
+<h2 id="conclusion"><span class="secnum">15.</span> Conclusion</h2>
+<p>TankGuard addresses a real, neglected problem&mdash;the silent degradation of household stored water&mdash;with a practical, evidence-based, fully local and solar-autonomous system. By measuring the parameters that actually change while water sits in a tank and computing a single TankScore, plus tracking how long it has been since a confirmed cleaning, the device moves tank maintenance from guesswork to a clear, timely schedule. The project follows a measured path&mdash;validated sensor bring-up, robust firmware, local dashboard, then real-tank soak test&mdash;producing a documented, reproducible prototype whose design can later be hardened into a custom PCB and sealed product.</p>
+
+<h2 id="refs"><span class="secnum">16.</span> References</h2>
+<ol style="font-size:9pt;">
+  <li>WHO. <em>Guidelines for drinking-water quality</em>, 4th ed. incorporating the 1st and 2nd addenda. World Health Organization, Geneva, 2022.</li>
+  <li>WHO &amp; UNICEF. <em>Progress on household drinking water, sanitation and hygiene</em>&mdash;JMP reports on safe water storage and handling.</li>
+  <li>S. Sharma et al., "An intelligent, low-cost water quality monitoring system with on-device machine learning and cloud integration," <em>Scientific Reports</em>, vol. 16, art. 11106, 2026. PMC13043767.</li>
+  <li>V. Kumar et al., "Design and implementation of an IoT-enabled water quality monitoring system using ESP32 with pH, turbidity, temperature, and TDS measurements," <em>Int. Journal of Computer Science and Publication</em>, vol. 16, no. 1, 2026.</li>
+  <li>N. Chavhan et al., "APAH: An autonomous IoT-driven real-time monitoring system for industrial wastewater quality," 2025.</li>
+  <li>HydroSense, "A dual-microcontroller IoT framework for multi-parameter water quality monitoring with edge processing and cloud analytics," arXiv:2601.21595, 2026.</li>
+  <li>DFRobot, "Gravity: Analogue water-quality sensor series &mdash; pH (SEN0161-V2), Turbidity (SEN0189), TDS (SEN0244)" product documentation and datasheets.</li>
+  <li>Espressif Systems, "ESP32 Datasheet" and "Sleep Modes &mdash; ESP-IDF Programming Guide," espressif.com.</li>
+  <li>DFRobot, "Gravity: Analogue Dissolved Oxygen Sensor/Meter Kit," SEN0237-A product page (future expansion).</li>
+  <li>DFRobot, "Waterproof DS18B20 temperature sensor" documentation.</li>
+  <li>mhdjishan, "water-quality-monitor: an IoT-based water quality monitoring device using ESP32," GitHub repository, 2025.</li>
+  <li>melt-founder, "water-quality-monitor: open-source end-to-end water quality monitoring system (ESP32 + Python web dashboard)," GitHub repository.</li>
+  <li>Sumedh-6504, "Water_Monitoring_System: real-time IoT TDS &amp; turbidity monitoring with ThingSpeak telemetry and SMS alerts," GitHub repository, 2026.</li>
+  <li>S. Kasthuriarachchi &amp; H. Perera, "IoT-Based Water-Level and Water-Quality Monitoring System for Water Tanks," GitHub repository, 2022.</li>
+  <li>patric1304, "Water-quality-IOT-project: university IoT water quality monitoring with ML-based anomaly alerting," GitHub repository, 2026.</li>
+</ol>
+
+<p class="small" style="margin-top:16pt;">Prepared: September 2026 &nbsp;&middot;&nbsp; For academic submission only &nbsp;&middot;&nbsp; Prices are indicative and subject to vendor confirmation.</p>
+
+</body>
+</html>

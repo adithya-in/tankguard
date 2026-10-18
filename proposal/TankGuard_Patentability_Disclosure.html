@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TankGuard — Patentability Disclosure</title>
+<style>
+  @page {
+    size: A4;
+    margin: 2cm 2cm 2cm 2cm;
+    @bottom-left  { content: "CONFIDENTIAL — Patent Disclosure Draft"; font-size: 8pt; color: #999; }
+    @bottom-right { content: "Page " counter(page); font-size: 8pt; color: #999; }
+  }
+  html { font-size: 10pt; }
+  body { font-family: "Times New Roman", Georgia, serif; color: #1a1a1a; line-height: 1.6; margin: 0; }
+  
+  h1 { font-size: 16pt; text-align: center; margin: 0 0 4pt 0; color: #000; }
+  h2 { font-size: 12pt; color: #1a1a1a; margin: 16pt 0 6pt 0; border-bottom: 1px solid #333; padding-bottom: 2pt; }
+  h3 { font-size: 11pt; color: #1a1a1a; margin: 12pt 0 4pt 0; }
+  p { margin: 0 0 8pt 0; text-align: justify; }
+  ul, ol { margin: 0 0 8pt 0; padding-left: 20pt; }
+  li { margin-bottom: 4pt; }
+  
+  .header-block { text-align: center; margin-bottom: 20pt; padding: 12pt; border: 2px solid #333; }
+  .header-block .conf { font-size: 10pt; font-weight: bold; letter-spacing: 3pt; color: #c00; margin-bottom: 8pt; }
+  .header-block .title { font-size: 18pt; font-weight: bold; margin: 8pt 0; }
+  .header-block .sub { font-size: 11pt; font-style: italic; }
+  
+  table { width: 100%; border-collapse: collapse; margin: 8pt 0 12pt 0; font-size: 9pt; }
+  th, td { border: 1px solid #666; padding: 5pt 6pt; vertical-align: top; text-align: left; }
+  th { background: #e8e8e8; font-weight: bold; }
+  
+  .claim-box { border: 1px solid #333; padding: 10pt 14pt; margin: 10pt 0; background: #f9f9f9; }
+  .claim-box .claim-label { font-weight: bold; font-size: 10pt; margin-bottom: 4pt; }
+  
+  .novelty-box { border-left: 4px solid #006600; background: #f0f8f0; padding: 8pt 12pt; margin: 10pt 0; }
+  .risk-box { border-left: 4px solid #cc6600; background: #fff8f0; padding: 8pt 12pt; margin: 10pt 0; }
+  
+  .pagebreak { page-break-before: always; }
+</style>
+</head>
+<body>
+
+<div class="header-block">
+  <div class="conf">CONFIDENTIAL</div>
+  <div class="title">PATENTABILITY DISCLOSURE</div>
+  <div class="sub">TankGuard: An Integrated In-Tank Water Quality Monitoring and<br>Automated Sediment-Flush System for Domestic and Institutional Storage Tanks</div>
+  <div style="margin-top:10pt; font-size:9pt;">Draft Date: October 2026<br>Document Ref: TG-PAT-2026-001</div>
+</div>
+
+<h2>1. TITLE OF INVENTION</h2>
+<p><em>"A self-powered in-tank water quality monitoring and automated sediment-flush system with closed-loop feedback for domestic and institutional water storage tanks"</em></p>
+
+<h2>2. FIELD OF THE INVENTION</h2>
+<p>The present invention relates to the field of water storage tank maintenance and water quality management. More particularly, the invention pertains to an integrated, self-powered sensing and actuation unit that is removably installed within a domestic or institutional water storage tank (overhead or underground), continuously measures key water quality parameters of the stored water, computes a composite water quality score indicative of accumulated contamination, and automatically or semi-automatically actuates a bottom-mounted flush valve to selectively remove the settled sediment and particulate layer at the tank floor — without draining the tank — when the computed quality score indicates that settled contamination has exceeded a predetermined threshold.</p>
+
+<h2>3. BACKGROUND AND PROBLEM STATEMENT</h2>
+
+<h3>3.1 The Forgotten Tank Problem</h3>
+<p>Water storage tanks in residential households, schools, hospitals, hostels, apartment complexes, and commercial buildings across India and similar tropical regions are among the most neglected components of the safe drinking water chain. Municipal or borewell water entering these tanks is typically treated and relatively clean at the point of entry. However, water that is stored in tanks for hours to weeks undergoes progressive degradation through the following mechanisms:</p>
+<ol>
+  <li><strong>Dissipation of disinfectant residual</strong> — Free chlorine, which inhibits microbial growth, dissipates within 24 to 48 hours of storage, removing the primary safeguard against bacterial proliferation.</li>
+  <li><strong>Sedimentation of suspended particles</strong> — Fine particulate matter (silt, clay, corrosion products, organic detritus) carried in by the source water settles under gravity onto the tank floor, forming a persistent sludge layer that is not removed by normal outlet flow.</li>
+  <li><strong>Biofilm formation</strong> — Microbial colonies colonize the submerged internal surfaces (walls, floor, baffles, inlet pipe exteriors), forming a slimy biofilm matrix that periodically sheds cells and fragments into the stored water.</li>
+  <li><strong>Algal growth</strong> — In transparent or semi-transparent tanks exposed to sunlight, algae proliferate on illuminated surfaces and in the water column, particularly during warm months.</li>
+  <li><strong>Chemical changes</strong> — pH may drift due to CO₂ absorption, pipe corrosion, or biological activity; dissolved solids may leach from accumulated debris.</li>
+</ol>
+
+<h3>3.2 The Detection Gap</h3>
+<p>Currently, tank owners detect water quality degradation through three unsatisfactory methods:</p>
+<ol>
+  <li><strong>Olfactory/gustatory detection</strong> — By the time the water smells "off" or tastes foul, significant microbial proliferation and/or biofilm shedding has already occurred. The consumer has already been exposed to degraded water.</li>
+  <li><strong>Visual detection</strong> — Discoloration or visible cloudiness indicates advanced contamination (turbidity typically exceeding 5 NTU), long after the degradation process began.</li>
+  <li><strong>Calendar-based cleaning</strong> — Tanks are cleaned on arbitrary schedules (monthly, quarterly, annually) regardless of actual contamination state, leading to either insufficient cleaning (health risk) or excessive cleaning (wasted water, labor, cost).</li>
+</ol>
+
+<h3>3.3 The Root Cause: Settled Sediment That No One Addresses</h3>
+<p>The fundamental physical reality that existing solutions fail to address is that the <strong>primary contamination reservoir in a stored-water tank is the settled sludge layer at the tank floor</strong>. This layer:</p>
+<ul>
+  <li>Accumulates continuously from incoming water particulates</li>
+  <li>Provides a nutrient-rich substrate for anaerobic bacterial growth</li>
+  <li>Re-suspends turbulently during inlet refilling, temporarily spiking water column turbidity</li>
+  <li>Is not removed by outlet draw-off (outlet is typically above the sludge layer)</li>
+  <li>Requires manual drain-and-scrub cleaning, which is labor-intensive, water-wasting, and infrequently performed</li>
+</ul>
+
+<h3>3.4 Limitations of Existing Approaches</h3>
+<p>Existing patents and products in this domain suffer from one or more of the following limitations:</p>
+<ul>
+  <li><strong>Monitoring without actuation:</strong> Sensor-only systems (e.g., WO2024173389A1) detect water quality changes but provide no mechanism to remediate them; the user is merely alerted.</li>
+  <li><strong>Full-tank drain cleaning:</strong> Automated cleaning systems (e.g., IN202441068267) use mechanical wipers and drain the entire tank, wasting large volumes of water and requiring the tank to be out of service.</li>
+  <li><strong>Industrial-scale solutions:</strong> Sludge discharge systems (e.g., CN223988161U) are designed for large municipal sedimentation tanks using camera-based image analysis, not for domestic or institutional storage tanks.</li>
+  <li><strong>In-pipe / point-of-use monitoring:</strong> Systems like WO2024173389A1 and Delta Faucet's application monitor water in pipes or at faucets, not in the storage tank where degradation actually occurs.</li>
+  <li><strong>Chemical treatment approaches:</strong> Systems that dispense chemicals (e.g., chlorine) address microbial contamination but do not remove the physical sludge reservoir that sustains microbial growth.</li>
+  <li><strong>Cloud dependence:</strong> Most IoT-based approaches require internet connectivity and cloud services, adding subscription cost and privacy concerns.</li>
+</ul>
+
+<h2>4. SUMMARY OF THE INVENTION</h2>
+
+<h3>4.1 Core Inventive Concept</h3>
+<p>The present invention provides a <strong>single integrated unit</strong> that combines continuous in-tank water quality sensing, composite contamination scoring with trend prediction, and a targeted bottom-flush actuation mechanism, all powered by an onboard solar-battery system, and operating entirely locally without cloud dependency.</p>
+
+<p>The key inventive step is the <strong>closed-loop integration of sensing and targeted sediment-flush actuation</strong>:</p>
+<ol>
+  <li>A multi-parameter sensor array submerged in the stored water continuously measures turbidity, pH, total dissolved solids (TDS), temperature, and water level.</li>
+  <li>An onboard processor computes a <strong>composite TankScore</strong> — a single weighted, trend-aware index that quantifies the overall contamination state of the stored water, with particular emphasis on indicators of settled-sediment activity (turbidity trend, TDS leaching rate, refill-induced resuspension events).</li>
+  <li>When the TankScore crosses a predetermined "clean-required" threshold (or when a manual trigger is received from a connected user interface), the processor actuates a <strong>normally-closed, bottom-mounted flush valve</strong> via a low-side or high-side switch, causing the valve to open for a predetermined duration.</li>
+  <li>During the flush interval, the high-concentration sediment layer at the tank floor is selectively drained through the flush valve — <strong>without draining the bulk water column above</strong>. The valve is positioned at the lowest point of the tank to preferentially discharge the highest-turbidity, highest-TDS water.</li>
+  <li>After the flush interval, the sensor array <strong>re-measures water quality</strong> and computes a post-flush TankScore, verifying the effectiveness of the flush. This closed-loop verification step is a critical aspect of the invention — the system confirms whether the flush actually improved water quality, and if not, may trigger additional flush cycles or escalate the alert to require manual cleaning.</li>
+  <li>A complete event log (pre-flush score, flush duration, post-flush score, effectiveness ratio) is stored locally and presented on a user-accessible dashboard, enabling the tank owner to track long-term contamination trends and cleaning effectiveness.</li>
+</ol>
+
+<h3>4.2 Novel Aspects (Distinguishing from Prior Art)</h3>
+
+<div class="novelty-box">
+<table style="font-size:9pt;">
+<tr><th style="width:40%;">Novel Aspect</th><th>Distinguishing Feature</th></tr>
+<tr><td><strong>1. Closed-loop flush verification</strong></td><td>System measures water quality AFTER flushing and compares with pre-flush quality to compute a quantitative effectiveness score. This feedback loop is absent in all surveyed prior art.</td></tr>
+<tr><td><strong>2. Selective bottom-layer flush (not full drain)</strong></td><td>Flush valve is designed and timed to remove only the settled sediment layer, not the bulk water. The flush duration and valve bore are selected so that only the bottom 5–15% of tank volume is discharged. This is fundamentally different from full-tank drain-and-clean systems.</td></tr>
+<tr><td><strong>3. Trend-predictive TankScore for flush triggering</strong></td><td>The trigger is not a simple threshold crossing but a composite score incorporating rate-of-change (14-day slope), acceleration, and refill-response analysis of turbidity and TDS. This enables predictive flush triggering BEFORE water quality becomes visibly degraded.</td></tr>
+<tr><td><strong>4. Integrated single-unit, self-powered design</strong></td><td>All sensing, processing, actuation, power management, and user interface are contained in a single tank-lid-mounted unit with onboard solar panel and battery. No external wiring, no plumbing modifications beyond a single drain-tap connection, no cloud dependency.</td></tr>
+<tr><td><strong>5. Sludge-resuspension event detection</strong></td><td>The system distinguishes between (a) gradual degradation (biofilm growth), (b) sudden contamination from source water (refill events), and (c) sludge resuspension (inlet turbulence). Each has a different TankScore contribution and different remediation strategy. This multi-event classification is novel.</td></tr>
+<tr><td><strong>6. Local-only, subscription-free architecture</strong></td><td>Dashboard, history, and alerts are served from the device itself over local WiFi (mDNS). No cloud service, no account, no subscription. This is a deliberate architectural choice that distinguishes from all IoT-based prior art which requires cloud platforms.</td></tr>
+</table>
+</div>
+
+<div class="pagebreak"></div>
+
+<h2>5. DETAILED DESCRIPTION OF EMBODIMENTS</h2>
+
+<h3>5.1 System Architecture</h3>
+<p>The invention comprises the following subsystems, all integrated into a single enclosure mountable on or within a water storage tank:</p>
+
+<h3>5.2 Sensor Subsystem</h3>
+<p>A plurality of sensors are positioned below the water line, suspended from the enclosure by waterproof cables through a sealed cable gland:</p>
+<table>
+<tr><th>Sensor</th><th>Measurement Principle</th><th>Role in TankScore</th><th>Weight</th></tr>
+<tr><td>Turbidity</td><td>Infrared light scattering (90° nephelometry)</td><td>Primary indicator of suspended particulate matter, biofilm fragments, and sludge resuspension</td><td>40%</td></tr>
+<tr><td>Total Dissolved Solids (TDS) / Electrical Conductivity</td><td>Two-electrode conductivity measurement with temperature compensation</td><td>Indicator of dissolved chemical leaching from settled debris, scale formation, and source water changes</td><td>25%</td></tr>
+<tr><td>pH</td><td>Glass electrode potentiometry</td><td>Indicator of biological activity (algae raise pH, anaerobic decay lowers pH), corrosion, and chemical contamination</td><td>20%</td></tr>
+<tr><td>Temperature</td><td>Digital thermistor (DS18B20 or equivalent)</td><td>Used for temperature compensation of TDS and pH readings; also serves as an independent biological activity indicator (warmer water accelerates microbial growth)</td><td>5%</td></tr>
+<tr><td>Water Level</td><td>Ultrasonic time-of-flight measurement</td><td>Determines water volume, detects refill events, identifies periods of no consumption, and enables detection of sludge resuspension during inlet flow</td><td>10%</td></tr>
+</table>
+
+<h3>5.3 TankScore Computation Engine</h3>
+<p>The TankScore is a composite numerical index (0–100) computed by the onboard processor. It integrates three classes of information:</p>
+
+<h4>(a) Instantaneous Parameter Sub-Scores</h4>
+<p>Each sensor parameter is converted to a 0–100 sub-score based on its distance from a safe reference band. For example, turbidity below 1 NTU scores 100; between 1–5 NTU scores linearly from 100 to 50; above 5 NTU scores 0.</p>
+
+<h4>(b) Trend Analysis</h4>
+<p>Linear regression is performed on the last 14 days (112 readings at 3-hour intervals) of turbidity, TDS, and pH data. The slope (rate of change) of each parameter contributes a trend bonus or penalty to the TankScore. A rising turbidity trend triggers a premature WATCH or CLEAN-NOW status even before the absolute threshold is breached, providing predictive capability.</p>
+
+<h4>(c) Event Classification</h4>
+<p>The system classifies water quality events into three categories based on correlated multi-parameter signatures:</p>
+<ul>
+  <li><strong>Gradual degradation:</strong> Turbidity slowly rising with stable pH → biofilm accumulation. TankScore penalized proportionally to slope.</li>
+  <li><strong>Source water contamination:</strong> Level rise (refill detected) followed by turbidity spike → contaminated incoming water. TankScore penalized based on peak turbidity but trend analysis is suppressed for settling period.</li>
+  <li><strong>Sludge resuspension:</strong> Turbidity spike without level change (inlet turbulence, temperature convection) → resuspension of existing bottom layer. TankScore penalized and flush recommendation issued (this is the primary flush trigger).</li>
+</ul>
+
+<h4>TankScore Status Output</h4>
+<table>
+<tr><th>Status</th><th>TankScore Range</th><th>System Action</th></tr>
+<tr><td>GOOD</td><td>80–100</td><td>No action required. Normal monitoring continues.</td></tr>
+<tr><td>WATCH</td><td>50–79</td><td>Dashboard displays warning. Trend extrapolation shows estimated days-to-clean. User advised to consider flushing.</td></tr>
+<tr><td>FLUSH RECOMMENDED</td><td>30–49</td><td>System recommends automated flush. User may confirm via dashboard, or system may auto-flush if configured for autonomous mode.</td></tr>
+<tr><td>CLEAN REQUIRED</td><td>0–29</td><td>Automated flush triggered. If post-flush score does not improve, persistent alert for manual cleaning is issued.</td></tr>
+</table>
+
+<h3>5.4 Automated Sediment-Flush Actuation Subsystem</h3>
+<p>The flush subsystem comprises:</p>
+<ol>
+  <li><strong>Flush valve:</strong> A normally-closed, electrically actuated valve (solenoid or motorized ball valve) with a bore diameter selected for the tank size (typically ½ inch to 1 inch for domestic tanks). The valve is installed at the lowest drain point of the tank via a T-fitting or existing drain tap. The valve body material is selected for potable water contact (brass with food-grade EPDM seal, or SS316).</li>
+  <li><strong>Valve driver:</strong> A MOSFET-based low-side switch driven by a GPIO output of the processor, with flyback protection (diode or RC snubber) for inductive loads (solenoid coils). The driver circuit is housed in the main enclosure and connected to the valve by a waterproof cable.</li>
+  <li><strong>Flush duration controller:</strong> The processor controls the valve open duration based on (a) tank volume (derived from level sensor), (b) pre-flush turbidity level, and (c) user-configurable sludge thickness parameter. Typical flush durations range from 30 seconds to 120 seconds for domestic tanks.</li>
+  <li><strong>Post-flush verification:</strong> After the flush interval, the system waits a predetermined settling time (typically 15–60 minutes), re-measures all sensor parameters, and computes the post-flush TankScore. The flush effectiveness is calculated as:</li>
+</ol>
+<p style="text-align:center; font-style:italic;">Flush Effectiveness (%) = (Pre-flush Turbidity − Post-flush Turbidity) / Pre-flush Turbidity × 100</p>
+<p>If effectiveness exceeds a predetermined threshold (e.g., 40%), the flush is confirmed successful and the TankScore is updated. If effectiveness is below threshold, the system may issue a second flush command or escalate to a manual-cleaning-required alert.</p>
+
+<h3>5.5 Power Management Subsystem</h3>
+<p>The unit is self-powered by a solar photovoltaic panel and rechargeable battery system:</p>
+<ul>
+  <li>Solar panel: 5–10 W, 12 V nominal, mounted adjacent to or integral with the enclosure.</li>
+  <li>Charge controller: MPPT or PWM, with overcharge and over-discharge protection.</li>
+  <li>Battery: Lithium-ion (18650 or LiFePO₄) pack, capacity selected for 2–3 weeks of zero-sun autonomy.</li>
+  <li>Regulated power rails: 12 V bus for flush valve actuation; 5 V rail for sensor excitation; 3.3 V rail for processor and digital circuits.</li>
+  <li>Duty cycling: The processor enters deep-sleep mode between measurement cycles, waking at predetermined intervals (default: every 3 hours) to power the sensor rail, perform measurements, compute TankScore, evaluate flush need, and serve any pending user requests. Deep-sleep current is minimized (&lt;1 mA) to maximize battery life.</li>
+</ul>
+
+<h3>5.6 User Interface Subsystem</h3>
+<p>The processor hosts a local web server accessible over the tank's WiFi network (no internet required). The interface provides:</p>
+<ul>
+  <li>Real-time gauge display of all measured parameters</li>
+  <li>TankScore status banner with color-coded indication</li>
+  <li>Trend charts (24-hour, 7-day, 30-day, 90-day) for each parameter</li>
+  <li>"Flush Now" button for manual override of automated flush</li>
+  <li>"Tank Cleaned" confirmation button (resets the cleaning interval counter and logs the event)</li>
+  <li>Flush history log (timestamp, pre-flush score, post-flush score, effectiveness)</li>
+  <li>Battery and solar charging status</li>
+  <li>Calibration interface for sensor maintenance</li>
+</ul>
+
+<h2>6. INDEPENDENT CLAIM (DRAFT)</h2>
+
+<div class="claim-box">
+<div class="claim-label">CLAIM 1 (Independent — System Claim):</div>
+<p style="font-size:9pt;">A self-powered in-tank water quality monitoring and automated sediment-flush system for a water storage tank, the system comprising:</p>
+<p style="font-size:9pt;">(a) an enclosure configured to be removably mounted on or within said water storage tank;</p>
+<p style="font-size:9pt;">(b) a plurality of water quality sensors suspended from said enclosure and submerged in stored water within said tank, said sensors comprising at least a turbidity sensor, a total dissolved solids sensor, a pH sensor, a temperature sensor, and a water level sensor;</p>
+<p style="font-size:9pt;">(c) a processor disposed within said enclosure, operatively connected to said sensors, configured to:</p>
+<p style="font-size:9pt;">(i) periodically measure water quality parameters from said sensors;</p>
+<p style="font-size:9pt;">(ii) compute a composite water quality score from said measured parameters, said score incorporating at least an instantaneous parameter component and a trend component derived from rate-of-change of said parameters over a predetermined historical window;</p>
+<p style="font-size:9pt;">(iii) classify said composite score into one of a plurality of quality states; and</p>
+<p style="font-size:9pt;">(iv) generate a flush actuation signal when said composite score indicates a quality state requiring sediment removal;</p>
+<p style="font-size:9pt;">(d) a normally-closed flush valve installed at a lowest drainage point of said tank and fluidly connected to said enclosure by a waterproof cable, said flush valve being configured to open upon receipt of said flush actuation signal and to discharge a sediment-rich bottom layer of said stored water through a drain outlet, without draining a bulk water column above said bottom layer;</p>
+<p style="font-size:9pt;">(e) a valve driver circuit disposed within said enclosure, operatively connecting said processor to said flush valve, said driver circuit configured to switch electrical power to said flush valve in response to said flush actuation signal;</p>
+<p style="font-size:9pt;">(f) a solar photovoltaic panel and rechargeable battery disposed within or adjacent to said enclosure, said solar panel and battery providing electrical power to said sensors, said processor, and said flush valve; and</p>
+<p style="font-size:9pt;">(g) a local wireless network interface hosted by said processor, configured to serve a user dashboard to a client device on a same local network without requiring internet connectivity,</p>
+<p style="font-size:9pt;">wherein said processor is further configured to re-measure said water quality parameters after said flush valve is closed, compute a post-flush composite water quality score, compare said post-flush score with said pre-flush score to derive a flush effectiveness metric, and store said flush effectiveness metric in a local event log for presentation on said user dashboard.</p>
+</div>
+
+<h2>7. CLAIMS FOR NOVELTY ASSESSMENT</h2>
+
+<table>
+<tr><th style="width:5%;">#</th><th style="width:35%;">Claimed Feature</th><th style="width:15%;">Novelty Rating</th><th>Justification</th></tr>
+<tr><td>1</td><td>Closed-loop flush verification (re-measure after flush, compute effectiveness)</td><td><strong>HIGH</strong></td><td>No surveyed prior art performs post-flush quality verification with quantitative effectiveness scoring. Existing flush/clean systems operate open-loop (actuate, then assume success).</td></tr>
+<tr><td>2</td><td>Selective bottom-layer flush (not full-tank drain)</td><td><strong>HIGH</strong></td><td>Prior art cleaning systems (IN202441068267) drain the entire tank. Industrial sludge systems (CN223988161U) use cameras and are for sedimentation tanks. The concept of a timed, partial flush that removes only the sediment-enriched bottom layer from a domestic tank is novel.</td></tr>
+<tr><td>3</td><td>Trend-predictive TankScore with event classification for flush triggering</td><td><strong>HIGH</strong></td><td>Prior art monitoring systems use simple threshold alerts. The composite score with 14-day slope analysis, acceleration detection, and three-way event classification (degradation vs refill contamination vs resuspension) is a novel computational method.</td></tr>
+<tr><td>4</td><td>Single integrated unit: sensing + scoring + actuation + power + local UI</td><td><strong>MEDIUM-HIGH</strong></td><td>While individual subsystems are known, their integration into a single tank-lid-mounted, solar-powered, cloud-free unit is a novel combination. Prior art splits these functions across separate devices or requires external infrastructure.</td></tr>
+<tr><td>5</td><td>Sludge resuspension detection (turbidity spike without level change)</td><td><strong>MEDIUM-HIGH</strong></td><td>This specific event classification — distinguishing resuspension from source contamination by correlating turbidity with level data — is not found in surveyed prior art.</td></tr>
+<tr><td>6</td><td>Local-only (no cloud) IoT architecture for tank monitoring</td><td><strong>MEDIUM</strong></td><td>Technically straightforward but architecturally significant. All surveyed IoT water monitoring systems use cloud platforms. The deliberate elimination of cloud dependency is a novel design choice with practical benefits (privacy, cost, offline operation).</td></tr>
+</table>
+
+<h2>8. PRIOR ART SEARCH SUMMARY</h2>
+
+<table>
+<tr><th style="width:15%;">Reference</th><th style="width:25%;">Title / Assignee</th><th style="width:20%;">Relevance</th><th>Distinction from Present Invention</th></tr>
+<tr><td>CN223988161U</td><td>Automatic sludge discharge control system (Chengdu, China)</td><td>Sludge discharge with valve</td><td>Uses camera-based image analysis, not water quality sensors. Designed for municipal sedimentation tanks (industrial scale), not domestic storage tanks. No water quality scoring, no closed-loop verification.</td></tr>
+<tr><td>IN202311028143</td><td>Smart Water Tank Management System (Uttaranchal University, India)</td><td>Tank quality monitoring with sensors</td><td>Sensor-only system. Alerts user via mobile app but provides no automated remediation. No flush valve, no actuation. Cleaning is manual, triggered only by alert.</td></tr>
+<tr><td>IN202441068267</td><td>Automatic Cleaning of Overhead Water Tanks (SR University, India)</td><td>Automated tank cleaning</td><td>Uses a mechanical wiper to scrub walls + chlorine doser + full drain. Requires manual initiation. Does not use water quality sensors to trigger cleaning. Drains entire tank (water wastage). No sediment-selective flush.</td></tr>
+<tr><td>IN (Marwadi University)</td><td>Water Purity Monitoring and Automated Purification Device</td><td>Sensing + treatment</td><td>Tests water in a separate chamber (not in-tank), then dispenses chemical treatments. Complex multi-chamber design. Chemical approach, not physical sediment removal.</td></tr>
+<tr><td>ILONNATI Innovations</td><td>Smart Intelligent Water Monitoring</td><td>IoT sensors + motorized valves</td><td>Designed for piped water supply networks, not storage tanks. Monitors supply quality at multiple network points. No in-tank sensing, no sediment flush.</td></tr>
+<tr><td>WO2024173389A1</td><td>Water Quality Monitoring System (AS America Inc, USA)</td><td>Multi-sensor monitoring + phone app</td><td>Pure monitoring system. No actuation, no cleaning, no flush valve. Monitors water in pipes, not in storage tanks.</td></tr>
+<tr><td>US (Delta Faucet)</td><td>Smart Water Sensing and Management System</td><td>Sensors + valve actuation</td><td>Monitors water at point-of-use (faucets/showers) using ORP and conductivity. Actuates valves to purge pipe water, not tank sludge. Tiered purge logic for plumbing systems, not for stored-water tanks.</td></tr>
+</table>
+
+<h2>9. PATENTABILITY ASSESSMENT</h2>
+
+<div class="novelty-box">
+<p><strong>Novelty (Section 32 of Indian Patents Act, 1970):</strong> The claimed subject matter is not anticipated by any single prior art reference found in the preliminary search. The combination of in-tank multi-parameter sensing, trend-predictive composite scoring, selective bottom-flush actuation, and closed-loop flush verification in a single self-powered unit is not disclosed in any surveyed reference.</p>
+</div>
+
+<div class="novelty-box">
+<p><strong>Inventive Step / Non-Obviousness:</strong> While each individual component (sensors, solenoid valve, ESP32, solar panel, web server) is known in isolation, their specific combination and integration into a closed-loop system that (a) distinguishes settled-sediment contamination from other contamination sources, (b) triggers a selective partial flush (not full drain), and (c) verifies flush effectiveness by re-measurement, is not obvious to a person skilled in the art of water tank maintenance or IoT sensor systems. The closed-loop verification step in particular represents a non-trivial technical contribution that addresses a real problem (silent flush failure due to valve clogging or insufficient duration) that is not recognized in prior art.</p>
+</div>
+
+<div class="novelty-box">
+<p><strong>Industrial Applicability:</strong> The invention is directly applicable to millions of domestic and institutional water storage tanks in India and similar regions. The system uses commercially available components and can be manufactured at low cost. The self-powered, cloud-free design makes it suitable for deployment in areas with unreliable electricity and internet connectivity.</p>
+</div>
+
+<h2>10. RECOMMENDED CLAIM STRATEGY</h2>
+
+<ol>
+  <li><strong>Independent System Claim (Claim 1):</strong> Broadest claim covering the complete integrated system. Drafted above.</li>
+  <li><strong>Dependent Claim — Closed-Loop Verification:</strong> The system of Claim 1, wherein the processor is configured to compute a flush effectiveness metric by comparing pre-flush and post-flush composite scores, and to issue a secondary flush command or a manual-cleaning alert when the flush effectiveness metric is below a predetermined threshold.</li>
+  <li><strong>Dependent Claim — Trend-Predictive Triggering:</strong> The system of Claim 1, wherein the composite score incorporates a trend component derived from linear regression analysis of historical turbidity and TDS readings over a period of 7 to 30 days, and wherein the flush actuation signal is generated when the trend component indicates a rate of degradation that would cause the instantaneous parameters to exceed safe thresholds within a predetermined number of days, even if the instantaneous parameters have not yet exceeded said thresholds.</li>
+  <li><strong>Dependent Claim — Event Classification:</strong> The system of Claim 1, wherein the processor classifies water quality events into a plurality of event types based on correlated multi-parameter signatures, said event types comprising at least: gradual degradation, source-water contamination, and sludge resuspension, and wherein each event type produces a different TankScore contribution and a different recommended remediation action.</li>
+  <li><strong>Dependent Claim — Selective Partial Flush:</strong> The system of Claim 1, wherein the flush valve open duration is determined based on at least one of: tank volume, pre-flush turbidity level, and a user-configurable sludge thickness parameter, and wherein said open duration is selected to discharge no more than 15% of total tank volume.</li>
+  <li><strong>Method Claim:</strong> A method of maintaining water quality in a storage tank, comprising: continuously measuring turbidity, TDS, pH, temperature, and water level in stored water; computing a composite water quality score with trend analysis; classifying the score into quality states; actuating a bottom-mounted flush valve when the score indicates sediment removal is needed; re-measuring water quality after flush completion; computing a flush effectiveness metric; and logging the effectiveness metric locally.</li>
+</ol>
+
+<h2>11. FEE ESTIMATE (INDIAN PATENT OFFICE)</h2>
+
+<table>
+<tr><th>Stage</th><th>Fee (Natural Person / Startup / MSME)</th><th>Fee (Other)</th></tr>
+<tr><td>Provisional Specification Filing</td><td>₹1,600</td><td>₹8,000</td></tr>
+<tr><td>Complete Specification (within 12 months)</td><td>₹4,000</td><td>₹20,000</td></tr>
+<tr><td>Examination Request</td><td>₹4,000</td><td>₹20,000</td></tr>
+<tr><td><strong>Total (to grant, estimated)</strong></td><td><strong>₹9,600 – ₹15,000</strong></td><td><strong>₹48,000 – ₹60,000</strong></td></tr>
+</table>
+<p style="font-size:9pt; color:#666;">Note: Fees are approximate and subject to current Indian Patent Office fee schedule. Startups recognized by DPIIT and MSMEs are eligible for natural-person fee rates. Additional costs for patent agent fees (₹15,000–₹40,000) and responses to examination reports may apply.</p>
+
+<h2>12. NEXT STEPS</h2>
+<ol>
+  <li><strong>Document reduction to practice:</strong> Complete the working prototype, document the closed-loop flush verification with actual test data (pre-flush score, flush operation, post-flush score, effectiveness percentage).</li>
+  <li><strong>Provisional filing:</strong> File a provisional specification immediately to secure the priority date. The independent claim drafted above is suitable for a provisional filing.</li>
+  <li><strong>Enhanced prior art search:</strong> Engage a patent search professional to conduct a comprehensive search across USPTO, EPO, WIPO, and Indian patent databases using the IPC classes G01N 33/18 (water quality testing), E03B 7/00 (water supply tank arrangements), and F16K 31/00 (valve actuation).</li>
+  <li><strong>Complete specification:</strong> Within 12 months of provisional filing, file the complete specification with formal claims, detailed drawings, and any experimental data.</li>
+  <li><strong>International filing (optional):</strong> If international protection is desired, file a PCT application within 12 months of the provisional filing date.</li>
+</ol>
+
+<p style="margin-top:20pt; font-size:9pt; color:#666; text-align:center;">— End of Patentability Disclosure —<br>This document is a confidential draft prepared for internal assessment purposes. It does not constitute legal advice.<br>Consult a registered Indian patent agent before filing.</p>
+
+</body>
+</html>

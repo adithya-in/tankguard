@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>TankGuard — 3-Page Project Proposal</title>
+<style>
+  @page {
+    size: A4;
+    margin: 1.5cm 1.3cm 1.5cm 1.3cm;
+    @bottom-left  { content: "TankGuard — Project Proposal"; font-size: 7pt; color: #7a8aa3; }
+    @bottom-right { content: "Page " counter(page) " of " counter(pages); font-size: 7pt; color: #7a8aa3; }
+  }
+  @page :first { @bottom-left { content: none; } @bottom-right { content: none; } }
+
+  html { font-size: 8pt; }
+  body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; color: #1c2733; line-height: 1.4; margin: 0; }
+
+  h1 { font-size: 16pt; color: #0e2a47; margin: 0 0 2pt 0; text-align: center; letter-spacing: -0.02em; }
+  h2 { font-size: 11pt; color: #0f766e; margin: 12pt 0 6pt 0; padding-bottom: 3pt; border-bottom: 2px solid #0f766e; page-break-after: avoid; }
+  h3 { font-size: 9.5pt; color: #0e2a47; margin: 10pt 0 4pt 0; page-break-after: avoid; }
+  p { margin: 0 0 5pt 0; text-align: justify; }
+  ul, ol { margin: 0 0 5pt 0; padding-left: 16pt; }
+  li { margin-bottom: 2pt; }
+  .subtitle { text-align: center; font-size: 10pt; color: #33505e; margin: 0 0 10pt 0; font-weight: 500; }
+  .tags { text-align: center; margin-bottom: 8pt; }
+  .tags span { display: inline-block; font-size: 7pt; background: #eaf3f2; color: #0f766e; padding: 1.5pt 6pt; border-radius: 999px; margin: 0 2pt 3pt; }
+
+  table { width: 100%; border-collapse: collapse; margin: 6pt 0 8pt 0; font-size: 7.5pt; page-break-inside: avoid; }
+  th, td { border: 1px solid #c9d4e0; padding: 3pt 4pt; vertical-align: top; text-align: left; }
+  th { background: #eaf3f2; color: #0e2a47; font-weight: bold; }
+  tbody tr:nth-child(even) { background: #f7fafc; }
+  td.num, th.num { text-align: right; }
+  td.center, th.center { text-align: center; }
+  .totalrow td { font-weight: bold; background: #eef4f3; }
+  .sectionhead td { background: #dfecea; color: #0e2a47; font-weight: bold; }
+  caption { caption-side: bottom; font-size: 6.5pt; color: #66788b; padding-top: 2pt; text-align: left; }
+
+  .pagebreak { page-break-before: always; }
+  .impact-box { background: linear-gradient(135deg, #0e2a47 0%, #0f766e 100%); color: #fff; padding: 8pt 10pt; border-radius: 4pt; margin: 8pt 0; }
+  .impact-box h3 { color: #fff; margin-top: 0; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 3pt; font-size: 9pt; }
+  .note { background: #fff7e6; border-left: 3px solid #d97706; padding: 4pt 6pt; font-size: 7pt; margin: 4pt 0; }
+  .highlight { background: #eafaf3; border-left: 3px solid #059669; padding: 4pt 6pt; margin: 4pt 0; font-size: 7.5pt; }
+  .simple-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 4pt; padding: 8pt; margin: 6pt 0; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 6pt; margin: 8pt 0; }
+  .stat-card { background: #f1f7f6; border: 1px solid #c9d4e0; border-radius: 4pt; padding: 6pt 8pt; text-align: center; }
+  .stat-card .num { font-size: 14pt; font-weight: bold; color: #0f766e; }
+  .stat-card .label { font-size: 7.5pt; color: #55697c; }
+
+  .twocol { display: flex; gap: 10pt; margin: 6pt 0; }
+  .twocol > div { flex: 1; }
+
+  .footnote { font-size: 6.5pt; color: #7a8aa3; margin-top: 10pt; text-align: center; }
+  blockquote { margin: 6pt 0; padding: 4pt 8pt; border-left: 3px solid #0f766e; background: #f1f7f6; font-style: italic; color: #33505e; font-size: 7.5pt; }
+  code { font-size: 7.5pt; background: #f1f7f6; padding: 0.5pt 3pt; border-radius: 2pt; }
+</style>
+</head>
+<body>
+
+<!-- ================= PAGE 1 ================= -->
+<header style="text-align:center; margin-bottom:8pt; padding-bottom:6pt; border-bottom:2px solid #0f766e;">
+  <h1>TankGuard</h1>
+  <p class="subtitle">Smart Water Tank Monitor — Know Exactly When to Clean Your Tank</p>
+  <div class="tags">
+    <span>Solar Powered</span><span>No Internet Needed</span><span>Phone Dashboard</span><span>Auto Flush Valve</span>
+  </div>
+</header>
+
+<h2>The Problem: India's Forgotten Water Tanks</h2>
+
+<p>Millions of homes, schools, hospitals, and apartment buildings store water in tanks. The water comes in clean — but sits for days or weeks. During that time:</p>
+
+<div class="twocol">
+  <div>
+    <h3>What Happens Inside the Tank</h3>
+    <ul>
+      <li>Chlorine (the disinfectant) disappears in 1–2 days</li>
+      <li>Dirt and sludge settle at the bottom</li>
+      <li>Green biofilm grows on walls and floor</li>
+      <li>Bacteria and algae multiply</li>
+    </ul>
+  </div>
+  <div>
+    <h3>What You Experience</h3>
+    <ul>
+      <li>Water smells or tastes bad — but it's too late</li>
+      <li>Family gets stomach infections</li>
+      <li>You waste water draining the whole tank to clean</li>
+      <li>Cleaning is guesswork — every 6 months? Once a year?</li>
+    </ul>
+  </div>
+</div>
+
+<blockquote>
+<strong>WHO says:</strong> "The safe water chain breaks at the point of storage unless tanks are kept clean and covered." Today, nobody knows when to clean — until the water goes bad.
+</blockquote>
+
+<div class="stat-grid">
+  <div class="stat-card"><div class="num">20 Cr+</div><div class="label">Household tanks in India</div></div>
+  <div class="stat-card"><div class="num">15 Lakh+</div><div class="label">Institutional tanks (schools, hospitals, offices)</div></div>
+  <div class="stat-card"><div class="num">Zero</div><div class="label">Affordable systems that tell you <em>when</em> to clean</div></div>
+  <div class="stat-card"><div class="num">100%</div><div class="label">Current practice = guesswork</div></div>
+</div>
+
+<h2>TankGuard's Solution: Guesswork → Evidence</h2>
+
+<p>A small solar-powered device sits on your tank lid. Sensors hang in the water and measure 5 things that actually change while water sits:</p>
+
+<table class="avoidbrk">
+  <tr><th>What It Measures</th><th>Why It Matters (Simple Terms)</th></tr>
+  <tr><td><strong>Turbidity</strong> (cloudiness)</td><td>First sign of sludge & biofilm — rises before you can see it</td></tr>
+  <tr><td><strong>pH</strong> (acid/alkaline balance)</td><td>Drift means algae, decay, or pipe corrosion</td></tr>
+  <tr><td><strong>TDS</strong> (dissolved solids)</td><td>Minerals leaching from settled dirt and scale</td></tr>
+  <tr><td><strong>Temperature</strong></td><td>Warmer water = faster bacteria growth</td></tr>
+  <tr><td><strong>Water Level</strong></td><td>How long since last refill (water age)</td></tr>
+</table>
+
+<p>These 5 numbers feed <strong>TankScore</strong> — one simple score that answers:</p>
+
+<div class="impact-box">
+  <h3>"Is it time to clean this tank?"</h3>
+  <p style="font-size:10pt; margin:4pt 0 0 0;"><strong>Answer:</strong> <code style="font-size:11pt;">✅ GOOD</code> · <code style="font-size:11pt;">⚠️ WATCH</code> · <code style="font-size:11pt;">🔴 CLEAN NOW</code></p>
+</div>
+
+<div class="simple-box">
+  <strong>What Changes for You</strong>
+  <ul style="margin:4pt 0 0 16pt;">
+    <li><strong>Before:</strong> Clean every 6 months (waste effort) or wait for bad smell (too late)</li>
+    <li><strong>After:</strong> Clean <em>exactly when needed</em> — get an alert on your phone</li>
+    <li><strong>Before:</strong> Climb the tank, open the lid, guess</li>
+    <li><strong>After:</strong> Open phone → see TankScore → tap "Flush Sludge" → done</li>
+    <li><strong>No WiFi? No internet? No problem.</strong> Works completely offline. Your data never leaves your home.</li>
+  </ul>
+</div>
+
+<div class="pagebreak"></div>
+
+<!-- ================= PAGE 2 ================= -->
+<h2>What You Get & What It Costs</h2>
+
+<h3>Core Kit (M1) — The Monitor</h3>
+<p>Everything needed to monitor one tank. Installs in 30 minutes.</p>
+
+<table class="avoidbrk">
+  <caption>Core Monitoring Kit — ₹15,500</caption>
+  <tr><th>Part</th><th>What It Does</th><th class="center">Qty</th><th class="num">Cost</th></tr>
+  <tr><td>Brain (ESP32 Dev Board)</td><td>Runs the system, connects to your phone via WiFi</td><td class="center">1</td><td class="num">₹1,237</td></tr>
+  <tr><td>Precision Converter (ADS1115)</td><td>Reads sensors accurately</td><td class="center">1</td><td class="num">₹145</td></tr>
+  <tr><td>pH Sensor Kit (Gravity SEN0161-V2)</td><td>Measures acid/alkaline balance</td><td class="center">1</td><td class="num">₹2,669</td></tr>
+  <tr><td>TDS Sensor (Gravity SEN0244)</td><td>Measures dissolved minerals</td><td class="center">1</td><td class="num">₹1,489</td></tr>
+  <tr><td>Turbidity Sensor (Gravity SEN0189)</td><td>Measures cloudiness (sludge indicator)</td><td class="center">1</td><td class="num">₹600</td></tr>
+  <tr><td>Temperature Probe (DS18B20 waterproof)</td><td>Water temperature</td><td class="center">1</td><td class="num">₹44</td></tr>
+  <tr><td>Water Level Sensor (JSN-SR04T ultrasonic)</td><td>Ultrasonic — measures fill level</td><td class="center">1</td><td class="num">₹270</td></tr>
+  <tr><td>Solar Panel (10W, 12V poly)</td><td>Powers everything from sunlight</td><td class="center">1</td><td class="num">₹950</td></tr>
+  <tr><td>Battery Pack (4×18650 Li-ion)</td><td>Runs 3 weeks without sun</td><td class="center">1</td><td class="num">₹760</td></tr>
+  <tr><td>Solar Charge Controller (CN3791 MPPT)</td><td>Manages battery charging</td><td class="center">1</td><td class="num">₹420</td></tr>
+  <tr><td>Weatherproof Box + Heat Shield (IP66)</td><td>Survives Indian summer, heat protected</td><td class="center">1</td><td class="num">₹1,520</td></tr>
+  <tr><td>Power Parts (buck, LDO, MOSFETs, wiring)</td><td>Safe 12V→5V→3.3V power rails</td><td class="center">1</td><td class="num">₹227</td></tr>
+  <tr><td>Calibration Kits & Spares</td><td>pH buffers, turbidity standards, probe care</td><td class="center">1</td><td class="num">₹2,060</td></tr>
+  <tr><td>Engineering & Integration</td><td>Assembly, calibration, bench validation</td><td class="center">1</td><td class="num">₹2,709</td></tr>
+  <tr class="totalrow"><td colspan="3">Core Kit Total</td><td class="num"><strong>₹15,500</strong></td></tr>
+</table>
+
+<h3>Sludge Flush Module (M2) — Auto-Clean the Tank Bottom</h3>
+<p><strong>NEW:</strong> When TankScore says <code>CLEAN NOW</code>, press "Flush Sludge" on your phone. A 1-inch valve at the tank bottom opens for 30–120 seconds, blasting out settled dirt <strong>without emptying the tank</strong>. Manual bypass included.</p>
+
+<table class="avoidbrk">
+  <caption>Sludge Flush Module — ₹3,970</caption>
+  <tr><th>Part</th><th>What It Does</th><th class="center">Qty</th><th class="num">Cost</th></tr>
+  <tr><td><strong>1″ Brass Solenoid Valve</strong></td><td>Food-grade, high-flow, normally-closed — opens on command</td><td class="center">1</td><td class="num"><strong>₹2,500</strong></td></tr>
+  <tr><td>1″ PVC Drain Kit</td><td>Reinforced hose, manual bypass valve, unions</td><td class="center">1</td><td class="num">₹450</td></tr>
+  <tr><td>Stainless Mounting Bracket</td><td>SS304, vibration-proof tank wall mount</td><td class="center">1</td><td class="num">₹180</td></tr>
+  <tr><td>Valve Driver Board</td><td>Safe 12V switching from main unit</td><td class="center">1</td><td class="num">₹95</td></tr>
+  <tr><td>Outdoor Cable (5m) + Waterproof Connectors</td><td>IP68 rated, UV resistant</td><td class="center">1</td><td class="num">₹220</td></tr>
+  <tr><td>Integration & Testing</td><td>Valve wiring, logic config, flush calibration</td><td class="center">1</td><td class="num">₹525</td></tr>
+  <tr class="totalrow"><td colspan="3">Flush Module Total</td><td class="num"><strong>₹3,970</strong></td></tr>
+</table>
+
+<h3>Total Project Cost (Parts Only)</h3>
+
+<table class="avoidbrk">
+  <caption>Complete System Pricing — Parts Only</caption>
+  <tr><th>Module</th><th class="num">Cost</th></tr>
+  <tr><td>Core Monitor (M1)</td><td class="num">₹15,500</td></tr>
+  <tr><td>Sludge Flush Valve (M2)</td><td class="num">₹3,970</td></tr>
+  <tr class="totalrow"><td><strong>Total Parts Cost</strong></td><td class="num"><strong>₹19,470</strong></td></tr>
+</table>
+
+<div class="note">
+<strong>Note:</strong> ₹19,470 is parts-only (excludes GST, freight, installation). 1″ brass solenoid valve (₹2,500) handles high flow for effective sludge removal — smaller ½″ valves clog. Optional Pump Control module (M3) adds ₹1,080 if needed later.
+</div>
+
+<div class="pagebreak"></div>
+
+<!-- ================= PAGE 3 ================= -->
+<h2>How We'll Build It in 2 Weeks</h2>
+
+<p><strong>14 days. Daily milestones. Working system on a real tank by Day 14.</strong></p>
+
+<table class="avoidbrk">
+  <caption>14-Day Build Plan</caption>
+  <tr><th>Week</th><th>Days</th><th>What We Do</th><th>You'll See</th></tr>
+  <tr><td rowspan="3"><strong>Week 1</strong></td><td>1–2</td><td>Buy all parts locally; test each sensor on the bench</td><td>5 sensors showing live readings</td></tr>
+  <tr><td>3–4</td><td>Calibrate each sensor with standard solutions (pH 4/7/9, TDS, turbidity)</td><td>Each sensor accurate within 2%</td></tr>
+  <tr><td>5</td><td>Build solar+battery power; program deep-sleep (wakes every 3 hours)</td><td>Runs 48+ hours on battery alone</td></tr>
+  <tr><td rowspan="4"><strong>Week 2</strong></td><td>6–7</td><td>Build TankScore brain: GOOD / WATCH / CLEAN NOW logic + trend detection</td><td>Brain correctly flags test water samples</td></tr>
+  <tr><td>8–9</td><td>Build phone dashboard: gauges, charts, "Flush Sludge" button, "Tank Cleaned" button</td><td>Open <code>tankmon.local</code> on phone — works offline</td></tr>
+  <tr><td>10</td><td>Mount in weatherproof box; install on real tank; connect 1″ flush valve</td><td>Fully installed, solar panel angled</td></tr>
+  <tr><td>11–13</td><td>Real-world test: 3-hour readings, watch TankScore change, test flush valve</td><td>72 hrs data; flush works; score matches reality</td></tr>
+  <tr><td>14</td><td>Final report, user guide, live demo</td><td><strong>Working system ready to use</strong></td></tr>
+</table>
+
+<div class="simple-box">
+  <strong>What Could Go Wrong (And How We Handle It)</strong>
+  <ul style="margin:4pt 0 0 16pt;">
+    <li><strong>Parts delayed?</strong> Local vendors (Robu, Semicon, Amazon same-day) + backup suppliers identified</li>
+    <li><strong>Sensors drift?</strong> Calibrated Day 3–4; monitored daily during 72-hr test</li>
+    <li><strong>Not enough sun?</strong> Battery sized for 3 weeks without sun; tested Day 5</li>
+    <li><strong>WiFi weak at tank?</strong> Device creates its own hotspot as fallback; data never lost (stored locally)</li>
+    <li><strong>Valve clogs?</strong> 1″ bore chosen for sludge; manual bypass valve always available</li>
+  </ul>
+</div>
+
+<div class="highlight">
+  <strong>In 14 days you get:</strong> A solar-powered tank monitor (₹13,550) + 1″ auto-flush valve (₹3,445) = <strong>₹16,995 parts</strong> → <strong>~₹20,500 installed</strong>. Phone dashboard works offline. Tells you <em>exactly when to clean</em> and lets you flush sludge with one tap. No cloud. No subscription. No guesswork.
+</div>
+
+<p class="footnote">Prepared: October 2026 · For project submission · Prices indicative (Indian market), subject to vendor confirmation</p>
+
+</body>
+</html>
