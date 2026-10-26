@@ -29,9 +29,10 @@ A self-powered, in-tank sensor unit (turbidity, TDS, pH, temperature, level) tha
 ## Documents
 | File | Description |
 |------|-------------|
+| `TankGuard_Specification.pdf` | **Technical specification** — title, abstract, components, features, uniqueness, cost, HW/SW specs, drawings |
 | `TankGuard_Patentability_Disclosure.pdf` | Patent disclosure draft — prior art, claims, novelty |
 | `TankGuard_3Page_Proposal.pdf` | 3-page project proposal with BOM and timeline |
-| `TankGuard_Minimum_BOM.md` | Minimum-cost bill of materials (~₹5,000) |
+| `TankGuard_Minimum_BOM.md` | Minimum-cost bill of materials (~₹6,500) |
 | `TankGuard_Proposal.pdf` | Full detailed proposal |
 
 ## License
