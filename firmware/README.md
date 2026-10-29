@@ -7,7 +7,7 @@ This folder contains the **hardware build instructions** for TankGuard, built ar
 |---|---|---|---|
 | Tank | **M1 — Monitor** | [`HARDWARE_M1_Monitor.md`](HARDWARE_M1_Monitor.md) | Reads turbidity, TDS, pH, temperature and water level; computes TankScore; sends data over Wi-Fi |
 | Tank | **M2 — Sludge Flush** | [`HARDWARE_M2_Flush.md`](HARDWARE_M2_Flush.md) | Drives the 1″ normally-closed solenoid valve at the tank floor |
-| Home | **H1 — Home** | [`HARDWARE_H1_Home.md`](HARDWARE_H1_Home.md) | Placed next to the pump motor switch; receives tank data, shows status, optionally automates the pump (mains-safe via relay + contactor) |
+| Home | **H1 — Home** | [`HARDWARE_H1_Home.md`](HARDWARE_H1_Home.md) | Next to the pump motor switch: ESP8266 + relay + 1.8″ ST7735 TFT + FLUSH/MOTOR override buttons; receives tank data and optionally automates the pump (mains-safe via relay + contactor) |
 | — | **Pin map** | [`PINMAP.md`](PINMAP.md) | Master ESP8266 pin allocation for the tank-side modules (M1/M2) |
 
 ---
