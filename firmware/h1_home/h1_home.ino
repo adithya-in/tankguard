@@ -25,11 +25,51 @@
 #include <SPI.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_ST7735.h>
+#include <math.h>
 #include "config.h"
 
 #ifndef TFT_INIT
 #define TFT_INIT INITR_BLACKTAB   // try INITR_REDTAB / INITR_GREENTAB if colours look wrong
 #endif
+
+// 1 = freeze the ambient wave/impeller, keep state changes
+#ifndef REDUCED_MOTION
+#define REDUCED_MOTION 0
+#endif
+
+// --- palette (RGB565) ------------------------------------------------------
+#define C_BG        0x0000
+#define C_FRAME     0x528A
+#define C_DIM       0x8410
+#define C_TRACK     0x2104
+#define C_WATER     0x04B6
+#define C_WATER_HI  0x2E9F
+#define C_FOAM      0xCE79
+#define C_ACCENT    0x07FF
+#define C_GREEN     0x07E0
+#define C_YELLOW    0xFFE0
+#define C_RED       0xF800
+#define C_ORANGE    0xFD20
+#define C_MAGENTA   0xF81F
+
+// --- layout ---------------------------------------------------------------
+#define TANK_X   6
+#define TANK_Y   18
+#define TANK_W   52
+#define TANK_H   98
+#define TANK_IX  (TANK_X + 3)
+#define TANK_IY  (TANK_Y + 4)
+#define TANK_IW  (TANK_W - 6)
+#define TANK_IH  (TANK_H - 8)
+#define TANK_BOT (TANK_IY + TANK_IH)
+
+#define DIAL_CX  112
+#define DIAL_CY  42
+#define DIAL_RO  24
+#define DIAL_RI  20
+#define SEGS     18
+
+#define BAR_Y    118
 
 Adafruit_ST7735 tft(TFT_CS, TFT_DC, TFT_RST);
 
@@ -51,14 +91,27 @@ bool linkOk = false;
 bool demo = false;
 unsigned long lastFetchMs = 0;
 unsigned long lastManualOnMs = 0;
-unsigned long lastUiMs = 0;
-String flushMsg = "READY";
 unsigned long flushMsgMs = 0;
+String flushMsg = "READY";
+
+// animation state
+float levelShown = 0;
+float scoreShown = 0;
+float wavePhase = 0;
+float impellerAngle = 0;
+float flushPhase = 0;
+int lastSeg = -1;
+int lastScoreInt = -1;
+bool lastLinkDraw = false;
+bool blinkOn = false;
+unsigned long lastBlinkMs = 0;
+unsigned long lastAnimMs = 0;
+unsigned long lastMetricMs = 0;
 
 // ------------------------------- buttons ----------------------------------
 struct Button {
   uint8_t pin;
-  bool stable = true;        // true = released (INPUT_PULLUP)
+  bool stable = true;
   bool lastRead = true;
   unsigned long changeMs = 0;
   unsigned long pressMs = 0;
@@ -71,16 +124,16 @@ Button btnFlush = { BTN_FLUSH };
 Button btnMotor = { BTN_MOTOR };
 
 void pollButton(Button &b) {
-  bool raw = digitalRead(b.pin);           // HIGH = released
+  bool raw = digitalRead(b.pin);
   unsigned long now = millis();
   if (raw != b.lastRead) { b.lastRead = raw; b.changeMs = now; }
 
   if (raw != b.stable && (now - b.changeMs) > 30) {
     b.stable = raw;
-    if (!b.stable) {                       // pressed
+    if (!b.stable) {
       b.pressMs = now;
       b.longFired = false;
-    } else {                               // released
+    } else {
       if (!b.longFired && (now - b.pressMs) >= 50) b.shortEvt = true;
     }
   }
@@ -122,7 +175,6 @@ void wifiBegin() {
 
 bool fetchTank() {
   if (demo) {
-    // animated demo values
     float t = millis() / 1000.0f;
     data.level = 55.0f + 40.0f * sinf(t / 20.0f);
     data.ph    = 7.0f + 0.6f * sinf(t / 45.0f);
@@ -180,89 +232,198 @@ void sendFlush(bool force) {
   flushMsgMs = millis();
 }
 
-// ------------------------------- display ----------------------------------
-void drawStatic() {
-  tft.fillScreen(ST77XX_BLACK);
-  tft.setTextSize(1);
-  tft.setTextColor(ST77XX_CYAN, ST77XX_BLACK);
-  tft.setCursor(2, 2);
-  tft.print("TANKGUARD H1");
-  tft.drawFastHLine(0, 12, 160, ST77XX_CYAN);
-
-  tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
-  tft.setCursor(2, 16); tft.print("SCORE");
-
-  tft.setTextColor(ST77XX_WHITE, ST77XX_BLACK);
-  tft.setCursor(2, 56);  tft.print("LVL");
-  tft.setCursor(2, 68);  tft.print("pH");
-  tft.setCursor(2, 80);  tft.print("TURB");
-  tft.setCursor(2, 92);  tft.print("TDS");
-  tft.setCursor(2, 104); tft.print("TEMP");
-}
-
-void drawText(int x, int y, int w, const char *s, uint16_t color) {
-  tft.fillRect(x, y, w, 9, ST77XX_BLACK);
-  tft.setTextSize(1);
-  tft.setTextColor(color, ST77XX_BLACK);
-  tft.setCursor(x, y);
-  tft.print(s);
-}
-
+// ------------------------------- drawing ----------------------------------
 uint16_t scoreColor(float s) {
-  if (s >= 70) return ST77XX_GREEN;
-  if (s >= 40) return ST77XX_YELLOW;
-  return ST77XX_RED;
+  if (s >= 70) return C_GREEN;
+  if (s >= 40) return C_YELLOW;
+  return C_RED;
 }
 
-void drawValues() {
-  char buf[24];
+void drawStatic() {
+  tft.fillScreen(C_BG);
+  tft.setTextSize(1);
 
-  tft.fillRect(2, 26, 70, 26, ST77XX_BLACK);
-  tft.setTextSize(3);
-  tft.setTextColor(scoreColor(data.score), ST77XX_BLACK);
-  snprintf(buf, sizeof(buf), "%3d", (int)data.score);
-  tft.setCursor(2, 26);
-  tft.print(buf);
+  tft.setTextColor(C_ACCENT, C_BG);
+  tft.setCursor(4, 2);
+  tft.print("TANKGUARD");
+  tft.drawFastHLine(0, 12, 160, C_FRAME);
 
-  snprintf(buf, sizeof(buf), "%3d%%", (int)data.level);
-  drawText(34, 56, 46, buf, ST77XX_WHITE);
+  // tank outline + lid
+  tft.drawRoundRect(TANK_X, TANK_Y, TANK_W, TANK_H, 5, C_FRAME);
+  tft.drawFastHLine(TANK_X + 16, TANK_Y - 3, 20, C_FRAME);
+  tft.drawFastVLine(TANK_X + 16, TANK_Y - 3, 4, C_FRAME);
+  tft.drawFastVLine(TANK_X + 35, TANK_Y - 3, 4, C_FRAME);
 
-  snprintf(buf, sizeof(buf), "%.1f", data.ph);
-  drawText(34, 68, 46, buf, ST77XX_WHITE);
+  // metric labels
+  tft.setTextColor(C_DIM, C_BG);
+  tft.setCursor(66, 71);  tft.print("pH");
+  tft.setCursor(112, 71); tft.print("TURB");
+  tft.setCursor(66, 95);  tft.print("TDS");
+  tft.setCursor(112, 95); tft.print("TEMP");
 
-  snprintf(buf, sizeof(buf), "%4.0f", data.turb);
-  drawText(34, 80, 46, buf, ST77XX_WHITE);
+  tft.drawFastHLine(0, 117, 160, C_FRAME);
+}
 
-  snprintf(buf, sizeof(buf), "%4.0f", data.tds);
-  drawText(34, 92, 46, buf, ST77XX_WHITE);
+void drawImpeller(int cx, int cy, float ang, uint16_t col) {
+  for (int i = 0; i < 3; i++) {
+    float a = ang + i * 2.0944f;
+    int x = cx + (int)(cosf(a) * 3.4f);
+    int y = cy + (int)(sinf(a) * 3.4f);
+    tft.drawLine(cx, cy, x, y, col);
+  }
+  tft.drawPixel(cx, cy, col);
+}
 
-  snprintf(buf, sizeof(buf), "%.1fC", data.temp);
-  drawText(34, 104, 46, buf, ST77XX_WHITE);
+void drawChevrons() {
+  int x = TANK_IX + TANK_IW / 2;
+  for (int i = 0; i < 3; i++) {
+    int y = 76 + (((int)flushPhase + i * 10) % 30);
+    uint16_t c = (i == 0) ? C_ACCENT : C_WATER_HI;
+    tft.drawLine(x - 6, y, x, y + 5, c);
+    tft.drawLine(x, y + 5, x + 6, y, c);
+  }
+}
 
-  snprintf(buf, sizeof(buf), "PUMP %s", pumpOn ? "ON " : "OFF");
-  drawText(86, 56, 72, buf, pumpOn ? ST77XX_GREEN : ST77XX_WHITE);
+void drawTank() {
+  float lv = levelShown;
+  if (lv < 0) lv = 0;
+  if (lv > 100) lv = 100;
+  int wy = TANK_BOT - (int)((lv / 100.0f) * TANK_IH);
+  if (wy < TANK_IY) wy = TANK_IY;
 
-  snprintf(buf, sizeof(buf), "MODE %s", mode == MODE_AUTO ? "AUTO" : "MAN ");
-  drawText(86, 68, 72, buf, mode == MODE_AUTO ? ST77XX_CYAN : ST77XX_ORANGE);
+  tft.fillRect(TANK_IX, TANK_IY, TANK_IW, TANK_IH, C_BG);
 
-  unsigned long age = (millis() - lastFetchMs) / 1000;
+  for (int x = 0; x < TANK_IW; x++) {
+    int yy = wy + (int)(1.6f * sinf(x * 0.38f + wavePhase));
+    if (yy < TANK_IY) yy = TANK_IY;
+    if (yy > TANK_BOT) yy = TANK_BOT;
+    tft.drawFastVLine(TANK_IX + x, yy, TANK_BOT - yy, C_WATER);
+    tft.drawPixel(TANK_IX + x, yy, C_WATER_HI);
+  }
+
+  // capacity ticks on the right inner edge
+  for (int p = 25; p <= 75; p += 25) {
+    int ty = TANK_BOT - (int)((p / 100.0f) * TANK_IH);
+    tft.drawFastHLine(TANK_IX + TANK_IW - 5, ty, 5, C_FRAME);
+  }
+
+  if (millis() - flushMsgMs < 4000) drawChevrons();
+
+  // level chip
+  tft.fillRect(TANK_IX + 5, TANK_IY + 4, 30, 11, C_BG);
+  char b[8];
+  snprintf(b, sizeof(b), "%d%%", (int)(lv + 0.5f));
+  tft.setTextSize(1);
+  tft.setTextColor(C_FOAM, C_BG);
+  tft.setCursor(TANK_IX + 7, TANK_IY + 6);
+  tft.print(b);
+}
+
+void drawDial() {
+  int filled = (int)(scoreShown / (100.0f / SEGS) + 0.5f);
+  if (filled > SEGS) filled = SEGS;
+  uint16_t sc = scoreColor(scoreShown);
+  int scoreInt = (int)(scoreShown + 0.5f);
+
+  if (filled == lastSeg && scoreInt == lastScoreInt) return;
+
+  tft.fillRect(DIAL_CX - (DIAL_RO + 2), DIAL_CY - (DIAL_RO + 2),
+               (DIAL_RO + 2) * 2, (DIAL_RO + 2) * 2, C_BG);
+
+  for (int i = 0; i < SEGS; i++) {
+    float a = 2.35619f + i * (4.71239f / (SEGS - 1));
+    int x1 = DIAL_CX + (int)(cosf(a) * DIAL_RI);
+    int y1 = DIAL_CY + (int)(sinf(a) * DIAL_RI);
+    int x2 = DIAL_CX + (int)(cosf(a) * DIAL_RO);
+    int y2 = DIAL_CY + (int)(sinf(a) * DIAL_RO);
+    uint16_t c = (i < filled) ? sc : C_TRACK;
+    tft.drawLine(x1, y1, x2, y2, c);
+    tft.drawLine(x1 + 1, y1, x2 + 1, y2, c);
+  }
+
+  char b[4];
+  snprintf(b, sizeof(b), "%d", scoreInt);
+  tft.setTextSize(2);
+  tft.setTextColor(sc, C_BG);
+  int w = 12 * strlen(b);
+  tft.setCursor(DIAL_CX - w / 2, DIAL_CY - 8);
+  tft.print(b);
+
+  lastSeg = filled;
+  lastScoreInt = scoreInt;
+}
+
+void drawMetrics() {
+  char b[10];
+  tft.setTextSize(1);
+
+  tft.fillRect(66, 80, 40, 9, C_BG);
+  snprintf(b, sizeof(b), "%.1f", data.ph);
+  tft.setTextColor(ST77XX_WHITE, C_BG);
+  tft.setCursor(66, 80); tft.print(b);
+
+  tft.fillRect(112, 80, 40, 9, C_BG);
+  snprintf(b, sizeof(b), "%.0f", data.turb);
+  tft.setTextColor(ST77XX_WHITE, C_BG);
+  tft.setCursor(112, 80); tft.print(b);
+
+  tft.fillRect(66, 104, 40, 9, C_BG);
+  snprintf(b, sizeof(b), "%.0f", data.tds);
+  tft.setTextColor(ST77XX_WHITE, C_BG);
+  tft.setCursor(66, 104); tft.print(b);
+
+  tft.fillRect(112, 104, 40, 9, C_BG);
+  snprintf(b, sizeof(b), "%.0fC", data.temp);
+  tft.setTextColor(ST77XX_WHITE, C_BG);
+  tft.setCursor(112, 104); tft.print(b);
+}
+
+void drawLink() {
+  tft.fillRect(140, 0, 20, 11, C_BG);
+  bool on;
+  uint16_t c;
+  if (demo) { on = true; c = C_MAGENTA; }
+  else if (linkOk) { on = true; c = C_GREEN; }
+  else { on = blinkOn; c = C_RED; }
+  if (on) tft.fillCircle(150, 5, 3, c);
+  lastLinkDraw = linkOk;
+}
+
+void drawBottom() {
+  tft.fillRect(0, BAR_Y, 160, 10, C_BG);
+  tft.setTextSize(1);
+
+  drawImpeller(8, 123, impellerAngle, pumpOn ? C_GREEN : C_DIM);
+
+  tft.setTextColor(pumpOn ? C_GREEN : C_DIM, C_BG);
+  tft.setCursor(18, BAR_Y + 1);
+  tft.print(pumpOn ? "PUMP ON" : "PUMP OFF");
+
   if (millis() - flushMsgMs < 4000) {
-    snprintf(buf, sizeof(buf), "FLUSH %s", flushMsg.c_str());
-  } else {
-    snprintf(buf, sizeof(buf), "UPD %lus", age);
-  }
-  drawText(86, 80, 72, buf, ST77XX_WHITE);
-
-  if (demo) {
-    snprintf(buf, sizeof(buf), "LINK DEMO");
-    drawText(86, 92, 72, buf, ST77XX_MAGENTA);
-  } else {
-    snprintf(buf, sizeof(buf), "LINK %s", linkOk ? "OK" : "--");
-    drawText(86, 92, 72, buf, linkOk ? ST77XX_GREEN : ST77XX_RED);
+    tft.setTextColor(C_ACCENT, C_BG);
+    tft.setCursor(66, BAR_Y + 1);
+    tft.print(flushMsg);
   }
 
-  snprintf(buf, sizeof(buf), "WiFi %s", (demo || WiFi.status() == WL_CONNECTED) ? "UP" : "DOWN");
-  drawText(86, 104, 72, buf, (demo || WiFi.status() == WL_CONNECTED) ? ST77XX_GREEN : ST77XX_RED);
+  tft.setTextColor(mode == MODE_AUTO ? C_ACCENT : C_ORANGE, C_BG);
+  tft.setCursor(126, BAR_Y + 1);
+  tft.print(mode == MODE_AUTO ? "AUTO" : "MAN");
+}
+
+void animate() {
+#if REDUCED_MOTION
+  levelShown = data.level;
+  scoreShown = data.score;
+#else
+  levelShown += (data.level - levelShown) * 0.18f;
+  scoreShown += (data.score - scoreShown) * 0.18f;
+  wavePhase += 0.28f;
+  if (pumpOn) impellerAngle += 0.55f;
+  if (millis() - flushMsgMs < 4000) flushPhase += 0.9f;
+#endif
+  drawTank();
+  drawDial();
+  drawBottom();
 }
 
 // ------------------------------- logic ------------------------------------
@@ -279,9 +440,10 @@ void applyAutoLogic() {
 void handleFlush(bool force) {
   flushMsg = "SENDING";
   flushMsgMs = millis();
-  drawValues();
+  flushPhase = 0;
   sendFlush(force);
   flushMsgMs = millis();
+  flushPhase = 0;
 }
 
 void handleMotorShort() {
@@ -296,11 +458,7 @@ void handleMotorShort() {
 }
 
 void handleMotorLong() {
-  if (mode == MODE_AUTO) {
-    mode = MODE_MANUAL;
-  } else {
-    mode = MODE_AUTO;
-  }
+  mode = (mode == MODE_AUTO) ? MODE_MANUAL : MODE_AUTO;
 }
 
 // ------------------------------- setup ------------------------------------
@@ -308,7 +466,6 @@ void setup() {
   Serial.begin(115200);
   delay(100);
 
-  // relay OFF immediately (before anything else)
 #if RELAY_ACTIVE_LOW
   pinMode(RELAY_PIN, OUTPUT);
   digitalWrite(RELAY_PIN, HIGH);
@@ -326,13 +483,14 @@ void setup() {
 #endif
 
   tft.initR(TFT_INIT);
-  tft.setRotation(1);       // landscape 160x128
+  tft.setRotation(1);
   drawStatic();
 
   wifiBegin();
   fetchTank();
   lastFetchMs = millis();
-  drawValues();
+  drawMetrics();
+  animate();
 
   Serial.println();
   Serial.println("TankGuard H1 ready");
@@ -354,23 +512,28 @@ void loop() {
     lastFetchMs = now;
     fetchTank();
     applyAutoLogic();
+    drawMetrics();
   }
 
-  // manual override timeout
   if (mode == MODE_MANUAL && pumpOn && now - lastManualOnMs >= MANUAL_TIMEOUT_MS) {
     mode = MODE_AUTO;
     applyAutoLogic();
     if (pumpOn && data.level >= LEVEL_HIGH) setPump(false);
   }
 
-  // safety: lost link -> stop pump
   if (!linkOk && pumpOn && now - lastFetchMs > 60000) {
     pumpOffSafe();
   }
 
-  if (now - lastUiMs >= 500) {
-    lastUiMs = now;
-    drawValues();
+  if (now - lastAnimMs >= 70) {
+    lastAnimMs = now;
+    animate();
+  }
+
+  if (now - lastBlinkMs >= 500) {
+    lastBlinkMs = now;
+    blinkOn = !blinkOn;
+    drawLink();
   }
 
   delay(5);
