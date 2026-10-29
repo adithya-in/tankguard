@@ -89,6 +89,25 @@ left unused. This is the single most important design rule for this build.
 
 ---
 
+## H1 firmware
+
+The home-side firmware lives in [`h1_home/`](h1_home/) (Arduino sketch, ESP8266).
+
+1. Edit [`h1_home/config.h`](h1_home/config.h): set `WIFI_SSID`, `WIFI_PASS`, `TANK_DATA_URL`, `TANK_FLUSH_URL`.
+   Leave `WIFI_SSID` empty to boot into an on-screen **DEMO** (no network).
+2. Install libraries: `Adafruit GFX Library`, `Adafruit ST7735 and ST7789 Library`, `ArduinoJson`.
+3. Compile + flash (NodeMCU):
+   ```
+   arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 firmware/h1_home
+   arduino-cli upload -p /dev/cu.usbserial-XXXX --fqbn esp8266:esp8266:nodemcuv2 firmware/h1_home
+   ```
+4. Open serial at 115200 — expect `TankGuard H1 ready`.
+
+Tank-side JSON expected by `fetchTank()`:
+```json
+{"score":82,"level":64,"ph":7.2,"turb":12,"tds":310,"temp":27.5}
+```
+
 ## Bring-up order (recommended)
 
 1. Power the NodeMCU alone from USB → confirm it boots and joins Wi-Fi.
