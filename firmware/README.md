@@ -108,6 +108,25 @@ Tank-side JSON expected by `fetchTank()`:
 {"score":82,"level":64,"ph":7.2,"turb":12,"tds":310,"temp":27.5}
 ```
 
+## Tank-side firmware
+
+The tank-side firmware lives in [`m1_tank/`](m1_tank/) (Arduino sketch, ESP8266).
+
+1. Edit [`m1_tank/config.h`](m1_tank/config.h): Wi-Fi, `TANK_DEPTH_CM`, pH calibration, flush timing.
+2. Libraries: `Adafruit ADS1X15`, `OneWire`, `DallasTemperature`, `ArduinoJson`.
+3. Compile + flash:
+   ```
+   arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 firmware/m1_tank
+   arduino-cli upload -p /dev/cu.usbserial-XXXX --fqbn esp8266:esp8266:nodemcuv2 firmware/m1_tank
+   ```
+4. With Wi-Fi set it serves:
+   - `GET /data` → `{"score","level","ph","turb","tds","temp","flush","valve"}`
+   - `GET /flush?force=0|1`
+   - `GET /` → small status page
+5. With `WIFI_SSID` empty it starts AP **TankGuard-Tank** (open) and serves the same pages.
+
+Point the home module at `http://<tank-ip>/data` and `http://<tank-ip>/flush`.
+
 ## Bring-up order (recommended)
 
 1. Power the NodeMCU alone from USB → confirm it boots and joins Wi-Fi.
