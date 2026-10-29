@@ -108,6 +108,15 @@ unsigned long lastBlinkMs = 0;
 unsigned long lastAnimMs = 0;
 unsigned long lastMetricMs = 0;
 
+// incremental redraw state (prevents flicker)
+int16_t prevTop[TANK_IW];
+int lastLvlInt = -1;
+int lastPumpDrawn = -1;
+int lastModeDrawn = -1;
+String lastFlushDrawn = "";
+bool flushShown = false;
+bool chevronsOn = false;
+
 // ------------------------------- buttons ----------------------------------
 struct Button {
   uint8_t pin;
@@ -291,14 +300,27 @@ void drawTank() {
   int wy = TANK_BOT - (int)((lv / 100.0f) * TANK_IH);
   if (wy < TANK_IY) wy = TANK_IY;
 
-  tft.fillRect(TANK_IX, TANK_IY, TANK_IW, TANK_IH, C_BG);
-
+  // Repaint only the pixels that changed per column: no full clear, no flicker.
   for (int x = 0; x < TANK_IW; x++) {
     int yy = wy + (int)(1.6f * sinf(x * 0.38f + wavePhase));
     if (yy < TANK_IY) yy = TANK_IY;
     if (yy > TANK_BOT) yy = TANK_BOT;
-    tft.drawFastVLine(TANK_IX + x, yy, TANK_BOT - yy, C_WATER);
-    tft.drawPixel(TANK_IX + x, yy, C_WATER_HI);
+
+    int prev = prevTop[x];
+    if (yy < prev) {
+      tft.drawFastVLine(TANK_IX + x, yy, prev - yy, C_WATER);
+    } else if (yy > prev) {
+      tft.drawFastVLine(TANK_IX + x, prev, yy - prev, C_BG);
+    }
+
+    if (yy != prev) {
+      tft.drawPixel(TANK_IX + x, yy, C_WATER_HI);
+      if (prev < TANK_BOT)
+        tft.drawPixel(TANK_IX + x, prev, (yy > prev) ? C_BG : C_WATER);
+    } else {
+      tft.drawPixel(TANK_IX + x, yy, C_WATER_HI);
+    }
+    prevTop[x] = yy;
   }
 
   // capacity ticks on the right inner edge
@@ -307,16 +329,28 @@ void drawTank() {
     tft.drawFastHLine(TANK_IX + TANK_IW - 5, ty, 5, C_FRAME);
   }
 
-  if (millis() - flushMsgMs < 4000) drawChevrons();
+  bool flushActive = (millis() - flushMsgMs < 4000);
+  if (flushActive) {
+    drawChevrons();
+    chevronsOn = true;
+  } else if (chevronsOn) {
+    // flush just ended: one clean repaint removes the chevrons
+    chevronsOn = false;
+    tft.fillRect(TANK_IX, TANK_IY, TANK_IW, TANK_IH, C_BG);
+    for (int i = 0; i < TANK_IW; i++) prevTop[i] = TANK_BOT;
+  }
 
-  // level chip
-  tft.fillRect(TANK_IX + 5, TANK_IY + 4, 30, 11, C_BG);
-  char b[8];
-  snprintf(b, sizeof(b), "%d%%", (int)(lv + 0.5f));
-  tft.setTextSize(1);
-  tft.setTextColor(C_FOAM, C_BG);
-  tft.setCursor(TANK_IX + 7, TANK_IY + 6);
-  tft.print(b);
+  int li = (int)(lv + 0.5f);
+  if (li != lastLvlInt) {
+    lastLvlInt = li;
+    char b[16];
+    snprintf(b, sizeof(b), "LVL %d%%", li);
+    tft.fillRect(62, 1, 52, 10, C_BG);
+    tft.setTextSize(1);
+    tft.setTextColor(C_FOAM, C_BG);
+    tft.setCursor(62, 2);
+    tft.print(b);
+  }
 }
 
 void drawDial() {
@@ -390,24 +424,40 @@ void drawLink() {
 }
 
 void drawBottom() {
-  tft.fillRect(0, BAR_Y, 160, 10, C_BG);
   tft.setTextSize(1);
 
+  // impeller is the only thing that changes every frame
+  tft.fillRect(1, 118, 15, 10, C_BG);
   drawImpeller(8, 123, impellerAngle, pumpOn ? C_GREEN : C_DIM);
 
-  tft.setTextColor(pumpOn ? C_GREEN : C_DIM, C_BG);
-  tft.setCursor(18, BAR_Y + 1);
-  tft.print(pumpOn ? "PUMP ON" : "PUMP OFF");
+  if ((int)pumpOn != lastPumpDrawn) {
+    lastPumpDrawn = (int)pumpOn;
+    tft.fillRect(18, BAR_Y + 1, 46, 9, C_BG);
+    tft.setTextColor(pumpOn ? C_GREEN : C_DIM, C_BG);
+    tft.setCursor(18, BAR_Y + 1);
+    tft.print(pumpOn ? "PUMP ON" : "PUMP OFF");
+  }
 
-  if (millis() - flushMsgMs < 4000) {
+  if ((int)mode != lastModeDrawn) {
+    lastModeDrawn = (int)mode;
+    tft.fillRect(126, BAR_Y + 1, 32, 9, C_BG);
+    tft.setTextColor(mode == MODE_AUTO ? C_ACCENT : C_ORANGE, C_BG);
+    tft.setCursor(126, BAR_Y + 1);
+    tft.print(mode == MODE_AUTO ? "AUTO" : "MAN");
+  }
+
+  bool flushActive = (millis() - flushMsgMs < 4000);
+  if (flushActive && (!flushShown || flushMsg != lastFlushDrawn)) {
+    flushShown = true;
+    lastFlushDrawn = flushMsg;
+    tft.fillRect(64, BAR_Y + 1, 62, 9, C_BG);
     tft.setTextColor(C_ACCENT, C_BG);
     tft.setCursor(66, BAR_Y + 1);
     tft.print(flushMsg);
+  } else if (!flushActive && flushShown) {
+    flushShown = false;
+    tft.fillRect(64, BAR_Y + 1, 62, 9, C_BG);
   }
-
-  tft.setTextColor(mode == MODE_AUTO ? C_ACCENT : C_ORANGE, C_BG);
-  tft.setCursor(126, BAR_Y + 1);
-  tft.print(mode == MODE_AUTO ? "AUTO" : "MAN");
 }
 
 void animate() {
@@ -484,6 +534,7 @@ void setup() {
 
   tft.initR(TFT_INIT);
   tft.setRotation(1);
+  for (int i = 0; i < TANK_IW; i++) prevTop[i] = TANK_BOT;
   drawStatic();
 
   wifiBegin();
