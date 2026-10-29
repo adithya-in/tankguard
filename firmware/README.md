@@ -1,14 +1,14 @@
 # TankGuard — Home-Side Module (Hardware)
 
-This folder contains the **hardware build instructions** for the TankGuard home-side
-unit, built around an **ESP8266** (NodeMCU / Wemos D1 mini). The system is split into
-two modules that share one controller:
+This folder contains the **hardware build instructions** for TankGuard, built around
+**ESP8266** boards. The system has a **tank-side** unit and a **home-side** unit:
 
-| Module | Document | What it does |
-|---|---|---|
-| **M1 — Monitor** | [`HARDWARE_M1_Monitor.md`](HARDWARE_M1_Monitor.md) | Reads turbidity, TDS, pH, temperature and water level; computes TankScore; hosts the local dashboard |
-| **M2 — Sludge Flush** | [`HARDWARE_M2_Flush.md`](HARDWARE_M2_Flush.md) | Drives the 1″ normally-closed solenoid valve at the tank floor |
-| **Pin map** | [`PINMAP.md`](PINMAP.md) | Master ESP8266 pin allocation (shared by both modules) |
+| Side | Module | Document | What it does |
+|---|---|---|---|
+| Tank | **M1 — Monitor** | [`HARDWARE_M1_Monitor.md`](HARDWARE_M1_Monitor.md) | Reads turbidity, TDS, pH, temperature and water level; computes TankScore; sends data over Wi-Fi |
+| Tank | **M2 — Sludge Flush** | [`HARDWARE_M2_Flush.md`](HARDWARE_M2_Flush.md) | Drives the 1″ normally-closed solenoid valve at the tank floor |
+| Home | **H1 — Home** | [`HARDWARE_H1_Home.md`](HARDWARE_H1_Home.md) | Placed next to the pump motor switch; receives tank data, shows status, optionally automates the pump (mains-safe via relay + contactor) |
+| — | **Pin map** | [`PINMAP.md`](PINMAP.md) | Master ESP8266 pin allocation for the tank-side modules (M1/M2) |
 
 ---
 

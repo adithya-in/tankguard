@@ -33,6 +33,7 @@ A self-powered, in-tank sensor unit (turbidity, TDS, pH, temperature, level) tha
 | [`firmware/PINMAP.md`](firmware/PINMAP.md) | Master ESP8266 pin map + ADS1115 channel map |
 | [`firmware/HARDWARE_M1_Monitor.md`](firmware/HARDWARE_M1_Monitor.md) | M1 monitor build — BOM, wiring, dividers, assembly, tests |
 | [`firmware/HARDWARE_M2_Flush.md`](firmware/HARDWARE_M2_Flush.md) | M2 flush driver build — MOSFET, flyback, valve wiring, tests |
+| [`firmware/HARDWARE_H1_Home.md`](firmware/HARDWARE_H1_Home.md) | H1 home-side build — receives tank data, drives pump via isolated relay + contactor (mains-safe) |
 
 ## Documents
 | File | Description |
