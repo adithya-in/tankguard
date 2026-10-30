@@ -106,12 +106,17 @@ Tank-side JSON expected by `fetchTank()`:
 one brush at the tip, both joints on generic DC gear motors. It is a **separate
 unit with its own power**, not part of M1 or H1.
 
-**Why ESP32:** 2 PWM + 2 DIR, two home switches, brush PWM, e-stop, lid and the
-level link — more I/O than a NodeMCU exposes.
+### Why ESP32
 
-**No position feedback.** There are no encoders on this build, so the firmware
-cannot servo to an angle. It drives each joint at a **calibrated duty for a
-computed time** and dead-reckons the angle. The design absorbs that:
+2 PWM + 2 DIR, two home switches, brush PWM, e-stop, lid and the level link —
+more I/O than a NodeMCU exposes. It is the one ESP32 in an otherwise all-ESP8266
+repo.
+
+### No position feedback (what it costs)
+
+There are no encoders on this build, so the firmware cannot servo to an angle.
+It drives each joint open-loop — a **calibrated duty for a computed time** — and
+dead-reckons the angle from the burst count. Three things make that workable:
 
 - both joints **re-home at every ring** (three per cycle), so drift never spans
   more than one pass;
@@ -120,9 +125,10 @@ computed time** and dead-reckons the angle. The design absorbs that:
 - the status JSON says `"openLoop": true` and its angles are estimates, not
   measurements.
 
-Expected accuracy: a few degrees per ring, not the planner's 0.3 cm overlap. The
-16 cm brush tolerates that; a wider overlap (or a compliant brush skirt) is the
-mitigation, not a bigger number in the planner.
+What it costs is accuracy: a few degrees per ring, not the planner's 0.3 cm
+overlap. The 16 cm brush tolerates that; a wider overlap (or a compliant brush
+skirt) is the mitigation, not a bigger number in the planner. An optional 12 PPR
+encoder on the motor shaft would give 0.35 °/count at the joint if fitted later.
 
 ### Wiring (ESP32 DevKit)
 
@@ -132,6 +138,7 @@ mitigation, not a bigger number in the planner.
 | elbow PWM / DIR | 27 / 14 | H-bridge |
 | shoulder / elbow home | 39 / 18 | NC switch to GND, trips at θ = 0 |
 | brush PWM | 13 | MOSFET or second bridge channel |
+| pump relay | 23 | suction pump; on only while scrubbing |
 | brush current | 36 | optional, ADC |
 | e-stop | 19 | NC loop, HIGH = unsafe (fail-safe) |
 | lid switch | 21 | NC to GND, HIGH = open |
@@ -139,21 +146,26 @@ mitigation, not a bigger number in the planner.
 ### Drivetrain (TJX28ZRM — RS395 12 V + 21.5:1, 11.3 N·cm rated)
 
 Datasheet: 348.8 rpm no-load, **279 rpm rated**, **11.3 N·cm rated / ~34 N·cm
-stall**, 0.62 A rated / 4.5 A stall. 279 rpm at the joint is 1,674 °/s, so the
-controller pulses: **250 ms full duty, 200 ms coast**, ~8° per burst.
+stall**, 0.62 A rated / 4.5 A stall, ≤2 ° backlash.
 
-**Torque is marginal, by design of the motor:** the joint needs ~30 N·cm (brush
-friction ~24 at 0.2 kg + water 5–10 + inertia 10–20) against 11.3 rated / 34
-stall. Keep the **brush head ≤ 0.2 kg**, expect **15–25 °/s loaded** and a
-**90–130 s cycle**. Order the **12 PPR encoder option** if you can — 0.35°/count
-turns this into a closed-loop controller.
+**Why not continuous PWM.** 279 rpm at the joint is 1,674 °/s, so 45 °/s would be
+a ~2.7 % duty — below the point where a loaded DC motor turns at all. The
+controller therefore runs **full-duty bursts**: 250 ms on, 200 ms coast
+(`BURST_MS` / `PAUSE_MS`), ~10 ° of joint travel per burst, tuned per joint (see
+Calibration).
+
+**Torque is comfortable.** The head is a sparse ring of bristles on the perimeter
+only, with an open centre for the pump intake — water flows through, so there is
+no seal and no vacuum downforce. Joint load is ≈ 8–16 N·cm against 11.3 rated /
+~34 stall. Expect **25–35 °/s** and a **55–80 s cycle**. The pump is sequenced
+with the brush for power and sludge behaviour, not as a safety gate.
 
 ### Calibration
 
 1. `BURST_DUTY` stays 255; `BURST_MS` / `PAUSE_MS` set the rhythm (250 / 200 ms).
-2. Measure the **advance per burst**: command a long move (e.g. 180°), count the
-   pulses the firmware prints, and divide by the angle the arm actually covered
-   — the coast is included in that number.
+2. Measure the **advance per burst**: command a long move (e.g. 180 °), count the
+   bursts the firmware prints, and divide the angle the arm actually covered by
+   that count — the coast is included in the number.
 3. Put it in `SH_DEG_PER_BURST` / `EL_DEG_PER_BURST`. Do it **in water, brush
    loaded** — that is the number the cycle will see.
 4. Re-check after the first few cycles; speed drifts with voltage and wear,
@@ -161,27 +173,30 @@ turns this into a closed-loop controller.
 
 ### Path
 
+Six arcs — two elbow branches on each of three rings (8.0 / 23.7 / 39.4 cm) —
+generated from `tools/swept_area.html`:
+
 ```
 node tools/export-plan.mjs 9225 file:///.../tools/swept_area.html firmware/c1_cleaner/plan.json
 node tools/plan-to-header.mjs firmware/c1_cleaner/plan.json firmware/c1_cleaner/path.h
 ```
 
-`path.h` holds six arcs (three rings × two elbow branches). The tool's
-"Export path (JSON)" button produces the same file without a headless browser.
+`path.h` holds the result. The tool's "Export path (JSON)" button produces the
+same file without a headless browser.
 
 ### API
 
 | request | effect |
 |---|---|
-| `GET /clean` | status: phase, ring/arc, estimates t1/t2, brush, level, lid, e-stop, fault |
+| `GET /clean` | status: `openLoop`, phase, ring/arc, estimated t1/t2, brush, pump, level, lid, e-stop, fault |
 | `GET /clean?mode=start` | home, then run the cycle (409 with a reason if interlocked) |
 | `GET /clean?mode=stop` | stop after the current move, then park |
 | `GET /clean?mode=home` / `reset` | re-home; clears a latched fault |
 | `GET /` | tiny status page |
 
-Interlocks are enforced on the device: e-stop, lid, level ≥ 15 % (from M1), and
-optional brush-stall cut-out. Any fault cuts motor power, stops the brush and
-latches until `reset`.
+Interlocks are enforced on the device: e-stop (NC), lid (NC), level ≥ 15 % (from
+M1), and optional brush-stall cut-out. Any fault cuts motor power, stops the
+brush and latches until `reset`.
 ## Tank-side firmware
 
 The tank-side firmware lives in [`m1_tank/`](m1_tank/) (Arduino sketch, ESP8266).
