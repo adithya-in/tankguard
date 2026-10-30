@@ -49,6 +49,7 @@ no history. See [`webapp/README.md`](webapp/README.md).
 ## Documents
 | File | Description |
 |------|-------------|
+| [`docs/CLEANER.md`](docs/CLEANER.md) | **Tank-cleaning arm** — mechanism, conflict with the "no actuator in the tank" rule, control requirements, proposed contract (design stage) |
 | `TankGuard_Specification.pdf` | **Technical specification** — title, abstract, components, features, uniqueness, cost, HW/SW specs, drawings |
 | `TankGuard_Patentability_Disclosure.pdf` | Patent disclosure draft — prior art, claims, novelty |
 | `TankGuard_3Page_Proposal.pdf` | 3-page project proposal with BOM and timeline |
