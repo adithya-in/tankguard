@@ -99,11 +99,15 @@
         <span class="ctl-head">Elbow θ2 <output id="o-t2">0°</output></span>
         <input id="i-t2" type="range" min="-180" max="180" step="1" value="0">
       </label>
+      <label class="ctl">
+        <span class="ctl-head">Trace duration <output id="o-speed">8 s</output></span>
+        <input id="i-speed" type="range" min="2" max="40" step="1" value="8">
+      </label>
       <div class="actions">
         <button class="btn primary" id="run">Trace a path</button>
         <button class="btn" id="reset">Reset</button>
       </div>
-      <span class="hint">Drag either joint to move the arm. “Trace a path” walks the reachable area the way a cleaning cycle would.</span>
+      <span class="hint">Drag either joint to move the arm. “Trace a path” walks the reachable area the way a cleaning cycle would — the duration slider sets how slowly it runs (you can change it mid-trace).</span>
     </div>
 
     <div class="group">
@@ -141,7 +145,7 @@ const px = (cm) => (cm + LIM) * scale;
 const deg = (r) => (r * 180) / Math.PI;
 const rad = (d) => (d * Math.PI) / 180;
 
-const state = { l1: 180, l2: 180, brush: 5, elbowBrush: true, t1: 0, t2: 0, traced: 0, running: false };
+const state = { l1: 180, l2: 180, brush: 5, elbowBrush: true, t1: 0, t2: 0, traced: 0, running: false, traceDur: 8 };
 
 const inTank = new Uint8Array(N * N);
 const tipOk = new Uint8Array(N * N);
@@ -415,6 +419,12 @@ t2El.addEventListener("input", () => {
   draw();
 });
 
+const speedEl = document.getElementById("i-speed");
+speedEl.addEventListener("input", () => {
+  state.traceDur = Number(speedEl.value);
+  document.getElementById("o-speed").textContent = state.traceDur + " s";
+});
+
 document.getElementById("reset").addEventListener("click", () => {
   traced.fill(0);
   draw();
@@ -446,11 +456,17 @@ document.getElementById("run").addEventListener("click", () => {
   }
 
   let idx = 0;
-  const batch = Math.max(1, Math.ceil(targets.length / 90)); // ~1.5 s at 60 fps
+  let progress = 0;
+  let lastNow = performance.now();
   let last = { t1: state.t1, t2: state.t2 };
 
-  const step = () => {
-    const want = Math.min(targets.length, idx + batch);
+  const step = (now) => {
+    const dt = Math.max(0, now - lastNow);
+    lastNow = now;
+    // progress is time-based, so the duration slider also works mid-trace
+    progress = Math.min(1, progress + dt / (state.traceDur * 1000));
+    const want = Math.min(targets.length, Math.max(1, Math.ceil(progress * targets.length)));
+
     for (; idx < want; idx++) {
       const s = targets[idx];
       last = s;
@@ -458,7 +474,7 @@ document.getElementById("run").addEventListener("click", () => {
       stampDisc(traced, L1 * Math.cos(a1), L1 * Math.sin(a1), state.brush);
       stampDisc(traced, L1 * Math.cos(a1) + L2 * Math.cos(a2), L1 * Math.sin(a1) + L2 * Math.sin(a2), state.brush);
     }
-    if (idx < targets.length) {
+    if (progress < 1) {
       state.t1 = last.t1; state.t2 = last.t2;
       t1El.value = String(state.t1); t2El.value = String(state.t2);
       document.getElementById("o-t1").textContent = state.t1.toFixed(0) + "°";

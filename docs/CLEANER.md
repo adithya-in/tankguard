@@ -221,6 +221,7 @@ Open it directly: `start tools/swept_area.html` (or drag it into a browser).
 | Brush radius | head size; also sets the outer edge (40 + b) |
 | Brush at the elbow | the r = 20 brush on/off |
 | θ1 / θ2 sliders | move the arm by hand |
+| Trace duration (2–40 s) | how slowly the path runs — adjustable mid-trace |
 | Trace a path | walks the reachable area the way a cycle would (paints what it actually scrubs) |
 
 ### Measured trade-off (⌀10 brushes, tank r 50, links 20 + 20)
