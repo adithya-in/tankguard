@@ -26,6 +26,7 @@ ESP8266 has only one analog input). See [`PINMAP.md`](PINMAP.md) for the shared 
 | 14 | Enclosure | IP65/66 box + IP68 glands + heat shield | 1 | 180–520 |
 | 15 | Wiring | Dupont, perf board, heat-shrink, fuse | set | 150 |
 | 16 | Calibration | pH 4.0/7.0 buffers + distilled water + KCl | 1 set | 120–250 |
+| 17 | nRF24L01+ PA/LNA (optional) | 2.4 GHz, SMA antenna, **3.3 V only**, + 100 µF/10 µF | 1 | 250–450 |
 
 **M1 parts subtotal: ~₹3,000 (minimum) to ~₹5,500 (grade-A).**
 

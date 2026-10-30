@@ -30,6 +30,21 @@
 > has a 10 kΩ pulldown, so at boot the gate is LOW → MOSFET OFF → normally-closed valve
 > stays closed. This satisfies the boot requirement and keeps the valve de-energised.
 
+### nRF24L01+ variant (`USE_NRF24=1`)
+
+Hardware SPI uses **D5/D7/D6**, so these signals move:
+
+| Function | Normal | With nRF |
+|---|---|---|
+| DS18B20 DQ | D6 (12) | **D4 (2)** + 4.7 kΩ pull-up |
+| JSN-SR04T TRIG | D7 (13) | **TX (1)** — serial debug lost |
+| JSN-SR04T ECHO | D5 (14) | **RX (3)** via 1k/1k |
+| nRF CE | — | **D0 (16)** |
+| nRF CSN | — | **D3 (0)** + 10 kΩ pull-up |
+| I²C, valve | — | unchanged |
+
+Full tables and home-side remap: [`NRF24_LONG_RANGE.md`](NRF24_LONG_RANGE.md).
+
 ---
 
 ## ADS1115 channel map (I²C address 0x48, ADDR → GND)

@@ -9,6 +9,12 @@
 #define WIFI_SSID ""
 #define WIFI_PASS ""
 
+// Radio link: 1 = nRF24L01+ direct link (see NRF24_LONG_RANGE.md, pin remap).
+// 0 = Wi-Fi/HTTP polling (default).
+#ifndef USE_NRF24
+#define USE_NRF24 0
+#endif
+
 // Tank-side module endpoints (HTTP polling)
 #define TANK_DATA_URL  "http://192.168.1.50/data"
 #define TANK_FLUSH_URL "http://192.168.1.50/flush"
@@ -17,12 +23,21 @@
 #define TFT_CS    16   // D0
 #define TFT_DC     5   // D1
 #define TFT_RST    4   // D2
+
+#if USE_NRF24
+// nRF24L01+ shares SPI with the TFT (SCK=D5, MOSI=D7, MISO=D6)
+#define NRF_CE     2   // D4 (10k pull-up to 3V3)
+#define NRF_CSN    0   // D3 (10k pull-up to 3V3)
+#define RELAY_PIN 15   // D8, must be active-HIGH (LOW at boot = pump OFF)
+#define RELAY_ACTIVE_LOW 0
+#define BTN_ADC   A0   // FLUSH/MOTOR resistor ladder
+#else
 #define RELAY_PIN 12   // D6
 #define BTN_FLUSH  0   // D3  (boot strap: do not hold at power-up)
 #define BTN_MOTOR  2   // D4  (boot strap: do not hold at power-up)
-
 // Relay module: 1 = active-LOW (most common), 0 = active-HIGH
 #define RELAY_ACTIVE_LOW 1
+#endif
 
 // Pump automation setpoints (% level)
 #define LEVEL_LOW   20.0f

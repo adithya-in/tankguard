@@ -4,9 +4,15 @@ Adds a **2.4 GHz nRF24L01+ PA/LNA** radio link between the tank and the home uni
 as an alternative (or backup) to Wi-Fi. At **250 kbps** the PA/LNA modules reach
 roughly **1 km line-of-sight** and hold up better through walls than high-rate Wi-Fi.
 
-> **Status:** design + wiring plan. The current firmware build uses Wi-Fi. Enabling
-> nRF requires the pin remap below (hardware rewire) and a firmware build with
-> `USE_NRF24`.
+> **Status:** implemented in both firmwares behind `USE_NRF24` (default `0` = Wi-Fi).
+> Enabling it requires the **Option A pin remap** below (hardware rewire).
+>
+> Enable with either:
+> - set `#define USE_NRF24 1` in `m1_tank/config.h` **and** `h1_home/config.h`, or
+> - build with `--build-property "compiler.cpp.extra_flags=-DUSE_NRF24=1"`.
+>
+> The two ends must use the same setting. With `USE_NRF24=1` the tank disables
+> serial debug (TX/RX are the ultrasonic pins) and the home unit stops using Wi-Fi.
 
 ---
 
@@ -132,7 +138,21 @@ struct __attribute__((packed)) CmdPacket {
 
 ---
 
-## 6. Recommendation
+## 6. Firmware behaviour with `USE_NRF24=1`
+
+| Tank side (`m1_tank`) | Home side (`h1_home`) |
+|---|---|
+| Listens for commands, sends a `TankPacket` every `SAMPLE_MS` (5 s) | Listens for packets, updates the TFT on each one |
+| FLUSH command → normal flush; FORCE → force flush | FLUSH button → sends `CmdPacket` (short=1, long=2) |
+| Serial debug off, Wi-Fi/HTTP server off | Wi-Fi/HTTP off; DEMO off |
+| Link loss: no packets for 15 s → `linkOk=false` | Pump is forced OFF after 60 s without a packet |
+
+The radio is half-duplex: each side writes to the same `"TANK1"` pipe and listens
+between sends. Command latency is at most one sample interval (5 s).
+
+---
+
+## 7. Recommendation
 
 | If | Choose |
 |---|---|

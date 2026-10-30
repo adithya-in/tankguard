@@ -10,6 +10,9 @@
  *   JSN-SR04T TRIG=D7(13) ECHO=D5(14) (echo via 1k/1k divider)
  *   Flush valve gate = D8(15) (10k pull-down)
  *
+ * Optional nRF24L01+ (USE_NRF24=1) moves DS18B20 to D4, ultrasonic to TX/RX,
+ * and adds CE=D0 / CSN=D3. See NRF24_LONG_RANGE.md.
+ *
  * Serves JSON for the home module:
  *   GET /data   -> {"score":..,"level":..,"ph":..,"turb":..,"tds":..,"temp":..,
  *                   "flush":"idle|running|done","valve":0|1}
@@ -27,6 +30,18 @@
 #include <DallasTemperature.h>
 #include <math.h>
 #include "config.h"
+
+#if USE_NRF24
+#include "nrf_link.h"
+RF24 radio(NRF_CE, NRF_CSN);
+#define TG_SERIAL_BEGIN()
+#define TG_PRINT(...)
+#define TG_PRINTLN(...)
+#else
+#define TG_SERIAL_BEGIN() do { Serial.begin(115200); delay(100); } while (0)
+#define TG_PRINT(...) Serial.print(__VA_ARGS__)
+#define TG_PRINTLN(...) Serial.println(__VA_ARGS__)
+#endif
 
 Adafruit_ADS1115 ads;
 OneWire oneWire(DS18B20_PIN);
@@ -107,12 +122,12 @@ float phValue(float volts) {
 }
 
 float readLevel() {
-  digitalWrite(D7, LOW);
+  digitalWrite(PIN_TRIG, LOW);
   delayMicroseconds(4);
-  digitalWrite(D7, HIGH);
+  digitalWrite(PIN_TRIG, HIGH);
   delayMicroseconds(10);
-  digitalWrite(D7, LOW);
-  unsigned long dur = pulseIn(D5, HIGH, 30000UL);
+  digitalWrite(PIN_TRIG, LOW);
+  unsigned long dur = pulseIn(PIN_ECHO, HIGH, 30000UL);
   if (dur == 0) return -1.0f;
   float distance = dur / 58.0f;
   if (distance < 2.0f || distance > TANK_DEPTH_CM + 30.0f) return -1.0f;
@@ -172,7 +187,7 @@ bool startFlush(bool force) {
   flushState = FLUSH_RUNNING;
   flushStartMs = millis();
   flushResult = "running";
-  Serial.println("Flush started");
+  TG_PRINTLN("Flush started");
   return true;
 }
 
@@ -188,8 +203,8 @@ void serviceFlush() {
   sample();
   if (turbBeforeFlush > 1.0f) {
     float eff = (turbBeforeFlush - r.turb) / turbBeforeFlush * 100.0f;
-    Serial.print("Flush done, turbidity reduction %: ");
-    Serial.println(eff, 1);
+    TG_PRINT("Flush done, turbidity reduction %: ");
+    TG_PRINTLN(eff, 1);
   }
 }
 
@@ -233,28 +248,77 @@ void handleRoot() {
   server.send(200, "text/html", h);
 }
 
+// ------------------------------ radio -------------------------------------
+#if USE_NRF24
+void radioBegin() {
+  radio.begin();
+  nrfConfig(radio);
+  radio.setAddressWidth(5);
+  radio.openWritingPipe(TG_ADDR);
+  radio.openReadingPipe(1, TG_ADDR);
+  radio.startListening();
+}
+
+uint8_t flushCode() {
+  if (flushState == FLUSH_RUNNING) return 1;
+  if (flushResult == "done") return 2;
+  return 0;
+}
+
+void radioSend() {
+  TankPacket p;
+  p.magic = TG_MAGIC;
+  p.score = r.score;
+  p.level = r.level;
+  p.ph    = r.ph;
+  p.turb  = r.turb;
+  p.tds   = r.tds;
+  p.temp  = r.temp;
+  p.flush = flushCode();
+  p.valve = (flushState == FLUSH_RUNNING) ? 1 : 0;
+  radio.stopListening();
+  radio.write(&p, sizeof(p));
+  radio.startListening();
+}
+
+void radioPoll() {
+  if (!radio.available()) return;
+  CmdPacket c;
+  radio.read(&c, sizeof(c));
+  if (c.magic == TG_MAGIC && (c.cmd == 1 || c.cmd == 2)) {
+    startFlush(c.cmd == 2);
+  }
+}
+#endif
+
 // ------------------------------ setup -------------------------------------
 void setup() {
-  Serial.begin(115200);
-  delay(100);
+  TG_SERIAL_BEGIN();
 
   valveInit();
 
-  pinMode(D7, OUTPUT);       // TRIG
-  pinMode(D5, INPUT);        // ECHO
+  pinMode(PIN_TRIG, OUTPUT);
+  pinMode(PIN_ECHO, INPUT);
 
   Wire.begin(4, 5);          // SDA=D2(4), SCL=D1(5)
   adsOk = ads.begin();
-  if (!adsOk) Serial.println("WARN: ADS1115 not found at 0x48");
+  if (!adsOk) TG_PRINTLN("WARN: ADS1115 not found at 0x48");
   ads.setGain(GAIN_ONE);
 
   ds.begin();
 
+  sample();
+  lastSampleMs = millis();
+
+#if USE_NRF24
+  radioBegin();
+  radioSend();
+#else
   if (strlen(WIFI_SSID) == 0) {
     WiFi.mode(WIFI_AP);
     WiFi.softAP("TankGuard-Tank");
-    Serial.print("AP mode, IP: ");
-    Serial.println(WiFi.softAPIP());
+    TG_PRINT("AP mode, IP: ");
+    TG_PRINTLN(WiFi.softAPIP());
   } else {
     WiFi.mode(WIFI_STA);
     WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -263,28 +327,33 @@ void setup() {
       delay(200);
       yield();
     }
-    Serial.print("IP: ");
-    Serial.println(WiFi.localIP());
+    TG_PRINT("IP: ");
+    TG_PRINTLN(WiFi.localIP());
   }
 
   server.on("/", handleRoot);
   server.on("/data", handleData);
   server.on("/flush", handleFlush);
   server.begin();
+#endif
 
-  sample();
-  lastSampleMs = millis();
-
-  Serial.println("TankGuard tank-side ready");
+  TG_PRINTLN("TankGuard tank-side ready");
 }
 
 // ------------------------------ loop --------------------------------------
 void loop() {
+#if USE_NRF24
+  radioPoll();
+#else
   server.handleClient();
+#endif
 
   if (millis() - lastSampleMs >= SAMPLE_MS) {
     lastSampleMs = millis();
     sample();
+#if USE_NRF24
+    radioSend();
+#endif
   }
 
   serviceFlush();

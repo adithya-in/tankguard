@@ -28,6 +28,13 @@
 #include <math.h>
 #include "config.h"
 
+#if USE_NRF24
+#include "nrf_link.h"
+RF24 radio(NRF_CE, NRF_CSN);
+#endif
+
+struct Button;
+
 #ifndef TFT_INIT
 #define TFT_INIT INITR_BLACKTAB   // try INITR_REDTAB / INITR_GREENTAB if colours look wrong
 #endif
@@ -94,6 +101,11 @@ unsigned long lastManualOnMs = 0;
 unsigned long flushMsgMs = 0;
 String flushMsg = "READY";
 
+#if USE_NRF24
+unsigned long lastRadioMs = 0;
+bool newPacket = false;
+#endif
+
 // animation state
 float levelShown = 0;
 float scoreShown = 0;
@@ -118,10 +130,25 @@ bool flushShown = false;
 bool chevronsOn = false;
 
 // ------------------------------- buttons ----------------------------------
+#if USE_NRF24
+// Resistor ladder on A0: idle ~3.3 V, FLUSH ~1.05 V, MOTOR ~0.30 V.
+bool rawFlushPressed() {
+  int v = analogRead(BTN_ADC);
+  return v > 240 && v < 430;
+}
+bool rawMotorPressed() {
+  int v = analogRead(BTN_ADC);
+  return v < 160;
+}
+#else
+bool rawFlushPressed() { return digitalRead(BTN_FLUSH) == LOW; }
+bool rawMotorPressed() { return digitalRead(BTN_MOTOR) == LOW; }
+#endif
+
 struct Button {
-  uint8_t pin;
-  bool stable = true;
-  bool lastRead = true;
+  bool (*readFn)();
+  bool stable = false;
+  bool lastRead = false;
   unsigned long changeMs = 0;
   unsigned long pressMs = 0;
   bool longFired = false;
@@ -129,17 +156,17 @@ struct Button {
   bool longEvt = false;
 };
 
-Button btnFlush = { BTN_FLUSH };
-Button btnMotor = { BTN_MOTOR };
+Button btnFlush = { rawFlushPressed };
+Button btnMotor = { rawMotorPressed };
 
 void pollButton(Button &b) {
-  bool raw = digitalRead(b.pin);
+  bool pressed = b.readFn();
   unsigned long now = millis();
-  if (raw != b.lastRead) { b.lastRead = raw; b.changeMs = now; }
+  if (pressed != b.lastRead) { b.lastRead = pressed; b.changeMs = now; }
 
-  if (raw != b.stable && (now - b.changeMs) > 30) {
-    b.stable = raw;
-    if (!b.stable) {
+  if (pressed != b.stable && (now - b.changeMs) > 30) {
+    b.stable = pressed;
+    if (b.stable) {
       b.pressMs = now;
       b.longFired = false;
     } else {
@@ -147,7 +174,7 @@ void pollButton(Button &b) {
     }
   }
 
-  if (!b.stable && !b.longFired && (now - b.pressMs) >= 2000) {
+  if (b.stable && !b.longFired && (now - b.pressMs) >= 2000) {
     b.longEvt = true;
     b.longFired = true;
   }
@@ -170,6 +197,10 @@ void pumpOffSafe() {
 
 // ------------------------------- network ----------------------------------
 void wifiBegin() {
+#if USE_NRF24
+  demo = false;
+  return;
+#else
   demo = (strlen(WIFI_SSID) == 0);
   if (demo) return;
 
@@ -180,6 +211,7 @@ void wifiBegin() {
     delay(200);
     yield();
   }
+#endif
 }
 
 bool fetchTank() {
@@ -222,6 +254,16 @@ bool fetchTank() {
 }
 
 void sendFlush(bool force) {
+#if USE_NRF24
+  CmdPacket c;
+  c.magic = TG_MAGIC;
+  c.cmd = force ? 2 : 1;
+  radio.stopListening();
+  bool ok = radio.write(&c, sizeof(c));
+  radio.startListening();
+  flushMsg = ok ? (force ? "FORCED" : "SENT") : "NO LINK";
+  flushMsgMs = millis();
+#else
   if (demo || WiFi.status() != WL_CONNECTED) {
     flushMsg = "NO LINK";
     flushMsgMs = millis();
@@ -239,7 +281,43 @@ void sendFlush(bool force) {
     flushMsg = "ERR";
   }
   flushMsgMs = millis();
+#endif
 }
+
+// ------------------------------- radio ------------------------------------
+#if USE_NRF24
+void radioBegin() {
+  radio.begin();
+  nrfConfig(radio);
+  radio.setAddressWidth(5);
+  radio.openWritingPipe(TG_ADDR);
+  radio.openReadingPipe(1, TG_ADDR);
+  radio.startListening();
+}
+
+void radioPoll() {
+  if (!radio.available()) return;
+  TankPacket p;
+  radio.read(&p, sizeof(p));
+  if (p.magic != TG_MAGIC) return;
+
+  data.score = p.score;
+  data.level = p.level;
+  data.ph    = p.ph;
+  data.turb  = p.turb;
+  data.tds   = p.tds;
+  data.temp  = p.temp;
+
+  linkOk = true;
+  lastRadioMs = millis();
+  lastFetchMs = lastRadioMs;
+
+  if (p.flush == 1)      flushMsg = "FLUSHING";
+  else if (p.flush == 2) flushMsg = "DONE";
+
+  newPacket = true;
+}
+#endif
 
 // ------------------------------- drawing ----------------------------------
 uint16_t scoreColor(float s) {
@@ -518,14 +596,16 @@ void setup() {
 
 #if RELAY_ACTIVE_LOW
   pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN, HIGH);
+  digitalWrite(RELAY_PIN, HIGH);   // active-LOW module: HIGH = pump OFF
 #else
   pinMode(RELAY_PIN, OUTPUT);
-  digitalWrite(RELAY_PIN, LOW);
+  digitalWrite(RELAY_PIN, LOW);    // active-HIGH module: LOW = pump OFF
 #endif
 
+#if !USE_NRF24
   pinMode(BTN_FLUSH, INPUT_PULLUP);
   pinMode(BTN_MOTOR, INPUT_PULLUP);
+#endif
 
 #if HAS_BUZZER
   pinMode(BUZZER_PIN, OUTPUT);
@@ -537,8 +617,12 @@ void setup() {
   for (int i = 0; i < TANK_IW; i++) prevTop[i] = TANK_BOT;
   drawStatic();
 
+#if USE_NRF24
+  radioBegin();
+#else
   wifiBegin();
   fetchTank();
+#endif
   lastFetchMs = millis();
   drawMetrics();
   animate();
@@ -559,12 +643,22 @@ void loop() {
   if (btnMotor.shortEvt) { btnMotor.shortEvt = false; handleMotorShort(); }
   if (btnMotor.longEvt)  { btnMotor.longEvt  = false; handleMotorLong();  }
 
+#if USE_NRF24
+  radioPoll();
+  if (newPacket) {
+    newPacket = false;
+    applyAutoLogic();
+    drawMetrics();
+  }
+  if (linkOk && now - lastRadioMs > 15000) linkOk = false;
+#else
   if (now - lastFetchMs >= FETCH_MS) {
     lastFetchMs = now;
     fetchTank();
     applyAutoLogic();
     drawMetrics();
   }
+#endif
 
   if (mode == MODE_MANUAL && pumpOn && now - lastManualOnMs >= MANUAL_TIMEOUT_MS) {
     mode = MODE_AUTO;

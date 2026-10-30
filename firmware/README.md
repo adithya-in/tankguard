@@ -128,6 +128,22 @@ The tank-side firmware lives in [`m1_tank/`](m1_tank/) (Arduino sketch, ESP8266)
 
 Point the home module at `http://<tank-ip>/data` and `http://<tank-ip>/flush`.
 
+### Optional nRF24L01+ direct link
+
+Instead of Wi-Fi, the two boards can talk over a 2.4 GHz nRF24L01+ (≈1 km LOS at
+250 kbps). This needs the pin remap in [`NRF24_LONG_RANGE.md`](NRF24_LONG_RANGE.md).
+Then build **both** sketches with `USE_NRF24=1`:
+
+```
+arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 \
+  --build-property "compiler.cpp.extra_flags=-DUSE_NRF24=1" firmware/m1_tank
+arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 \
+  --build-property "compiler.cpp.extra_flags=-DUSE_NRF24=1" firmware/h1_home
+```
+
+Library needed: `RF24`. With nRF enabled the tank drops serial debug and the home
+unit drops Wi-Fi; the protocol is described in `NRF24_LONG_RANGE.md`.
+
 ## Bring-up order (recommended)
 
 1. Power the NodeMCU alone from USB → confirm it boots and joins Wi-Fi.

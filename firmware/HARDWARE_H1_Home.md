@@ -60,6 +60,7 @@ This guide assumes **HTTP polling** (default) but the wiring is identical for al
 | 9 | Terminals / wire | screw terminals, 1.5 mm² mains wire, ferrules | set | 150 |
 | 10 | MCB / fuse | 6 A MCB + 1 A fuse for LV | 1 | 200 |
 | 11 | Manual selector | Auto / Off / Manual rotary switch | 1 | 120 |
+| 12 | nRF24L01+ PA/LNA (optional) | 2.4 GHz, SMA antenna, **3.3 V only**, + 100 µF/10 µF | 1 | 250–450 |
 
 > **Do not** use a bare 5 V relay coil on a GPIO, and **do not** switch the pump with a
 > 10 A relay alone if the pump is larger than ~0.5 HP — use the relay to drive a
