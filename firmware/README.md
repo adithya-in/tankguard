@@ -136,36 +136,28 @@ mitigation, not a bigger number in the planner.
 | e-stop | 19 | NC loop, HIGH = unsafe (fail-safe) |
 | lid switch | 21 | NC to GND, HIGH = open |
 
-### Drivetrain (12 V, 350 rpm motors)
+### Drivetrain (12 V, 350 rpm, **no gearbox**)
 
-Direct drive is not usable: 350 rpm is **2,100 °/s**, while the planner sweeps at
-45 °/s, and PWM cannot throttle a DC motor to 2 % duty (it stalls). The joints
-therefore need a **reduction chosen so rated speed equals cleaning speed**:
+350 rpm is **2,100 °/s** direct drive; the sweep needs 45 °/s, and a loaded DC
+motor stalls below ~15 % duty, so continuous PWM cannot do it. The controller
+modulates **in time**: a 15 ms full-duty burst, then 200 ms of coast. Each burst
+advances ~10°, so the average is ~46 °/s — the planner's speed — with every
+pulse at full torque, and the dwell helps the brush.
 
-| reduction | joint speed at full duty | note |
-|---|---|---|
-| 20:1 | 105 °/s | 2.3× too fast |
-| **47:1** | **44.7 °/s** | matches the planner |
-| 50:1 | 42 °/s | 7 % under, easiest to source |
-| 100:1 | 21 °/s | cycle doubles |
-
-Torque: arm ≈ 0.8 kg with its CoM ~15 cm out → ~12 kg·cm of gravity, plus
-10–20 kg·cm of brush drag in water ≈ **25 kg·cm at the joint**. Through 50:1 at
-70 % efficiency the motor only supplies ~0.7 kg·cm, well inside a 350 rpm
-gearmotor's 1–3 kg·cm — and the gearbox holds the arm parked unpowered.
-
-Backlash in the gearbox (1–2°) adds to the open-loop drift budget, which is
-already the dominant error.
+**Torque is the gate.** The joint needs ~40–70 kg·cm (≈20 kg·cm to hold a 1 kg
+arm at 20 cm, plus brush drag). A small 350 rpm motor makes 2–5 kg·cm — check
+the stall torque before building; if it is short, no PWM scheme fixes it.
 
 ### Calibration
 
-1. Set `SH_MOVE_DUTY` / `EL_MOVE_DUTY` — with a 50:1 box, **255** (full duty).
-2. Command a known move, e.g. 180°, and time it with a stopwatch (or home
-   before and after and read the difference on the mechanism).
-3. `DPS = degrees / seconds` → `SH_DPS` / `EL_DPS`. Do it **in water, brush
+1. `BURST_DUTY` stays 255; `BURST_MS` / `PAUSE_MS` set the rhythm (15 / 200 ms).
+2. Measure the **advance per burst**: command a long move (e.g. 180°), count the
+   pulses the firmware prints, and divide by the angle the arm actually covered
+   — the coast is included in that number.
+3. Put it in `SH_DEG_PER_BURST` / `EL_DEG_PER_BURST`. Do it **in water, brush
    loaded** — that is the number the cycle will see.
-4. Re-check after the first few cycles; gearmotor speed drifts with voltage and
-   wear, which is why the cycle re-homes.
+4. Re-check after the first few cycles; speed drifts with voltage and wear,
+   which is why the cycle re-homes.
 
 ### Path
 

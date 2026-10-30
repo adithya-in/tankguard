@@ -41,13 +41,12 @@ struct Joint {
   const char *name;
   uint8_t pwmPin, dirPin, homePin, pwmCh;
   bool invert;
-  uint8_t moveDuty;
-  float dps;
-  float estDeg; // dead-reckoned angle, 0 = home switch
+  float degPerBurst; // calibrated advance per full-duty pulse (includes coast)
+  float estDeg;      // dead-reckoned angle, 0 = home switch
 };
 
-Joint sh = {"shoulder", SH_PWM, SH_DIR, SH_HOME, 0, SH_DIR_INVERT, SH_MOVE_DUTY, SH_DPS, 0};
-Joint el = {"elbow", EL_PWM, EL_DIR, EL_HOME, 1, EL_DIR_INVERT, EL_MOVE_DUTY, EL_DPS, 0};
+Joint sh = {"shoulder", SH_PWM, SH_DIR, SH_HOME, 0, SH_DIR_INVERT, SH_DEG_PER_BURST, 0};
+Joint el = {"elbow", EL_PWM, EL_DIR, EL_HOME, 1, EL_DIR_INVERT, EL_DEG_PER_BURST, 0};
 
 volatile bool stopRequested = false;
 
@@ -77,31 +76,33 @@ bool hold(uint32_t ms) {
   return true;
 }
 
-/** Timed move: fixed duty, duration from the calibrated speed. */
+/** Burst move: full-duty pulses with a dwell between them (no gearbox).
+ *  Each pulse advances degPerBurst; the count comes from the requested angle. */
 bool moveBy(Joint &j, float deltaDeg) {
   if (isnan(j.estDeg)) return false; // angle unknown — must re-home first
   if (fabsf(deltaDeg) < MOVE_TOL_DEG) return true;
 
-  const float target = constrain(j.estDeg + deltaDeg, JOINT_MIN_DEG, JOINT_MAX_DEG);
-  const float travel = target - j.estDeg;
+  const float clamped = constrain(j.estDeg + deltaDeg, JOINT_MIN_DEG, JOINT_MAX_DEG);
+  const float travel = clamped - j.estDeg;
   const int dir = travel > 0 ? 1 : -1;
-  const uint32_t ms = (uint32_t)(fabsf(travel) / j.dps * 1000.0f);
+  const int bursts = (int)lroundf(fabsf(travel) / j.degPerBurst);
+  if (bursts == 0) return true;
 
-  applyDuty(j, dir * KICK_DUTY); // break stiction
-  const bool kicked = hold(KICK_MS);
-  applyDuty(j, dir * j.moveDuty);
-  const uint32_t rest = ms > KICK_MS ? ms - KICK_MS : 0;
-  const bool ran = rest ? hold(rest) : true;
-  applyDuty(j, 0);
-
-  if (!kicked || !ran) {
-    // stopped mid-move: the angle is unknown, force a re-home before anything else
-    stopRequested = false;
-    j.estDeg = NAN;
-    return false;
+  for (int i = 0; i < bursts; i++) {
+    applyDuty(j, dir * BURST_DUTY);
+    const bool on = hold(BURST_MS);
+    applyDuty(j, 0); // coast; the brush dwells here
+    const bool off = on && hold(PAUSE_MS);
+    if (!on || !off) {
+      // stopped mid-move: the angle is unknown, force a re-home before anything else
+      stopRequested = false;
+      j.estDeg = NAN;
+      return false;
+    }
   }
+
   delay(SETTLE_MS);
-  j.estDeg = target;
+  j.estDeg = j.estDeg + dir * bursts * j.degPerBurst;
   return true;
 }
 

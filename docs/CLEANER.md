@@ -147,28 +147,35 @@ M1 tank unit (ESP8266, solar)            cleaner controller (ESP-class, own powe
    brushes through the pipe with a shaft — no motors in water, no glands to
    trust. The second is strongly preferred for potable water.
 
-### Drivetrain — 12 V, 350 rpm motors
+### Drivetrain — 12 V, 350 rpm motors, **no gearbox**
 
-The joints use 12 V DC gearmotors rated **350 rpm**. That is 2,100 °/s at the
-shaft, while the planned sweep is 45 °/s — a factor of 47 — and PWM cannot
-throttle a DC motor down to 2 % duty (it stalls). The reduction is therefore
-chosen so that **rated speed equals cleaning speed**:
+Direct drive at 350 rpm is 2,100 °/s, while the sweep needs 45 °/s, and a loaded
+DC motor stalls below ~15 % duty — so **continuous PWM cannot produce a cleaning
+sweep** (45 °/s would be ~2 % duty). The controller therefore modulates in
+*time*, not amplitude:
 
-| reduction | joint speed at full duty | note |
-|---|---|---|
-| 20:1 | 105 °/s | 2.3× too fast |
-| **47:1** | **44.7 °/s** | matches the planner |
-| 50:1 | 42 °/s | 7 % under, easiest to source |
-| 100:1 | 21 °/s | cycle doubles |
+| phase | value |
+|---|---|
+| burst | 15 ms at full duty (255) |
+| coast / dwell | 200 ms, bridge off |
+| advance per burst | ~10° (calibrated, includes the coast) |
+| average speed | 10° / 0.215 s ≈ **46 °/s** — the planner's speed |
 
-Torque budget: arm ≈ 0.8 kg with CoM ~15 cm out → ~12 kg·cm of gravity, plus
-10–20 kg·cm of brush drag in water ≈ **25 kg·cm at the joint**. Through 50:1 at
-70 % efficiency the motor supplies ~0.7 kg·cm — inside a 350 rpm gearmotor's
-1–3 kg·cm, and the gearbox holds the arm parked unpowered.
+Every pulse starts from rest, so it is far more repeatable than 2 % duty, and the
+dwell actually scrubs better than a continuous skim. Cycle motion is
+1,991° / 10° ≈ 199 bursts ≈ **43 s**, plus three re-homes.
 
-Two consequences for the controller: full duty is the most repeatable speed
-without feedback (good for open-loop timing), and gearbox backlash (1–2°) adds
-to the drift budget.
+**Torque is the open question.** Holding a ~1 kg arm with its CoM ~20 cm out
+takes ~20 kg·cm; brush drag in water adds 20–50 kg·cm, so the joint needs
+**~40–70 kg·cm**. A bare 350 rpm 12 V motor makes a few hundred g·cm and a small
+350 rpm gearmotor 2–5 kg·cm — both are 10–20× short. Direct drive only works if
+the motors are large, high-torque units at that speed (a 350 rpm worm gearmotor
+in the 40 kg·cm class). **Check the stall torque before building**: burst mode
+raises the starting torque over low-duty running, but it cannot create torque
+that the motor does not have.
+
+If the motors turn out to be small, the choices are: a heavier-duty motor, or a
+reduction after all (gear, belt or friction wheel — all are transmissions).
 
 ### Safety rules this mechanism needs (in addition to the repo's existing ones)
 

@@ -37,34 +37,30 @@
 #define PIN_ESTOP     19   // LOW = loop intact, HIGH = pressed / broken
 #define PIN_LID       21   // LOW = lid closed, HIGH = open / broken
 
-// ---- drivetrain -----------------------------------------------------------
-// Motors: 12 V DC, 350 rpm rated (both joints). Direct drive would sweep
-// 2100 deg/s — 47x faster than the planner's 45 deg/s — and PWM cannot throttle
-// it (45 deg/s is ~2 % duty, below stiction). So each joint gets a reduction
-// chosen so that rated speed IS the cleaning speed, and runs at full duty:
+// ---- drivetrain (NO gearbox — PWM in time, not amplitude) ------------------
+// Motors: 12 V DC, 350 rpm rated (both joints) = 2100 deg/s direct drive.
+// A loaded DC motor stalls below ~15 % duty, and 45 deg/s would need ~2 %, so
+// continuous PWM cannot produce a cleaning sweep. Instead the joint is driven
+// in full-duty BURSTS with a dwell between them:
 //
-//   350 rpm / 50 = 7 rpm = 42 deg/s      (47:1 gives 44.7 deg/s)
+//   drive BURST_MS at 255  ->  the arm advances DEG_PER_BURST degrees
+//   coast PAUSE_MS         ->  brush dwells (which also scrubs better)
 //
-// Full duty is also the most repeatable speed available without feedback.
-// Torque: arm ~0.8 kg with CoM ~15 cm -> ~12 kg.cm, brush drag ~10-20 kg.cm,
-// so ~25 kg.cm at the joint; through 50:1 at 70 % that is ~0.7 kg.cm at the
-// motor, well inside a 350 rpm gearmotor's 1-3 kg.cm.
-#define MOTOR_RPM_RATED 350.0f
-#define SH_GEAR_RATIO   50.0f
-#define EL_GEAR_RATIO   50.0f
+// average speed = DEG_PER_BURST / (BURST_MS + PAUSE_MS)
+// with 10 deg / (15 + 200) ms that is ~46 deg/s, i.e. the planner's 45 deg/s.
+//
+// Every pulse starts from rest, so it is far more repeatable than running the
+// motor at 2 % duty. Calibrate DEG_PER_BURST (it includes the coast) on the
+// bench, in water, brush loaded.
+#define MOTOR_RPM_RATED  350.0f
+#define BURST_DUTY       255
+#define BURST_MS         15
+#define PAUSE_MS         200
+#define SH_DEG_PER_BURST 10.0f
+#define EL_DEG_PER_BURST 10.0f
+// Belt/pulley or friction transmission would be a reduction too — out of scope
+// here: the build is direct drive with no gearbox.
 
-// Joint speed at full duty = MOTOR_RPM_RATED / GEAR_RATIO * 6 deg/s.
-// Calibrate these on the bench anyway: gearbox efficiency, supply sag and load
-// all move the real number. Backlash (~1-2 deg) adds to the drift budget.
-#define SH_MOVE_DUTY  255
-#define SH_DPS        42.0f
-#define EL_MOVE_DUTY  255
-#define EL_DPS        42.0f
-
-// A short full-duty kick breaks stiction; its distance is folded into the
-// calibration above by keeping KICK_MS small relative to normal moves.
-#define KICK_MS       90
-#define KICK_DUTY     255
 
 // ---- motion limits --------------------------------------------------------
 #define JOINT_MIN_DEG -185.0f
@@ -72,7 +68,7 @@
 #define MOVE_TOL_DEG    0.5f
 #define HOME_DUTY       90
 #define HOME_TIMEOUT_MS 25000UL
-#define SETTLE_MS       180UL   // let the arm stop before the next move
+#define SETTLE_MS       180UL   // settle after the last burst of a move
 
 // ---- brush ----------------------------------------------------------------
 #define BRUSH_DUTY       200
