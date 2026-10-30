@@ -13,20 +13,23 @@ guesses.
 ## 1. What the model shows (mechanical)
 
 - A **vertical pipe** through the tank lid — the arm's spine.
-- A **main arm** in 2020 aluminium extrusion carrying **two planetary-motor
-  units** beneath it, each ending in a coupling/hub — the brush mounts.
-- A **second arm segment** (`arm1` / `arm2`) hinged at the end of the main arm.
-- Assembly tree: `Rigid 4` (brush mounts), `Revolute 3` and `Revolute 1` (two
-  rotational axes), body `mainarm`.
+- A **main arm** in 2020 aluminium extrusion: **pipe → outer motor at r = 20 cm**.
+- **Two planetary-motor units** beneath the arm: one near the pipe driving a
+  direct brush (covers roughly r = 0–12 cm), one at **r = 20 cm** driving the
+  **secondary arm** (`arm1` / `arm2`), which extends to **r = 40 cm** fully
+  extended, with its brush at the end.
+- Assembly tree: `Rigid 4` (brush mounts), `Revolute 3` (the secondary arm's
+  hinge at the outer motor) and `Revolute 1` (the main arm's rotation about the
+  pipe), body `mainarm`.
 
-**Motion implied:** the arm rotates about the pipe axis and sweeps a radius over
-the tank floor while the two brush heads spin on their own axes; the second
-segment gives reach adjustment or a fold for insertion through the lid.
+**Motion implied:** the whole arm rotates about the pipe axis; the outer motor
+extends/retracts the secondary arm to follow the annulus; both brush heads spin
+on their own axes.
 
 | axis | joint | job |
 |---|---|---|
 | sweep | Revolute 1 | rotate the arm across the floor |
-| fold / reach | Revolute 3 | fold for insertion, or set the sweep radius |
+| reach | Revolute 3 | extend the secondary arm 20 → 40 cm |
 | brush 1 / brush 2 | Rigid 4 | scrub, independently |
 
 Open: which revolute is the sweep vs the fold, and whether the pipe is also a
@@ -44,21 +47,26 @@ motors, no cables, no slip ring in the water; the rotary seal lives at the lid.
 | given | value | derived |
 |---|---|---|
 | tank radius | 50 cm | floor area 7,854 cm² |
-| arm reach, fully extended (centre → outer brush-motor axis, top view) | 40 cm | swept disc 5,027 cm² |
-| **unreachable ring** | **10 cm wide** | **2,827 cm² = 36 % of the floor** |
+| main arm: pipe → outer motor | 20 cm | inner brush covers ≈ r = 0–12 cm |
+| secondary arm: outer motor → brush | 20 cm (fully extended) | outer brush at **r = 40 cm** |
+| swept disc | r = 40 cm | 5,027 cm² |
+| **unreachable ring** | **r = 40–50 cm (10 cm)** | **2,827 cm² = 36 % of the floor** |
 | pump suction cup | ⌀ 5 cm | 19.6 cm² footprint (0.25 % of the floor) |
-| 2020 extrusion stock | 500 mm | 100 mm of beam already sits beyond the outer motor |
+| 2020 extrusion stock | 500 mm | **fully used**: 200 + 200 mm + joints — no idle beam |
 
 **The ring is the real constraint.** It is exactly the wall base, where sludge
 settles hardest. Options, cheapest first:
 
 | option | change | result |
 |---|---|---|
-| **A — use the beam** | move the outer brush motor to the beam tip (stock is already 500 mm) | brush edge reaches past 50 cm → ring closed, no new parts |
-| **B — accept it** | add a fixed wall-base brush/skirt at the tip | ring still 36 % but the fillet gets scrubbed |
-| **C — extend** | telescoping arm beyond 500 mm | new stock, more mass, more torque on the sweep axis |
+| **A — accept it** | add a fixed wall-base brush/skirt at the tip | ring still 36 %, but the fillet gets scrubbed |
+| **B — longer second stage** | secondary arm 20 → 30 cm (needs > 500 mm stock: a 1 m extrusion cut down) | outer brush reaches r = 50 cm → ring closed |
+| **C — third stage** | telescoping stage beyond r = 40 | ring closed, most mass and torque at the tip |
 
-**Off-centre pivot is not a fix.** A 40 cm arm pivoted *d* from the centre
+Brush diameter cannot substitute: touching the wall from r = 40 needs a ⌀ 20 cm
+brush — heavy, high torque, and it would scrub at a different surface speed.
+
+**Off-centre pivot is not a fix.** A 40 cm reach pivoted *d* from the centre
 sweeps a disc of radius 40 around the pivot; at d = 40 it trades the 10 cm inner
 ring for a far-side crescent reaching 90 cm — worse, and it includes the far
 wall. Only a centred pivot with ≥ 50 cm effective reach covers the floor.
