@@ -34,8 +34,52 @@ linear axis (the CAD shows it fixed).
 
 ---
 
-## 2. Where this collides with the product as it stands
+## 2. Given constraints (30 Oct 2026) and what they cost
 
+**Rule the design must satisfy: the actuator never sinks.** Motor deck above the
+tank's maximum water line (i.e. above the lid), driving the brushes down through
+the pipe on a shaft. Only the brush heads (and the pump) are submerged — no
+motors, no cables, no slip ring in the water; the rotary seal lives at the lid.
+
+| given | value | derived |
+|---|---|---|
+| tank radius | 50 cm | floor area 7,854 cm² |
+| arm reach, fully extended (centre → outer brush-motor axis, top view) | 40 cm | swept disc 5,027 cm² |
+| **unreachable ring** | **10 cm wide** | **2,827 cm² = 36 % of the floor** |
+| pump suction cup | ⌀ 5 cm | 19.6 cm² footprint (0.25 % of the floor) |
+| 2020 extrusion stock | 500 mm | 100 mm of beam already sits beyond the outer motor |
+
+**The ring is the real constraint.** It is exactly the wall base, where sludge
+settles hardest. Options, cheapest first:
+
+| option | change | result |
+|---|---|---|
+| **A — use the beam** | move the outer brush motor to the beam tip (stock is already 500 mm) | brush edge reaches past 50 cm → ring closed, no new parts |
+| **B — accept it** | add a fixed wall-base brush/skirt at the tip | ring still 36 % but the fillet gets scrubbed |
+| **C — extend** | telescoping arm beyond 500 mm | new stock, more mass, more torque on the sweep axis |
+
+**Off-centre pivot is not a fix.** A 40 cm arm pivoted *d* from the centre
+sweeps a disc of radius 40 around the pivot; at d = 40 it trades the 10 cm inner
+ring for a far-side crescent reaching 90 cm — worse, and it includes the far
+wall. Only a centred pivot with ≥ 50 cm effective reach covers the floor.
+
+**The pump cup is the collision constraint.** Where the pump sits decides the
+motion plan:
+
+- **inside r < 40** → the arm sweeps through the pump: needs a keep-out sector
+  (lift/skip) or vertical clearance between the brush plane and the pump top;
+- **in the 10 cm ring** → out of the sweep, but its intake sits permanently in
+  the uncleaned sludge zone — the worst place for it;
+- **docked at the pipe** → cleanest hydraulically, but it blocks the arm's inner
+  end.
+
+> **Open:** the team's "main constraint" sentence was left unfinished — the
+> pump's mounting radius and height are still needed before the motion plan can
+> be fixed.
+
+---
+
+## 3. Where this collides with the product as it stands
 The repo's current position, written into `firmware/README.md`, is explicit:
 
 > **No actuator in the tank:** TankGuard monitors water quality and controls the
@@ -58,7 +102,7 @@ drafts must be rewritten. Both are legitimate; drifting between them is not.
 
 ---
 
-## 3. Control requirements (derived from the repo's stack)
+## 4. Control requirements (derived from the repo's stack)
 
 The repo already has the pattern this fits: an ESP8266-class controller on the
 tank, a second unit near the pump, Wi-Fi as the primary link and nRF24 as the
@@ -105,7 +149,7 @@ M1 tank unit (ESP8266, solar)            cleaner controller (ESP-class, own powe
 
 ---
 
-## 4. Proposed control contract (v1 — for the dashboard)
+## 5. Proposed control contract (v1 — for the dashboard)
 
 Only what the cleaner can actually measure. The dashboard reflects interlocks;
 it never bypasses them.
@@ -131,7 +175,7 @@ Interlocks live on the device: `start` returns `409` with a reason when
 
 ---
 
-## 5. Firmware state machine (sketch)
+## 6. Firmware state machine (sketch)
 
 ```
 IDLE ──start──► HOME ──► SWEEP ⇄ (n passes) ──► RETRACT ──► IDLE
@@ -145,7 +189,7 @@ default 30°; dwell 6 s; brush current over cap for 300 ms → `FAULT:stall`.
 
 ---
 
-## 6. Open questions (blocking firmware)
+## 7. Open questions (blocking firmware)
 
 1. **Motors** — what are the planetary units, and what drives the sweep axis:
    brushed DC with gearbox, or a stepper? (Voltage/current/gearing decide the
