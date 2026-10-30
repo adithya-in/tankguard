@@ -65,13 +65,38 @@ live trace (pressing a card opens that channel below) · **detail chart** with
 1H/6H/ALL windows, hover or arrow-key crosshair, and min/avg/P95/max stats ·
 footer with the data-source verdict.
 
-## Serving it from the tank unit
+## Serving it from the tank unit (ESP8266 + LittleFS)
 
-`dist/` is fully static (~81 KB gzipped JS+CSS + Saira subsets) and needs no
-build step on the device. The current `m1_tank.ino` serves a small inline
-status page; serving this bundle from LittleFS (gzipped, with the ESP8266
-responding at `/`) is a small firmware follow-up — until then, host `dist/`
-anywhere static (or run the dev server) and point it at the unit with `?api=`.
+The bundle is ~150 KB — trivial for the NodeMCU's 4 MB flash. The tank-side
+firmware (`firmware/m1_tank/`) serves it from LittleFS, pre-gzipped, and
+answers at `http://tankguard.local` (mDNS), at its IP, or at
+`http://192.168.4.1` in AP mode. With no bundle in flash it falls back to the
+old inline status page.
+
+```
+npm run build                          # dist/
+node tools/build-device-bundle.mjs     # device/ + device-littlefs.bin (1 MB image)
+```
+
+The packer gzips text assets, shortens font filenames to fit LittleFS's
+32-character path limit (rewriting the CSS references), and builds the image
+with the core's `mklittlefs` when installed. Then flash both halves — sketch
+and filesystem — on the **4M1M** layout:
+
+```
+arduino-cli compile --fqbn "esp8266:esp8266:nodemcuv2:eesz=4M1M,xtal=80" firmware/m1_tank
+arduino-cli upload   --fqbn "esp8266:esp8266:nodemcuv2:eesz=4M1M,xtal=80" -p <PORT> firmware/m1_tank
+esptool.py --port <PORT> write_flash 0x300000 webapp/device-littlefs.bin
+```
+
+**Desk-test without hardware:** `node tools/device-server.mjs` runs the exact
+route table the firmware serves — gzip + MIME + cache rules, same-origin
+`/data` computed with the firmware's own `scoreFrom()` — on
+`http://127.0.0.1:4311/`.
+
+Why the tank unit and not the H1 display unit? H1 is a *client* — it fetches
+from the tank unit, runs no server, and drops Wi-Fi entirely in nRF24 mode.
+Serving from M1 keeps a single source of truth and changes nothing on H1.
 
 ## Verification (2026-10-30)
 
@@ -79,4 +104,7 @@ anywhere static (or run the dev server) and point it at the unit with `?api=`.
 320/390/768/900/1020/1440 · interaction probe green across card selection,
 window tabs, hover/keyboard crosshair · device mode proven against a mock
 `/data` (chip, 5 s polling, persistence across reload, clear log) · down and
-demo states render honestly. Dev rasters in `webapp/.review/` (not committed).
+demo states render honestly · the LittleFS serving scheme proven in a browser
+via `tools/device-server.mjs` (Device chip, fonts, gzip assets, all 200) · the
+patched `m1_tank.ino` compiles for `nodemcuv2:eesz=4M1M` — RAM 38 %, sketch
+31 % of its partition. Dev rasters in `webapp/.review/` (not committed).

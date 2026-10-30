@@ -12,8 +12,14 @@
  * Optional nRF24L01+ (USE_NRF24=1) moves DS18B20 to D4, ultrasonic to TX/RX,
  * and adds CE=D0 / CSN=D3. See NRF24_LONG_RANGE.md.
  *
- * Serves JSON for the home module:
+ * Serves the web dashboard from LittleFS and JSON for clients:
  *   GET /data   -> {"score":..,"level":..,"ph":..,"turb":..,"tds":..,"temp":..}
+ *   GET /...    -> webapp bundle (LittleFS, pre-gzipped — see webapp/tools/build-device-bundle.mjs)
+ *
+ * The webapp bundle is flashed to the FS area (4M1M layout: 1 MB at 0x300000):
+ *   node webapp/tools/build-device-bundle.mjs      -> device-littlefs.bin
+ *   esptool.py --port <PORT> write_flash 0x300000 device-littlefs.bin
+ * If LittleFS is empty the old inline status page is served instead.
  *
  * NOTE: this build runs continuously because it hosts an HTTP server, so the
  * ESP8266 cannot deep-sleep. Solar sizing must cover continuous Wi-Fi.
@@ -21,6 +27,8 @@
 
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
+#include <ESP8266mDNS.h>
+#include <LittleFS.h>
 #include <Wire.h>
 #include <Adafruit_ADS1X15.h>
 #include <OneWire.h>
@@ -57,6 +65,7 @@ Readings r;
 
 unsigned long lastSampleMs = 0;
 bool adsOk = false;
+bool fsOk = false;
 
 // ------------------------------ sensors -----------------------------------
 float readVolts(uint8_t ch) {
@@ -147,6 +156,58 @@ void sample() {
 }
 
 // ------------------------------ web ---------------------------------------
+
+// ---- static bundle from LittleFS (the webapp is pre-gzipped on the PC) ----
+static const char* mimeFor(const String& path) {
+  if (path.endsWith(".html")) return "text/html";
+  if (path.endsWith(".js"))   return "application/javascript";
+  if (path.endsWith(".css"))  return "text/css";
+  if (path.endsWith(".json")) return "application/json";
+  if (path.endsWith(".svg"))  return "image/svg+xml";
+  if (path.endsWith(".ico"))  return "image/x-icon";
+  if (path.endsWith(".woff2")) return "font/woff2";
+  if (path.endsWith(".png"))  return "image/png";
+  return "application/octet-stream";
+}
+
+// Serve a file from LittleFS, preferring the pre-gzipped variant. Content is
+// streamed from flash in chunks — a 76 KB bundle never lands in RAM.
+bool serveFromFS(String path) {
+  if (!fsOk) return false;
+  if (path == "/") path = "/index.html";
+  if (path.endsWith("/")) path += "index.html";
+  if (path.indexOf("..") >= 0) return false;   // no traversal
+
+  const char* cache = path.startsWith("/assets/") ? "public, max-age=86400" : "no-cache";
+
+  String gz = path + ".gz";
+  if (LittleFS.exists(gz)) {
+    File f = LittleFS.open(gz, "r");
+    if (f) {
+      server.sendHeader("Content-Encoding", "gzip");
+      server.sendHeader("Cache-Control", cache);
+      server.streamFile(f, mimeFor(path));
+      f.close();
+      return true;
+    }
+  }
+  if (LittleFS.exists(path)) {
+    File f = LittleFS.open(path, "r");
+    if (f) {
+      server.sendHeader("Cache-Control", cache);
+      server.streamFile(f, mimeFor(path));
+      f.close();
+      return true;
+    }
+  }
+  return false;
+}
+
+void handleNotFound() {
+  if (serveFromFS(server.uri())) return;
+  server.send(404, "text/plain", "not found");
+}
+
 String jsonData() {
   String s = "{";
   s += "\"score\":" + String(r.score, 1);
@@ -164,13 +225,16 @@ void handleData() {
 }
 
 void handleRoot() {
+  // the real dashboard from flash when the bundle is installed
+  if (serveFromFS("/")) return;
+
   String h = "<!doctype html><meta name=viewport content='width=device-width'>";
   h += "<title>TankGuard tank</title><body style='font-family:sans-serif;background:#071018;color:#cfe'>";
   h += "<h2>TankGuard</h2><pre id=v>loading...</pre>";
-  h += "<p><a href='/data'>JSON</a></p>";
+  h += "<p>No webapp bundle in flash (see webapp/tools/build-device-bundle.mjs). <a href='/data'>JSON</a></p>";
   h += "<script>async function u(){let j=await(await fetch('/data')).json();";
   h += "v.textContent='Score '+j.score+'\\nLevel '+j.level+'%\\npH '+j.ph+'\\nTurbidity '+j.turb+' NTU\\nTDS '+j.tds+' ppm\\nTemp '+j.temp+' C';}";
-  h += "u();setInterval(u,3000);</script></body>";
+  h += "u();setInterval(u,3000);</script></body></html>";
   server.send(200, "text/html", h);
 }
 
@@ -235,8 +299,17 @@ void setup() {
     TG_PRINTLN(WiFi.localIP());
   }
 
+  fsOk = LittleFS.begin();
+  if (!fsOk) TG_PRINTLN("WARN: LittleFS mount failed — serving inline page only");
+
+  if (MDNS.begin("tankguard")) {
+    MDNS.addService("http", "tcp", 80);
+    TG_PRINTLN("mDNS: http://tankguard.local");
+  }
+
   server.on("/", handleRoot);
   server.on("/data", handleData);
+  server.onNotFound(handleNotFound);
   server.begin();
 #endif
 

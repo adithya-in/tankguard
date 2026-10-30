@@ -105,18 +105,34 @@ Tank-side JSON expected by `fetchTank()`:
 The tank-side firmware lives in [`m1_tank/`](m1_tank/) (Arduino sketch, ESP8266).
 
 1. Edit [`m1_tank/config.h`](m1_tank/config.h): Wi-Fi, `TANK_DEPTH_CM`, pH calibration.
-2. Libraries: `Adafruit ADS1X15`, `OneWire`, `DallasTemperature`, `ArduinoJson`.
-3. Compile + flash:
+2. Libraries: `Adafruit ADS1X15`, `OneWire`, `DallasTemperature` (LittleFS and mDNS ship with the core).
+3. Compile + flash (**4M1M layout** — the web dashboard lives in the 1 MB FS area):
    ```
-   arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 firmware/m1_tank
-   arduino-cli upload -p /dev/cu.usbserial-XXXX --fqbn esp8266:esp8266:nodemcuv2 firmware/m1_tank
+   arduino-cli compile --fqbn "esp8266:esp8266:nodemcuv2:eesz=4M1M,xtal=80" firmware/m1_tank
+   arduino-cli upload -p /dev/cu.usbserial-XXXX --fqbn "esp8266:esp8266:nodemcuv2:eesz=4M1M,xtal=80" firmware/m1_tank
    ```
 4. With Wi-Fi set it serves:
    - `GET /data` → `{"score","level","ph","turb","tds","temp"}`
-   - `GET /` → small status page
-5. With `WIFI_SSID` empty it starts AP **TankGuard-Tank** (open) and serves the same pages.
+   - `GET /` → **the web dashboard from LittleFS** (see below), or a small
+     inline status page when no bundle is flashed
+   - mDNS: `http://tankguard.local`
+5. With `WIFI_SSID` empty it starts AP **TankGuard-Tank** (open) and serves the same pages at `192.168.4.1`.
 
 Point the home module at `http://<tank-ip>/data`.
+
+### Flashing the web dashboard
+
+The webapp (see [`../webapp/`](../webapp/)) is served by this sketch from
+LittleFS, pre-gzipped (~150 KB). Build and flash the filesystem image:
+
+```
+cd ../webapp
+npm run build && node tools/build-device-bundle.mjs
+esptool.py --port /dev/cu.usbserial-XXXX write_flash 0x300000 device-littlefs.bin
+```
+
+Desk-test the whole serving scheme with no hardware:
+`node tools/device-server.mjs` → http://127.0.0.1:4311/
 
 ### Optional nRF24L01+ direct link
 
