@@ -15,9 +15,8 @@
 #define USE_NRF24 0
 #endif
 
-// Tank-side module endpoints (HTTP polling)
+// Tank-side module endpoint (HTTP polling)
 #define TANK_DATA_URL  "http://192.168.1.50/data"
-#define TANK_FLUSH_URL "http://192.168.1.50/flush"
 
 // NodeMCU pin labels -> GPIO numbers
 #define TFT_CS    16   // D0
@@ -30,10 +29,9 @@
 #define NRF_CSN    0   // D3 (10k pull-up to 3V3)
 #define RELAY_PIN 15   // D8, must be active-HIGH (LOW at boot = pump OFF)
 #define RELAY_ACTIVE_LOW 0
-#define BTN_ADC   A0   // FLUSH/MOTOR resistor ladder
+#define BTN_ADC   A0   // MOTOR button via 1k to GND
 #else
 #define RELAY_PIN 12   // D6
-#define BTN_FLUSH  0   // D3  (boot strap: do not hold at power-up)
 #define BTN_MOTOR  2   // D4  (boot strap: do not hold at power-up)
 // Relay module: 1 = active-LOW (most common), 0 = active-HIGH
 #define RELAY_ACTIVE_LOW 1

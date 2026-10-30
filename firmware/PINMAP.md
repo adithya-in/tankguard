@@ -14,7 +14,7 @@
 | JSN-SR04T **TRIG** | **D7** | GPIO13 | 3.3 V output is fine |
 | JSN-SR04T **ECHO** | **D5** | GPIO14 | **5 V output — divide to ~2.5 V** |
 | DS18B20 **DQ** | **D6** | GPIO12 | 4.7 kΩ pull-up to 3.3 V |
-| Valve **MOSFET gate** | **D8** | GPIO15 | 10 kΩ pull-down to GND; **must be LOW at boot** |
+| Spare | **D8** | GPIO15 | free; must be **LOW at boot** (10 kΩ pull-down if used) |
 | Deep-sleep wake | **D0** | GPIO16 | jumper to **RST** |
 | A0 (built-in ADC) | A0 | ADC | **unused** — all analog via ADS1115 |
 
@@ -24,11 +24,10 @@
 | D3 | GPIO0 | Boot-mode strap (must be HIGH at boot) — used by some boards for FLASH button |
 | D4 | GPIO2 | Boot strap + onboard LED (must be HIGH at boot) |
 | D9 / D10 | GPIO3 / GPIO1 | UART RX/TX — reserved for serial debug |
-| D8 | GPIO15 | *Used for valve, but only because it must be LOW at boot and a pulldown guarantees the valve is OFF at boot — safe.* |
+| D8 | GPIO15 | Must be LOW at boot — usable only with a pull-down |
 
-> **Why D8/GPIO15 is safe for the valve:** GPIO15 must be LOW at boot. The MOSFET gate
-> has a 10 kΩ pulldown, so at boot the gate is LOW → MOSFET OFF → normally-closed valve
-> stays closed. This satisfies the boot requirement and keeps the valve de-energised.
+> **D8/GPIO15 note:** GPIO15 must be LOW at boot. It is free in the current build; if
+> you connect anything there, add a 10 kΩ pull-down so the board still boots.
 
 ### nRF24L01+ variant (`USE_NRF24=1`)
 
@@ -41,7 +40,7 @@ Hardware SPI uses **D5/D7/D6**, so these signals move:
 | JSN-SR04T ECHO | D5 (14) | **RX (3)** via 1k/1k |
 | nRF CE | — | **D0 (16)** |
 | nRF CSN | — | **D3 (0)** + 10 kΩ pull-up |
-| I²C, valve | — | unchanged |
+| I²C | — | unchanged |
 
 Full tables and home-side remap: [`NRF24_LONG_RANGE.md`](NRF24_LONG_RANGE.md).
 
@@ -68,15 +67,15 @@ Full tables and home-side remap: [`NRF24_LONG_RANGE.md`](NRF24_LONG_RANGE.md).
 |---|---|---|
 | 5 V | `VIN` | JSN-SR04T VCC, SEN0189 VCC, SEN0244 VCC, pH kit VCC |
 | 3.3 V | `3V3` | ADS1115 VDD, DS18B20 VDD, I²C pull-ups, divider tops |
-| GND | `GND` | all sensor GND + MOSFET source + 12 V supply GND (common) |
+| GND | `GND` | all sensor GND + 12 V supply GND (common) |
 
 ---
 
 ## Boot-strap check before first power-up
 
-- [ ] GPIO15 (D8) pulled to GND through 10 kΩ (valve off at boot)
+- [ ] GPIO15 (D8) pulled to GND through 10 kΩ if anything is connected there
 - [ ] GPIO0 (D3) NOT held low (no FLASH button pressed)
 - [ ] GPIO2 (D4) not forced low
 - [ ] Echo line divided to ≤3.3 V
 - [ ] Common ground between 12 V and 3.3 V sections
-- [ ] 12 V valve line fused (2 A)
+- [ ] 12 V feed fused (2 A)

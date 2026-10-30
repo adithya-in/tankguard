@@ -28,21 +28,7 @@
 
 ---
 
-## Sludge Flush (M2) — Bare Minimum
-
-| # | Component | Cheapest Indian Option | Qty | Est. Price | Source |
-|---|-----------|------------------------|-----|------------|--------|
-| 1 | Valve | 1″ Brass Solenoid Valve NC (generic, non-food-grade) | 1 | ₹1,200 | Local plumbing / Amazon |
-| 2 | Plumbing | 1″ PVC ball valve (bypass) + 1m hose + 2 hose clamps | 1 set | ₹250 | Local plumbing |
-| 3 | Mounting | SS hose clamps + L-brackets (DIY) | 1 set | ₹80 | Local hardware |
-| 4 | Driver | IRF520 MOSFET module (already in M1) | — | ₹0 | Reuse from M1 |
-| 5 | Cable | 2-core 1mm² wire (5m) + waterproof tape | 1 | ₹60 | Local electrical |
-
-**M2 Absolute Minimum: ~₹1,590**
-
----
-
-## Grand Total: **~₹6,100–6,800** (parts only)
+## Grand Total: **~₹4,500–5,200** (parts only, no actuator)
 
 ---
 
@@ -53,7 +39,6 @@
 | **Robu.in** | ESP32, ADS1115, sensors, solar, batteries — COD, fast |
 | **Amazon.in** | Generic sensors, DS18B20, JSN-SR04T, enclosures |
 | **Local Electronics Market** (Lamington Rd Mumbai, SP Rd Bangalore, Nehru Place Delhi) | 30–40% cheaper, instant, can bargain |
-| **Local Plumbing Shop** | 1″ solenoid valve, PVC fittings, hose — half online price |
 | **Salvage** | 18650 cells from old laptop batteries (free), TP4056 boards |
 
 ---
@@ -77,7 +62,7 @@
 2. **Median filter** — 50 samples per sensor, take median (removes noise)
 3. **TankScore** — simple threshold: turbidity>5 OR TDS>500 OR pH<6.5/8.5 = CLEAN NOW
 4. **Local AP + Web Server** — ESP32 hosts `tankmon.local` (no router needed for demo)
-5. **Flush button** — triggers MOSFET → opens valve for 60s
+5. **Pump control** — home-side relay drives the pump contactor (mains-safe)
 
 ---
 
@@ -87,7 +72,7 @@
 |-----|------|
 | **Day 1** | Breadboard all sensors → serial print raw values → calibrate pH/TDS/turbidity with buffers |
 | **Day 2** | Add solar+battery+deep sleep → verify 24h run → build TankScore logic → test with dirty water |
-| **Day 3** | Wire solenoid valve → add flush button to web UI → install in box → mount on tank → demo |
+| **Day 3** | Build the home unit (TFT + relay + button) → link it to the tank → install in box → demo |
 
 ---
 
@@ -96,7 +81,6 @@
 - **Generic pH probe** lasts 3–6 months (vs 1–2 years for Gravity)
 - **No MPPT** = panel must face sun directly, larger panel needed
 - **No heat shield** = ESP32 may overheat in direct summer sun (add vent holes)
-- **Non-food-grade valve** = not for drinking water tanks (use only for demo/greywater)
 - **No NIST calibration** = readings ±5–10% (good enough for trend detection)
 
 ---

@@ -10,7 +10,7 @@
 
 static const uint8_t TG_ADDR[5] = { 'T', 'A', 'N', 'K', '1' };
 
-// Fixed 32-byte payload so both ends always agree on layout.
+// Fixed payload so both ends always agree on layout.
 struct __attribute__((packed)) TankPacket {
   uint16_t magic;
   float score;
@@ -19,13 +19,6 @@ struct __attribute__((packed)) TankPacket {
   float turb;
   float tds;
   float temp;
-  uint8_t flush;    // 0 idle, 1 running, 2 done
-  uint8_t valve;    // 0 closed, 1 open
-};
-
-struct __attribute__((packed)) CmdPacket {
-  uint16_t magic;
-  uint8_t cmd;      // 1 = flush, 2 = force flush
 };
 
 // Common radio settings. Power the module from 3.3 V only (100 uF + 10 uF).

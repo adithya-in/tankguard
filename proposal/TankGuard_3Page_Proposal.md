@@ -16,7 +16,7 @@ Every day, millions of households, schools, hospitals, hostels, and apartment co
 |-------------|-----------------|
 | Chlorine residual dissipates within 24–48 hours | Bacteria, algae, and biofilm multiply unchecked |
 | Sediment & sludge accumulate on tank floors | Heavy metals, microbes, and particulates re-suspend with every refill |
-| Biofilm coats walls & submerged surfaces | Persistent contamination source resistant to casual flushing |
+| Biofilm coats walls & submerged surfaces | Persistent contamination source resistant to casual cleaning |
 | Tanks cleaned once every 6–18 months (or never) | Water quality degrades silently—detected only by foul taste, odour, or illness |
 
 **WHO identifies storage as the critical recontamination point**: *"The safe water chain breaks at the point of storage unless tanks are kept clean and covered."* Yet in practice, cleaning is calendar-based guesswork or purely reactive—after the water has already become unusable.
@@ -93,12 +93,11 @@ These feed **TankScore**—a single, weighted, trend-aware index that answers on
 
 | Module | Components | Subtotal |
 |--------|------------|----------|
-| **M2 — Drain & Sludge-Flush** | 12 V NC solenoid valve (½″), PVC fittings, mounting bracket | ₹750 |
-| **M3 — Auto Pump Control** | 12 V relay/contactor kit, mains wiring, CT dry-run clamp | ₹1,000 |
+| **M2 — Auto Pump Control** | 12 V relay/contactor kit, mains wiring, CT dry-run clamp | ₹1,000 |
 
-**Full 3-Module Product Line: ₹15,300** (under ₹15,346 budget cap)
+**Full 2-Module Product Line: ₹14,550** (under ₹15,346 budget cap)
 
-> **Note:** Prices marked "est." are typical Indian street estimates; verified retailer prices used where available. Parts-only cost—excludes labour, GST, freight, duties. ~10% contingency (≈₹1,530) brings delivered full-family unit to ~₹16,830.
+> **Note:** Prices marked "est." are typical Indian street estimates; verified retailer prices used where available. Parts-only cost—excludes labour, GST, freight, duties. ~10% contingency (≈₹1,455) brings delivered full-family unit to ~₹16,005.
 
 ---
 

@@ -1,5 +1,5 @@
 /*
- * TankGuard tank-side firmware (ESP8266) - M1 monitor + M2 flush
+ * TankGuard tank-side firmware (ESP8266) - M1 monitor
  *
  * Hardware (NodeMCU):
  *   I2C: SDA=D2(4)  SCL=D1(5)   -> ADS1115 (0x48)
@@ -8,15 +8,12 @@
  *     A2 = pH SEN0161-V2
  *   DS18B20 DQ = D6(12)   (+4.7k pull-up to 3.3V)
  *   JSN-SR04T TRIG=D7(13) ECHO=D5(14) (echo via 1k/1k divider)
- *   Flush valve gate = D8(15) (10k pull-down)
  *
  * Optional nRF24L01+ (USE_NRF24=1) moves DS18B20 to D4, ultrasonic to TX/RX,
  * and adds CE=D0 / CSN=D3. See NRF24_LONG_RANGE.md.
  *
  * Serves JSON for the home module:
- *   GET /data   -> {"score":..,"level":..,"ph":..,"turb":..,"tds":..,"temp":..,
- *                   "flush":"idle|running|done","valve":0|1}
- *   GET /flush?force=0|1
+ *   GET /data   -> {"score":..,"level":..,"ph":..,"turb":..,"tds":..,"temp":..}
  *
  * NOTE: this build runs continuously because it hosts an HTTP server, so the
  * ESP8266 cannot deep-sleep. Solar sizing must cover continuous Wi-Fi.
@@ -58,34 +55,8 @@ struct Readings {
 };
 Readings r;
 
-enum FlushState { FLUSH_IDLE, FLUSH_RUNNING };
-FlushState flushState = FLUSH_IDLE;
-unsigned long flushStartMs = 0;
-unsigned long lastFlushMs = 0;
-float turbBeforeFlush = 0;
-String flushResult = "idle";
-
 unsigned long lastSampleMs = 0;
 bool adsOk = false;
-
-// ------------------------------ valve -------------------------------------
-void valveWrite(bool open) {
-#if VALVE_ACTIVE_HIGH
-  digitalWrite(VALVE_PIN, open ? HIGH : LOW);
-#else
-  digitalWrite(VALVE_PIN, open ? LOW : HIGH);
-#endif
-}
-
-void valveInit() {
-#if VALVE_ACTIVE_HIGH
-  pinMode(VALVE_PIN, OUTPUT);
-  digitalWrite(VALVE_PIN, LOW);      // closed at boot
-#else
-  pinMode(VALVE_PIN, OUTPUT);
-  digitalWrite(VALVE_PIN, HIGH);     // closed at boot
-#endif
-}
 
 // ------------------------------ sensors -----------------------------------
 float readVolts(uint8_t ch) {
@@ -175,39 +146,6 @@ void sample() {
   r.score = scoreFrom(r.turb, r.tds, r.ph, r.temp);
 }
 
-// ------------------------------ flush -------------------------------------
-bool startFlush(bool force) {
-  if (flushState == FLUSH_RUNNING) return false;
-  if (!force && r.level < 5.0f) {
-    flushResult = "low level";
-    return false;
-  }
-  turbBeforeFlush = r.turb;
-  valveWrite(true);
-  flushState = FLUSH_RUNNING;
-  flushStartMs = millis();
-  flushResult = "running";
-  TG_PRINTLN("Flush started");
-  return true;
-}
-
-void serviceFlush() {
-  if (flushState != FLUSH_RUNNING) return;
-  if (millis() - flushStartMs < (unsigned long)FLUSH_SECONDS * 1000UL) return;
-
-  valveWrite(false);
-  flushState = FLUSH_IDLE;
-  lastFlushMs = millis();
-  flushResult = "done";
-
-  sample();
-  if (turbBeforeFlush > 1.0f) {
-    float eff = (turbBeforeFlush - r.turb) / turbBeforeFlush * 100.0f;
-    TG_PRINT("Flush done, turbidity reduction %: ");
-    TG_PRINTLN(eff, 1);
-  }
-}
-
 // ------------------------------ web ---------------------------------------
 String jsonData() {
   String s = "{";
@@ -217,8 +155,6 @@ String jsonData() {
   s += ",\"turb\":" + String(r.turb, 1);
   s += ",\"tds\":" + String(r.tds, 0);
   s += ",\"temp\":" + String(r.temp, 1);
-  s += ",\"flush\":\"" + flushResult + "\"";
-  s += ",\"valve\":" + String(flushState == FLUSH_RUNNING ? 1 : 0);
   s += "}";
   return s;
 }
@@ -227,23 +163,13 @@ void handleData() {
   server.send(200, "application/json", jsonData());
 }
 
-void handleFlush() {
-  bool force = false;
-  if (server.hasArg("force")) force = server.arg("force").toInt() != 0;
-  bool ok = startFlush(force);
-  String s = "{\"ok\":";
-  s += ok ? "true" : "false";
-  s += ",\"flush\":\"" + flushResult + "\"}";
-  server.send(ok ? 200 : 409, "application/json", s);
-}
-
 void handleRoot() {
   String h = "<!doctype html><meta name=viewport content='width=device-width'>";
   h += "<title>TankGuard tank</title><body style='font-family:sans-serif;background:#071018;color:#cfe'>";
   h += "<h2>TankGuard</h2><pre id=v>loading...</pre>";
-  h += "<p><a href='/flush?force=0'>Flush</a> | <a href='/flush?force=1'>Force flush</a> | <a href='/data'>JSON</a></p>";
+  h += "<p><a href='/data'>JSON</a></p>";
   h += "<script>async function u(){let j=await(await fetch('/data')).json();";
-  h += "v.textContent='Score '+j.score+'\\nLevel '+j.level+'%\\npH '+j.ph+'\\nTurbidity '+j.turb+' NTU\\nTDS '+j.tds+' ppm\\nTemp '+j.temp+' C\\nFlush '+j.flush;}";
+  h += "v.textContent='Score '+j.score+'\\nLevel '+j.level+'%\\npH '+j.ph+'\\nTurbidity '+j.turb+' NTU\\nTDS '+j.tds+' ppm\\nTemp '+j.temp+' C';}";
   h += "u();setInterval(u,3000);</script></body>";
   server.send(200, "text/html", h);
 }
@@ -255,14 +181,7 @@ void radioBegin() {
   nrfConfig(radio);
   radio.setAddressWidth(5);
   radio.openWritingPipe(TG_ADDR);
-  radio.openReadingPipe(1, TG_ADDR);
-  radio.startListening();
-}
-
-uint8_t flushCode() {
-  if (flushState == FLUSH_RUNNING) return 1;
-  if (flushResult == "done") return 2;
-  return 0;
+  radio.stopListening();
 }
 
 void radioSend() {
@@ -274,28 +193,13 @@ void radioSend() {
   p.turb  = r.turb;
   p.tds   = r.tds;
   p.temp  = r.temp;
-  p.flush = flushCode();
-  p.valve = (flushState == FLUSH_RUNNING) ? 1 : 0;
-  radio.stopListening();
   radio.write(&p, sizeof(p));
-  radio.startListening();
-}
-
-void radioPoll() {
-  if (!radio.available()) return;
-  CmdPacket c;
-  radio.read(&c, sizeof(c));
-  if (c.magic == TG_MAGIC && (c.cmd == 1 || c.cmd == 2)) {
-    startFlush(c.cmd == 2);
-  }
 }
 #endif
 
 // ------------------------------ setup -------------------------------------
 void setup() {
   TG_SERIAL_BEGIN();
-
-  valveInit();
 
   pinMode(PIN_TRIG, OUTPUT);
   pinMode(PIN_ECHO, INPUT);
@@ -333,7 +237,6 @@ void setup() {
 
   server.on("/", handleRoot);
   server.on("/data", handleData);
-  server.on("/flush", handleFlush);
   server.begin();
 #endif
 
@@ -342,9 +245,7 @@ void setup() {
 
 // ------------------------------ loop --------------------------------------
 void loop() {
-#if USE_NRF24
-  radioPoll();
-#else
+#if !USE_NRF24
   server.handleClient();
 #endif
 
@@ -355,17 +256,6 @@ void loop() {
     radioSend();
 #endif
   }
-
-  serviceFlush();
-
-#if AUTO_FLUSH
-  if (flushState == FLUSH_IDLE &&
-      millis() - lastFlushMs > AUTO_FLUSH_MIN_INTERVAL_MS &&
-      r.level > AUTO_FLUSH_MIN_LEVEL &&
-      r.score < AUTO_FLUSH_SCORE) {
-    startFlush(false);
-  }
-#endif
 
   delay(2);
 }

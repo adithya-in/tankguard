@@ -139,7 +139,7 @@ timer. Add last, after everything else works.
 ## 4. Assembly into the enclosure
 
 1. Mount the NodeMCU, ADS1115 and LM2596 on perf board or a small carrier.
-2. Drill the enclosure lid and fit **IP68 cable glands** for: sensor cable bundle, solar cable, valve cable (M2).
+2. Drill the enclosure lid and fit **IP68 cable glands** for: sensor cable bundle and solar cable.
 3. Seal the buck converter and battery in the box; add a **heat shield** if the box sits in direct sun.
 4. Pot or heat-shrink exposed solder joints.
 5. Label every cable at both ends.

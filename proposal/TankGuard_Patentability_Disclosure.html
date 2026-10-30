@@ -49,18 +49,18 @@
 <div class="header-block">
   <div class="conf">CONFIDENTIAL</div>
   <div class="title">PATENTABILITY DISCLOSURE</div>
-  <div class="sub">TankGuard: An IoT-Enabled In-Tank Water Quality Monitoring and<br>Automated Sediment-Flush System for Domestic and Institutional Storage Tanks</div>
+  <div class="sub">TankGuard: An IoT-Enabled In-Tank Water Quality Monitoring and<br>Mains-Isolated Pump-Control System for Domestic and Institutional Storage Tanks</div>
   <div style="margin-top:10pt; font-size:9pt;">Draft Date: October 2026<br>Document Ref: TG-PAT-2026-001</div>
 </div>
 
 <h2>1. TITLE OF INVENTION</h2>
-<p><em>"A self-powered IoT-based in-tank water quality monitoring and automated sediment-flush system with edge-computed composite scoring, closed-loop feedback and local-network dashboard for domestic and institutional water storage tanks"</em></p>
+<p><em>"A self-powered IoT-based in-tank water quality monitoring system with edge-computed composite scoring, trend prediction and a local-network dashboard, paired with a mains-isolated home pump controller for domestic and institutional water storage tanks"</em></p>
 
 <h2>2. FIELD OF THE INVENTION</h2>
-<p>The present invention relates to the field of Internet of Things (IoT) enabled water storage tank maintenance and water quality management. More particularly, the invention pertains to an integrated, self-powered IoT sensing, edge-computing and actuation unit that is removably installed within a domestic or institutional water storage tank (overhead or underground), continuously measures key water quality parameters of the stored water, computes at the network edge a composite water quality score indicative of accumulated contamination, and automatically or semi-automatically actuates a bottom-mounted flush valve to selectively remove the settled sediment and particulate layer at the tank floor — without draining the tank — when the computed quality score indicates that settled contamination has exceeded a predetermined threshold.</p>
+<p>The present invention relates to the field of Internet of Things (IoT) enabled water storage tank maintenance and water quality management. More particularly, the invention pertains to a self-powered IoT sensing and edge-computing unit that is removably installed within a domestic or institutional water storage tank (overhead or underground) and continuously measures key water quality parameters of the stored water, together with a separate indoor pump-control unit. The tank unit computes at the network edge a composite water quality score indicative of accumulated contamination, predicts degradation from historical trends, and raises a prioritised cleaning alert; the home unit displays that status and switches the pump through an opto-isolated relay and a motor-rated contactor, with the electronics never touching mains.</p>
 
 <div class="novelty-box" style="border-left-color:#003399; background:#f0f4fa;">
-<p><strong>IoT Characterisation of the Invention:</strong> The invention is an edge-computing IoT system in which (i) a battery of physical sensors forms the perception layer, (ii) an on-device microcontroller forms the edge/fog computing layer where scoring, trend analysis and event classification are executed locally, (iii) a Wi-Fi access point + embedded web server forms the local communication layer serving an HTML dashboard to any browser on the LAN, and (iv) a valve actuator forms the physical actuation layer that closes the loop. <strong>No cloud, no subscription and no internet uplink is required for any core function</strong> — a deliberate architectural distinction over prior-art IoT water monitors.</p>
+<p><strong>IoT Characterisation of the Invention:</strong> The invention is an edge-computing IoT system in which (i) a battery of physical sensors forms the perception layer, (ii) an on-device microcontroller forms the edge/fog computing layer where scoring, trend analysis and event classification are executed locally, (iii) a Wi-Fi access point + embedded web server forms the local communication layer serving an HTML dashboard to any browser on the LAN, and (iv) a separate, mains-isolated home unit forms the pump-control layer, using an opto-isolated relay and a motor-rated contactor with fail-safe OFF. <strong>No cloud, no subscription and no internet uplink is required for any core function</strong> — a deliberate architectural distinction over prior-art IoT water monitors.</p>
 </div>
 
 <h2>3. BACKGROUND AND PROBLEM STATEMENT</h2>
@@ -96,7 +96,7 @@
 <h3>3.4 Limitations of Existing Approaches</h3>
 <p>Existing patents and products in this domain suffer from one or more of the following limitations:</p>
 <ul>
-  <li><strong>Monitoring without actuation:</strong> Sensor-only systems (e.g., WO2024173389A1) detect water quality changes but provide no mechanism to remediate them; the user is merely alerted.</li>
+  <li><strong>Monitoring without prioritisation:</strong> Sensor-only systems (e.g., WO2024173389A1) detect water quality changes but reduce them to raw readings or simple threshold alerts; the owner is given no composite, trend-aware judgement of when cleaning is actually due.</li>
   <li><strong>Full-tank drain cleaning:</strong> Automated cleaning systems (e.g., IN202441068267) use mechanical wipers and drain the entire tank, wasting large volumes of water and requiring the tank to be out of service.</li>
   <li><strong>Industrial-scale solutions:</strong> Sludge discharge systems (e.g., CN223988161U) are designed for large municipal sedimentation tanks using camera-based image analysis, not for domestic or institutional storage tanks.</li>
   <li><strong>In-pipe / point-of-use monitoring:</strong> Systems like WO2024173389A1 and Delta Faucet's application monitor water in pipes or at faucets, not in the storage tank where degradation actually occurs.</li>
@@ -107,16 +107,16 @@
 <h2>4. SUMMARY OF THE INVENTION</h2>
 
 <h3>4.1 Core Inventive Concept</h3>
-<p>The present invention provides a <strong>single integrated unit</strong> that combines continuous in-tank water quality sensing, composite contamination scoring with trend prediction, and a targeted bottom-flush actuation mechanism, all powered by an onboard solar-battery system, and operating entirely locally without cloud dependency.</p>
+<p>The present invention provides a <strong>two-unit system</strong>: a self-powered tank unit that combines continuous in-tank water quality sensing with composite contamination scoring and trend prediction, and a separate home unit that displays that status and controls the pump with full mains isolation, both operating entirely locally without cloud dependency.</p>
 
-<p>The key inventive step is the <strong>closed-loop integration of sensing and targeted sediment-flush actuation</strong>:</p>
+<p>The key inventive step is the <strong>edge-computed, trend-predictive health assessment coupled to a fail-safe pump controller</strong>:</p>
 <ol>
   <li>A multi-parameter sensor array submerged in the stored water continuously measures turbidity, pH, total dissolved solids (TDS), temperature, and water level.</li>
   <li>An onboard processor computes a <strong>composite TankScore</strong> — a single weighted, trend-aware index that quantifies the overall contamination state of the stored water, with particular emphasis on indicators of settled-sediment activity (turbidity trend, TDS leaching rate, refill-induced resuspension events).</li>
-  <li>When the TankScore crosses a predetermined "clean-required" threshold (or when a manual trigger is received from a connected user interface), the processor actuates a <strong>normally-closed, bottom-mounted flush valve</strong> via a low-side or high-side switch, causing the valve to open for a predetermined duration.</li>
-  <li>During the flush interval, the high-concentration sediment layer at the tank floor is selectively drained through the flush valve — <strong>without draining the bulk water column above</strong>. The valve is positioned at the lowest point of the tank to preferentially discharge the highest-turbidity, highest-TDS water.</li>
-  <li>After the flush interval, the sensor array <strong>re-measures water quality</strong> and computes a post-flush TankScore, verifying the effectiveness of the flush. This closed-loop verification step is a critical aspect of the invention — the system confirms whether the flush actually improved water quality, and if not, may trigger additional flush cycles or escalate the alert to require manual cleaning.</li>
-  <li>A complete event log (pre-flush score, flush duration, post-flush score, effectiveness ratio) is stored locally and presented on a user-accessible dashboard, enabling the tank owner to track long-term contamination trends and cleaning effectiveness.</li>
+  <li>When the TankScore crosses a predetermined "clean-required" threshold (or when a manual confirmation is received from the user interface), the system raises a persistent, prioritised cleaning alert and logs the event, so that manual drain-and-scrub cleaning is scheduled on evidence rather than on a calendar.</li>
+  <li>The same tank unit wirelessly publishes level and health status to a separate indoor home unit. That home unit drives the pump through an opto-isolated relay whose contacts energise a motor-rated AC-3 contactor — the low-voltage electronics never make contact with mains.</li>
+  <li>The pump controller enforces fail-safe behaviour: the relay is de-energised on processor reset, and the pump is forced OFF if the tank link is lost for more than a configured timeout. A single local button provides manual override with automatic release.</li>
+  <li>A complete event log (samples, TankScore history, cleaning confirmations, pump run events) is stored locally and presented on a user-accessible dashboard, enabling the owner to track long-term contamination trends and pump behaviour.</li>
 </ol>
 
 <h3>4.2 Novel Aspects (Distinguishing from Prior Art)</h3>
@@ -124,12 +124,10 @@
 <div class="novelty-box">
 <table style="font-size:9pt;">
 <tr><th style="width:40%;">Novel Aspect</th><th>Distinguishing Feature</th></tr>
-<tr><td><strong>1. Closed-loop flush verification</strong></td><td>System measures water quality AFTER flushing and compares with pre-flush quality to compute a quantitative effectiveness score. This feedback loop is absent in all surveyed prior art.</td></tr>
-<tr><td><strong>2. Selective bottom-layer flush (not full drain)</strong></td><td>Flush valve is designed and timed to remove only the settled sediment layer, not the bulk water. The flush duration and valve bore are selected so that only the bottom 5–15% of tank volume is discharged. This is fundamentally different from full-tank drain-and-clean systems.</td></tr>
-<tr><td><strong>3. Trend-predictive TankScore for flush triggering</strong></td><td>The trigger is not a simple threshold crossing but a composite score incorporating rate-of-change (14-day slope), acceleration, and refill-response analysis of turbidity and TDS. This enables predictive flush triggering BEFORE water quality becomes visibly degraded.</td></tr>
-<tr><td><strong>4. Integrated single-unit, self-powered design</strong></td><td>All sensing, processing, actuation, power management, and user interface are contained in a single tank-lid-mounted unit with onboard solar panel and battery. No external wiring, no plumbing modifications beyond a single drain-tap connection, no cloud dependency.</td></tr>
-<tr><td><strong>5. Sludge-resuspension event detection</strong></td><td>The system distinguishes between (a) gradual degradation (biofilm growth), (b) sudden contamination from source water (refill events), and (c) sludge resuspension (inlet turbulence). Each has a different TankScore contribution and different remediation strategy. This multi-event classification is novel.</td></tr>
-<tr><td><strong>6. Local-only, subscription-free architecture</strong></td><td>Dashboard, history, and alerts are served from the device itself over local WiFi (mDNS). No cloud service, no account, no subscription. This is a deliberate architectural choice that distinguishes from all IoT-based prior art which requires cloud platforms.</td></tr>
+<tr><td><strong>1. Trend-predictive TankScore</strong></td><td>The trigger is not a simple threshold crossing but a weighted composite score incorporating rate-of-change (14-day slope), acceleration, and refill-response analysis of turbidity and TDS. This enables actionable alerts BEFORE water quality becomes visibly degraded.</td></tr>
+<tr><td><strong>2. Integrated self-powered sensing unit</strong></td><td>All sensing, edge processing, power management and the local dashboard are contained in a single tank-lid-mounted unit with onboard solar panel and battery. No external wiring, no tank penetration, no cloud dependency.</td></tr>
+<tr><td><strong>3. Sludge-resuspension event detection</strong></td><td>The system distinguishes between (a) gradual degradation (biofilm growth), (b) sudden contamination from source water (refill events), and (c) sludge resuspension (inlet turbulence). Each has a different TankScore contribution and different remediation strategy. This multi-event classification is novel.</td></tr>
+<tr><td><strong>4. Local-only, subscription-free architecture</strong></td><td>Dashboard, history, and alerts are served from the device itself over local WiFi (mDNS). No cloud service, no account, no subscription. This is a deliberate architectural choice that distinguishes from all IoT-based prior art which requires cloud platforms.</td></tr>
 </table>
 </div>
 
@@ -138,19 +136,19 @@
 <h2>5. DETAILED DESCRIPTION OF EMBODIMENTS</h2>
 
 <h3>5.1 System Architecture Overview</h3>
-<p>The invention is embodied as a single tank-lid-mounted enclosure containing all electronics, with sensor probes and a flush valve connected externally by waterproof cables. The architecture follows a classic four-layer IoT stack:</p>
+<p>The invention is embodied as a tank-lid-mounted enclosure containing the sensing electronics, with sensor probes connected externally by waterproof cables, plus a separate indoor pump-control enclosure. The architecture follows a layered IoT stack:</p>
 
 <div class="arch-diagram">
-  <div class="layer"><span class="layer-title">LAYER 4 — ACTUATION (physical world)</span><br>
-  Normally-closed flush valve (½"–1" solenoid/ball) at tank floor drain ← waterproof cable → MOSFET low-side driver + flyback protection</div>
+  <div class="layer"><span class="layer-title">LAYER 4 — PUMP CONTROL (separate indoor unit)</span><br>
+  ESP8266 + TFT display + local button → opto-isolated relay → motor-rated AC-3 contactor → pump. Fail-safe OFF on reset or link loss; no mains contact by the electronics.</div>
   <div class="layer"><span class="layer-title">LAYER 3 — EDGE COMPUTING (on-device, no cloud)</span><br>
-  ESP32 dual-core MCU: sensor fusion → TankScore engine → trend regression → event classification → flush decision logic → embedded web server (HTTP + mDNS) → event logging to flash</div>
+  ESP32 dual-core MCU: sensor fusion → TankScore engine → trend regression → event classification → alert decision logic → embedded web server (HTTP + mDNS) → event logging to flash</div>
   <div class="layer"><span class="layer-title">LAYER 2 — LOCAL COMMUNICATION (LAN only)</span><br>
   ESP32 Wi-Fi access point / station mode → serves HTML5 dashboard to any browser on the same LAN → local notifications, no internet uplink required</div>
   <div class="layer"><span class="layer-title">LAYER 1 — PERCEPTION (sensors in water)</span><br>
   Turbidity (SEN0189) · TDS/EC (XKC-Y25) · pH (glass electrode + ADS1115 16-bit ADC) · Temperature (DS18B20, 1-Wire) · Level (JSN-SR04T ultrasonic)</div>
   <div class="layer"><span class="layer-title">LAYER 0 — POWER (self-sustaining)</span><br>
-  5–10 W solar panel → charge controller → Li-ion/LiFePO₄ battery → regulated rails: 12 V (valve) / 5 V (sensors) / 3.3 V (MCU)</div>
+  5–10 W solar panel → charge controller → Li-ion/LiFePO₄ battery → regulated rails: 12 V battery bus / 5 V (sensors) / 3.3 V (MCU)</div>
 </div>
 
 <h3>5.2 Component List (Bill of Materials)</h3>
@@ -158,17 +156,16 @@
 
 <table>
 <tr><th style="width:16%;">Component</th><th style="width:20%;">Representative Part</th><th style="width:14%;">Interface</th><th>Function in the Invention</th></tr>
-<tr><td><strong>Microcontroller (edge processor)</strong></td><td>ESP32-WROOM-32 DevKit</td><td>Wi-Fi + BT, GPIO, I²C, 1-Wire, ADC</td><td>Runs all firmware: measurement scheduling, TankScore computation, trend regression, event classification, flush decision, embedded HTTP server, mDNS discovery, flash logging, deep-sleep power management</td></tr>
+<tr><td><strong>Microcontroller (edge processor)</strong></td><td>ESP32-WROOM-32 DevKit</td><td>Wi-Fi + BT, GPIO, I²C, 1-Wire, ADC</td><td>Runs all firmware: measurement scheduling, TankScore computation, trend regression, event classification, embedded HTTP server, mDNS discovery, flash logging, deep-sleep power management</td></tr>
 <tr><td><strong>External ADC</strong></td><td>ADS1115 16-bit, 4-channel (I²C)</td><td>I²C @ 0x48</td><td>Digitises the high-impedance pH electrode output (0–2 V differential) with 16-bit resolution — the ESP32's internal 12-bit ADC is too coarse/noisy for mV-level pH measurements</td></tr>
 <tr><td><strong>Turbidity sensor</strong></td><td>DFRobot SEN0189 (analog, IP68)</td><td>Analog → ADS1115 or ESP32 ADC</td><td>90° nephelometric infrared scattering; primary indicator of suspended particles, biofilm fragments and sludge resuspension; 40% of TankScore</td></tr>
 <tr><td><strong>TDS sensor</strong></td><td>XKC-Y25-NPN (analog + temperature)</td><td>Analog (0.2–2.0 V)</td><td>Two-electrode conductivity with NTC compensation; indicates dissolved-solids leaching from settled debris; 25% of TankScore</td></tr>
 <tr><td><strong>pH sensor</strong></td><td>PH-01 glass electrode + op-amp front end</td><td>Analog via ADS1115; 5 V excitation + 10k/10k divider to 3.3 V</td><td>Potentiometric pH measurement; indicates algal activity, anaerobic decay and corrosion; 20% of TankScore</td></tr>
 <tr><td><strong>Temperature sensor</strong></td><td>DS18B20 (waterproof probe, IP67)</td><td>1-Wire (parasitic power capable)</td><td>Compensates TDS and pH readings; independent indicator of microbial growth rate; 5% of TankScore</td></tr>
 <tr><td><strong>Level sensor</strong></td><td>JSN-SR04T ultrasonic (IP67)</td><td>Trigger/Echo GPIO</td><td>Water volume and refill detection; enables discrimination between source-water contamination and sludge resuspension; 10% of TankScore</td></tr>
-<tr><td><strong>Flush valve</strong></td><td>1″ brass normally-closed solenoid valve, 12 V DC (or motorised ball valve)</td><td>2-wire, switched by MOSFET</td><td>The actuator of the invention: opens on command to discharge the sediment-rich bottom layer through the tank's lowest drain point</td></tr>
-<tr><td><strong>Valve driver</strong></td><td>N-channel MOSFET (e.g. IRLZ44N) low-side switch + flyback diode</td><td>Gate ← ESP32 GPIO (PWM-capable)</td><td>Isolates the 3.3 V logic from the 12 V solenoid coil; protects against inductive kickback; allows timed and PWM-modulated valve control</td></tr>
-<tr><td><strong>Power system</strong></td><td>5–10 W solar panel + TP4056/BQ25895 charge controller + 18650/LiFePO₄ pack + buck converters (12 V/5 V/3.3 V)</td><td>—</td><td>Self-sustaining off-grid power; supports 2–3 weeks zero-sun autonomy; regulated rails for valve, sensors and MCU</td></tr>
-<tr><td><strong>Enclosure</strong></td><td>IP65 ABS/polycarbonate box with cable glands, lid-mount brackets</td><td>—</td><td>Protects electronics from humidity and splash; mounts on tank lid; sensors and valve cables exit through sealed glands</td></tr>
+<tr><td><strong>Home pump-control unit</strong></td><td>ESP8266 (NodeMCU) + 1.8″ ST7735 TFT + opto-relay module + AC-3 contactor + MCB</td><td>Wi-Fi or nRF24L01+; relay contact → contactor coil</td><td>Displays tank status indoors and switches the pump safely: opto-isolated relay drives a motor-rated contactor, with fail-safe OFF and one local override button</td></tr>
+<tr><td><strong>Power system</strong></td><td>5–10 W solar panel + TP4056/BQ25895 charge controller + 18650/LiFePO₄ pack + buck converters (12 V/5 V/3.3 V)</td><td>—</td><td>Self-sustaining off-grid power; supports 2–3 weeks zero-sun autonomy; regulated rails for the battery bus, sensors and MCU</td></tr>
+<tr><td><strong>Enclosure</strong></td><td>IP65 ABS/polycarbonate box with cable glands, lid-mount brackets</td><td>—</td><td>Protects electronics from humidity and splash; mounts on tank lid; sensor cables exit through sealed glands</td></tr>
 <tr><td><strong>Software / firmware</strong></td><td>ESP-IDF or Arduino framework; embedded HTTP server; LittleFS/SPIFFS flash logging</td><td>Wi-Fi AP/STA</td><td>All edge logic and the local dashboard — constitutes the software-implemented portion of the IoT system</td></tr>
 </table>
 
@@ -184,7 +181,7 @@
 </table>
 
 <h3>5.4 How It Works — Operational Sequence</h3>
-<p>The invention operates as a continuous, autonomous sense–compute–actuate cycle. The following sequence describes one complete operating cycle of a working embodiment:</p>
+<p>The invention operates as a continuous, autonomous sense–compute–alert–control cycle. The following sequence describes one complete operating cycle of a working embodiment:</p>
 
 <div class="flow-step"><b class="step-no">STEP 1 — WAKE &amp; POWER-UP.</b> The ESP32 wakes from deep sleep (default: every 3 hours) via RTC timer. It energises the 5 V sensor rail through a load switch, initialises the I²C bus (ADS1115), 1-Wire bus (DS18B20) and UART/GPIO for the level sensor. Deep-sleep current between cycles is &lt;1 mA to conserve battery.</div>
 
@@ -194,25 +191,23 @@
 
 <div class="flow-step"><b class="step-no">STEP 4 — TREND &amp; EVENT ANALYSIS.</b> Linear regression is run over the 14-day window for turbidity, TDS and pH. The system classifies the current event as (i) gradual degradation, (ii) source-water contamination (level rise + turbidity spike), or (iii) sludge resuspension (turbidity spike with no level change). This classification determines the score penalty and the recommended action.</div>
 
-<div class="flow-step"><b class="step-no">STEP 5 — DECIDE.</b> The TankScore is mapped to a state: GOOD (80–100), WATCH (50–79), FLUSH RECOMMENDED (30–49) or CLEAN REQUIRED (0–29). In autonomous mode, CLEAN REQUIRED directly issues a flush command; in advisory mode, the request is pushed to the dashboard for user confirmation. A manual "Flush Now" button on the dashboard can also issue the command at any time.</div>
+<div class="flow-step"><b class="step-no">STEP 5 — DECIDE.</b> The TankScore is mapped to a state: GOOD (80–100), WATCH (50–79), ACTION ADVISED (30–49) or CLEAN REQUIRED (0–29). The state drives a prioritised local alert and estimates days-to-clean from the trend slope; a "Tank Cleaned" confirmation is available on the dashboard after manual cleaning.</div>
 
-<div class="flow-step"><b class="step-no">STEP 6 — ACTUATE (flush).</b> The GPIO drives the MOSFET gate, energising the solenoid valve. The valve opens for a computed duration (30–120 s, derived from tank volume, pre-flush turbidity and configured sludge thickness). Because the valve sits at the tank's lowest drain point, the dense, sediment-rich bottom layer discharges first — typically only 5–15% of tank volume — while the bulk water column above remains in the tank.</div>
+<div class="flow-step"><b class="step-no">STEP 6 — PUBLISH.</b> The tank unit publishes level, TankScore and state over the local link — Wi-Fi HTTP, or an optional nRF24L01+ radio link — to the indoor home unit every sample period.</div>
 
-<div class="flow-step"><b class="step-no">STEP 7 — CLOSE &amp; SETTLE.</b> The valve is de-energised (returns to normally-closed state). The system waits a settling interval (15–60 minutes) to allow residual suspended particles to redistribute before re-measuring.</div>
+<div class="flow-step"><b class="step-no">STEP 7 — CONTROL (home unit).</b> The home unit switches the pump through an opto-isolated relay and motor-rated contactor: ON when level falls below the low threshold, OFF above the high threshold, with manual override and a 10-minute auto-release. On processor reset or link loss beyond 60 s the relay is de-energised and the pump is forced OFF.</div>
 
-<div class="flow-step"><b class="step-no">STEP 8 — VERIFY (closed loop).</b> All sensors are re-read and a post-flush TankScore is computed. Flush Effectiveness = (Pre-flush turbidity − Post-flush turbidity) / Pre-flush turbidity × 100. If effectiveness ≥ threshold (default 40%), the flush is logged as successful. If not, the system issues a second flush command or escalates to a persistent manual-cleaning-required alert. <b>This verification step is the core novel feedback loop.</b></div>
+<div class="flow-step"><b class="step-no">STEP 8 — REPORT &amp; LOG.</b> The event record (timestamp, TankScore, state, pump runs, cleaning confirmations) is appended to flash storage. The embedded web server updates the dashboard with current readings, the TankScore banner, trend charts and history. Battery/solar status is included.</div>
 
-<div class="flow-step"><b class="step-no">STEP 9 — REPORT &amp; LOG.</b> The full event record (timestamp, pre-flush score, flush duration, post-flush score, effectiveness ratio) is appended to flash storage. The embedded web server updates the dashboard with current readings, the TankScore banner, trend charts and the flush history. Battery/solar status is included.</div>
-
-<div class="flow-step"><b class="step-no">STEP 10 — SLEEP.</b> The sensor rail is de-energised, the ESP32 enters deep sleep, and the cycle repeats at the next timer interval.</div>
+<div class="flow-step"><b class="step-no">STEP 9 — SLEEP.</b> The sensor rail is de-energised, the ESP32 enters deep sleep, and the cycle repeats at the next timer interval.</div>
 
 <h3>5.5 IoT Subsystem (Highlighted)</h3>
-<p>The IoT subsystem is what converts a set of sensors and a valve into an autonomous, remotely observable, edge-intelligent system. It comprises the following elements:</p>
+<p>The IoT subsystem is what converts a set of sensors and a pump into an autonomous, locally observable, edge-intelligent system. It comprises the following elements:</p>
 
 <h4>(a) Edge Intelligence — Computation On-Device, Not in the Cloud</h4>
-<p>All decision-making runs on the ESP32's dual-core Xtensa processor: sensor fusion, weighted scoring, 14-day linear-regression trend analysis, three-way event classification, flush decision logic and post-flush verification. <strong>Nothing is sent to a cloud server for analysis.</strong> This means:</p>
+<p>All decision-making runs on the ESP32's dual-core Xtensa processor: sensor fusion, weighted scoring, 14-day linear-regression trend analysis, three-way event classification, alert decision logic and local publication of status. <strong>Nothing is sent to a cloud server for analysis.</strong> This means:</p>
 <ul>
-  <li>Flush decisions are made in real time on-device, immune to internet outages or server downtime.</li>
+  <li>Health decisions are made in real time on-device, immune to internet outages or server downtime.</li>
   <li>No user data leaves the premises — an architectural privacy guarantee.</li>
   <li>No recurring cloud cost, no account, no API key, no subscription.</li>
   <li>The device remains fully functional with zero internet connectivity.</li>
@@ -222,19 +217,18 @@
 <p>The ESP32 operates as a Wi-Fi access point (or joins an existing LAN in station mode) and hosts an embedded HTTP server. Any browser-equipped device on the same network — phone, tablet, laptop — can open a URL (resolved via mDNS, e.g. <em>tankguard.local</em>) and load the dashboard. The dashboard provides:</p>
 <ul>
   <li>Real-time gauges for turbidity, TDS, pH, temperature and level</li>
-  <li>Colour-coded TankScore status banner (GOOD / WATCH / FLUSH RECOMMENDED / CLEAN REQUIRED)</li>
+  <li>Colour-coded TankScore status banner (GOOD / WATCH / ACTION ADVISED / CLEAN REQUIRED)</li>
   <li>Trend charts at 24-hour, 7-day, 30-day and 90-day horizons</li>
-  <li>Manual "Flush Now" override and "Tank Cleaned" confirmation buttons</li>
-  <li>Flush history log with pre/post scores and effectiveness percentages</li>
+  <li>"Tank Cleaned" confirmation button and cleaning history</li>
   <li>Battery and solar charging status; sensor calibration interface</li>
 </ul>
 <p>Because the dashboard is served from the device itself, it works in buildings with no internet, in rural installations, and in situations where the owner does not want water-usage data held by a third-party cloud provider.</p>
 
 <h4>(c) Data Persistence at the Edge</h4>
-<p>All sensor samples and flush event records are written to the ESP32's flash filesystem (LittleFS/SPIFFS) using wear-levelled append operations. The 14-day ring buffer supports trend regression; longer history supports the 90-day charts. Data survives power cycles and reboots. Optional export is available via a CSV download endpoint on the local server.</p>
+<p>All sensor samples and cleaning/pump event records are written to the ESP32's flash filesystem (LittleFS/SPIFFS) using wear-levelled append operations. The 14-day ring buffer supports trend regression; longer history supports the 90-day charts. Data survives power cycles and reboots. Optional export is available via a CSV download endpoint on the local server.</p>
 
 <h4>(d) Optional Extended IoT Connectivity (Claimed as Preferred Embodiment, Not Required)</h4>
-<p>In a preferred optional embodiment, the same ESP32 can additionally connect to the internet and push alerts through one or more channels — MQTT to a self-hosted broker, e-mail, SMS gateway, or a messaging-app bot — <em>without changing any core logic</em>, because the flush decision is already made at the edge. The internet link is used only for notification and remote status viewing, never for control. This keeps the system's safety-critical function independent of connectivity.</p>
+<p>In a preferred optional embodiment, the same ESP32 can additionally connect to the internet and push alerts through one or more channels — MQTT to a self-hosted broker, e-mail, SMS gateway, or a messaging-app bot — <em>without changing any core logic</em>, because the health decision is already made at the edge. The internet link is used only for notification and remote status viewing, never for control. This keeps the system's safety-critical function independent of connectivity.</p>
 
 <h4>(e) OTA Firmware Updates</h4>
 <p>An optional over-the-air firmware update mechanism allows the device's firmware to be improved after deployment (e.g. new TankScore weights, new sensor drivers) while the unit remains installed inside the tank — no physical removal required.</p>
@@ -256,28 +250,28 @@
 <ul>
   <li><strong>Gradual degradation:</strong> Turbidity slowly rising with stable pH → biofilm accumulation. TankScore penalized proportionally to slope.</li>
   <li><strong>Source water contamination:</strong> Level rise (refill detected) followed by turbidity spike → contaminated incoming water. TankScore penalized based on peak turbidity but trend analysis is suppressed for settling period.</li>
-  <li><strong>Sludge resuspension:</strong> Turbidity spike without level change (inlet turbulence, temperature convection) → resuspension of existing bottom layer. TankScore penalized and flush recommendation issued (this is the primary flush trigger).</li>
+  <li><strong>Sludge resuspension:</strong> Turbidity spike without level change (inlet turbulence, temperature convection) → resuspension of existing bottom layer. TankScore penalized and a cleaning recommendation is issued.</li>
 </ul>
 
 <h4>TankScore Status Output</h4>
 <table>
 <tr><th>Status</th><th>TankScore Range</th><th>System Action</th></tr>
 <tr><td>GOOD</td><td>80–100</td><td>No action required. Normal monitoring continues.</td></tr>
-<tr><td>WATCH</td><td>50–79</td><td>Dashboard displays warning. Trend extrapolation shows estimated days-to-clean. User advised to consider flushing.</td></tr>
-<tr><td>FLUSH RECOMMENDED</td><td>30–49</td><td>System recommends automated flush. User may confirm via dashboard, or system may auto-flush if configured for autonomous mode.</td></tr>
-<tr><td>CLEAN REQUIRED</td><td>0–29</td><td>Automated flush triggered. If post-flush score does not improve, persistent alert for manual cleaning is issued.</td></tr>
+<tr><td>WATCH</td><td>50–79</td><td>Dashboard displays warning. Trend extrapolation shows estimated days-to-clean. User advised to plan cleaning.</td></tr>
+<tr><td>ACTION ADVISED</td><td>30–49</td><td>System recommends cleaning soon and shows the evidence; user may confirm cleaning via the dashboard after it is done.</td></tr>
+<tr><td>CLEAN REQUIRED</td><td>0–29</td><td>Persistent alert for manual cleaning; state remains until a "Tank Cleaned" confirmation or a sustained score recovery is recorded.</td></tr>
 </table>
 
-<h3>5.7 Automated Sediment-Flush Actuation Subsystem</h3>
-<p>The flush subsystem comprises:</p>
+<h3>5.7 Mains-Isolated Pump-Control Subsystem</h3>
+<p>Cleaning remains a manual drain-and-scrub operation; the invention does not actuate anything on the tank itself. The pump-control subsystem is a separate indoor unit comprising:</p>
 <ol>
-  <li><strong>Flush valve:</strong> A normally-closed, electrically actuated valve (solenoid or motorized ball valve) with a bore diameter selected for the tank size (typically ½ inch to 1 inch for domestic tanks). The valve is installed at the lowest drain point of the tank via a T-fitting or existing drain tap. The valve body material is selected for potable water contact (brass with food-grade EPDM seal, or SS316).</li>
-  <li><strong>Valve driver:</strong> A MOSFET-based low-side switch driven by a GPIO output of the processor, with flyback protection (diode or RC snubber) for inductive loads (solenoid coils). The driver circuit is housed in the main enclosure and connected to the valve by a waterproof cable.</li>
-  <li><strong>Flush duration controller:</strong> The processor controls the valve open duration based on (a) tank volume (derived from level sensor), (b) pre-flush turbidity level, and (c) user-configurable sludge thickness parameter. Typical flush durations range from 30 seconds to 120 seconds for domestic tanks.</li>
-  <li><strong>Post-flush verification:</strong> After the flush interval, the system waits a predetermined settling time (typically 15–60 minutes), re-measures all sensor parameters, and computes the post-flush TankScore. The flush effectiveness is calculated as:</li>
+  <li><strong>Opto-isolated relay:</strong> A 5 V relay module with an optocoupler barrier, its contacts rated 10 A / 250 V AC, driven from an ESP8266 GPIO. The optocoupler keeps the low-voltage electronics galvanically separated from the switching circuit.</li>
+  <li><strong>Motor-rated contactor:</strong> The relay contacts energise the coil of an AC-3 rated contactor sized for the pump's locked-rotor current. All pump mains wiring terminates at the contactor, never at the electronics board.</li>
+  <li><strong>Local display and control:</strong> A 1.8″ ST7735 TFT shows tank level and TankScore; one physical button provides manual override (short press = toggle pump, long press = toggle AUTO/MANUAL), and manual mode auto-releases after 10 minutes.</li>
+  <li><strong>Fail-safe logic:</strong> The relay is active only while the controller is healthy. On reset, crash or loss of the tank link for longer than 60 s, the relay de-energises and the pump stops. A miniature circuit breaker and the existing starter protection remain in the mains path.</li>
 </ol>
-<p style="text-align:center; font-style:italic;">Flush Effectiveness (%) = (Pre-flush Turbidity − Post-flush Turbidity) / Pre-flush Turbidity × 100</p>
-<p>If effectiveness exceeds a predetermined threshold (e.g., 40%), the flush is confirmed successful and the TankScore is updated. If effectiveness is below threshold, the system may issue a second flush command or escalate to a manual-cleaning-required alert.</p>
+<p style="text-align:center; font-style:italic;">Relay ON condition = link healthy AND (AUTO with level below LOW threshold OR manual override active)</p>
+<p>This architecture satisfies the safety invariant that the embedded electronics never make or break mains current directly; the contactor, not the relay or the microcontroller, carries the pump load.</p>
 
 <h3>5.8 Power Management Subsystem</h3>
 <p>The unit is self-powered by a solar photovoltaic panel and rechargeable battery system:</p>
@@ -285,8 +279,8 @@
   <li>Solar panel: 5–10 W, 12 V nominal, mounted adjacent to or integral with the enclosure.</li>
   <li>Charge controller: MPPT or PWM, with overcharge and over-discharge protection.</li>
   <li>Battery: Lithium-ion (18650 or LiFePO₄) pack, capacity selected for 2–3 weeks of zero-sun autonomy.</li>
-  <li>Regulated power rails: 12 V bus for flush valve actuation; 5 V rail for sensor excitation; 3.3 V rail for processor and digital circuits.</li>
-  <li>Duty cycling: The processor enters deep-sleep mode between measurement cycles, waking at predetermined intervals (default: every 3 hours) to power the sensor rail, perform measurements, compute TankScore, evaluate flush need, and serve any pending user requests. Deep-sleep current is minimized (&lt;1 mA) to maximize battery life.</li>
+  <li>Regulated power rails: 12 V battery bus; 5 V rail for sensor excitation; 3.3 V rail for processor and digital circuits.</li>
+  <li>Duty cycling: The processor enters deep-sleep mode between measurement cycles, waking at predetermined intervals (default: every 3 hours) to power the sensor rail, perform measurements, compute TankScore, publish status, and serve any pending user requests. Deep-sleep current is minimized (&lt;1 mA) to maximize battery life.</li>
 </ul>
 
 <h3>5.9 User Interface Subsystem</h3>
@@ -295,9 +289,8 @@
   <li>Real-time gauge display of all measured parameters</li>
   <li>TankScore status banner with color-coded indication</li>
   <li>Trend charts (24-hour, 7-day, 30-day, 90-day) for each parameter</li>
-  <li>"Flush Now" button for manual override of automated flush</li>
   <li>"Tank Cleaned" confirmation button (resets the cleaning interval counter and logs the event)</li>
-  <li>Flush history log (timestamp, pre-flush score, post-flush score, effectiveness)</li>
+  <li>Cleaning and pump-run history log</li>
   <li>Battery and solar charging status</li>
   <li>Calibration interface for sensor maintenance</li>
 </ul>
@@ -307,65 +300,63 @@
 
 <div class="claim-box">
 <div class="claim-label">CLAIM 1 (Independent — System Claim):</div>
-<p style="font-size:9pt;">A self-powered in-tank water quality monitoring and automated sediment-flush system for a water storage tank, the system comprising:</p>
+<p style="font-size:9pt;">A self-powered in-tank water quality monitoring and mains-isolated pump-control system for a water storage tank, the system comprising:</p>
 <p style="font-size:9pt;">(a) an enclosure configured to be removably mounted on or within said water storage tank;</p>
 <p style="font-size:9pt;">(b) a plurality of water quality sensors suspended from said enclosure and submerged in stored water within said tank, said sensors comprising at least a turbidity sensor, a total dissolved solids sensor, a pH sensor, a temperature sensor, and a water level sensor;</p>
 <p style="font-size:9pt;">(c) a processor disposed within said enclosure, operatively connected to said sensors, configured to:</p>
 <p style="font-size:9pt;">(i) periodically measure water quality parameters from said sensors;</p>
 <p style="font-size:9pt;">(ii) compute a composite water quality score from said measured parameters, said score incorporating at least an instantaneous parameter component and a trend component derived from rate-of-change of said parameters over a predetermined historical window;</p>
 <p style="font-size:9pt;">(iii) classify said composite score into one of a plurality of quality states; and</p>
-<p style="font-size:9pt;">(iv) generate a flush actuation signal when said composite score indicates a quality state requiring sediment removal;</p>
-<p style="font-size:9pt;">(d) a normally-closed flush valve installed at a lowest drainage point of said tank and fluidly connected to said enclosure by a waterproof cable, said flush valve being configured to open upon receipt of said flush actuation signal and to discharge a sediment-rich bottom layer of said stored water through a drain outlet, without draining a bulk water column above said bottom layer;</p>
-<p style="font-size:9pt;">(e) a valve driver circuit disposed within said enclosure, operatively connecting said processor to said flush valve, said driver circuit configured to switch electrical power to said flush valve in response to said flush actuation signal;</p>
-<p style="font-size:9pt;">(f) a solar photovoltaic panel and rechargeable battery disposed within or adjacent to said enclosure, said solar panel and battery providing electrical power to said sensors, said processor, and said flush valve; and</p>
+<p style="font-size:9pt;">(iv) generate a prioritised cleaning alert when said composite score indicates a quality state requiring manual cleaning, and publish said score and state over said local-network interface;</p>
+<p style="font-size:9pt;">(d) a separate pump-control enclosure, distinct from said tank-mounted enclosure, comprising an opto-isolated relay whose low-voltage input is driven by a controller output and whose contacts are configured to energise a coil of a motor-rated contactor, said contactor being arranged to connect an electric pump to a mains supply, whereby the relay provides galvanic isolation between the controller and the mains switching circuit and the contactor carries the pump load;</p>
+<p style="font-size:9pt;">(e) a local override input on said pump-control enclosure and a fail-safe circuit configured to de-energise said relay upon controller reset or loss of communication with said tank-mounted enclosure for a predetermined timeout, thereby forcing the pump OFF; and</p>
+<p style="font-size:9pt;">(f) a solar photovoltaic panel and rechargeable battery disposed within or adjacent to said tank-mounted enclosure, said solar panel and battery providing electrical power to said sensors and said processor; and</p>
 <p style="font-size:9pt;">(g) an IoT communication subsystem comprising a wireless local-network interface hosted by said processor, said interface comprising an embedded HTTP server and a multicast-DNS responder, configured to serve an interactive user dashboard to a client device on the same local network without requiring internet connectivity, cloud infrastructure or a user account,</p>
-<p style="font-size:9pt;">wherein said processor is further configured to execute all of said measurement, scoring, classification and flush decision logic at the network edge on said processor without transmitting sensor data to any remote server, and to re-measure said water quality parameters after said flush valve is closed, compute a post-flush composite water quality score, compare said post-flush score with said pre-flush score to derive a flush effectiveness metric, and store said flush effectiveness metric in a local event log for presentation on said user dashboard.</p>
+<p style="font-size:9pt;">wherein said processor is further configured to execute all of said measurement, scoring, classification and alerting logic at the network edge on said processor without transmitting sensor data to any remote server, and to store a local event log, including cleaning confirmations and pump-run events, for presentation on said user dashboard.</p>
 </div>
 
 <div class="claim-box">
 <div class="claim-label">CLAIM 7 (Dependent — Edge/IoT Architecture):</div>
-<p style="font-size:9pt;">The system of Claim 1, wherein said composite water quality score, said trend analysis, said event classification and said flush actuation decision are all computed locally on said processor within said enclosure, and wherein the system operates its full sense–compute–actuate–verify control loop without any internet connection, cloud service, subscription or user account; and wherein said local wireless network interface is the sole means by which sensor data is presented to a user.</p>
+<p style="font-size:9pt;">The system of Claim 1, wherein said composite water quality score, said trend analysis, said event classification and said alert decision are all computed locally on said processor within said enclosure, and wherein the system operates its full sense–compute–alert–control loop without any internet connection, cloud service, subscription or user account; and wherein said local wireless network interface is the sole means by which sensor data is presented to a user.</p>
 </div>
 
 <div class="claim-box">
 <div class="claim-label">CLAIM 8 (Dependent — Duty-Cycled Edge Sensing):</div>
-<p style="font-size:9pt;">The system of Claim 1, wherein said processor operates in a low-power sleep state between measurement cycles and wakes at predetermined intervals to energise a switched sensor power rail, acquire sensor readings, compute the composite score, evaluate flush need and serve pending dashboard requests, thereby enabling solar-battery operation with multi-week autonomy while maintaining continuous logical monitoring of the stored water.</p>
+<p style="font-size:9pt;">The system of Claim 1, wherein said processor operates in a low-power sleep state between measurement cycles and wakes at predetermined intervals to energise a switched sensor power rail, acquire sensor readings, compute the composite score, publish status and serve pending dashboard requests, thereby enabling solar-battery operation with multi-week autonomy while maintaining continuous logical monitoring of the stored water.</p>
 </div>
 
 <h2>7. CLAIMS FOR NOVELTY ASSESSMENT</h2>
 
 <table>
 <tr><th style="width:5%;">#</th><th style="width:35%;">Claimed Feature</th><th style="width:15%;">Novelty Rating</th><th>Justification</th></tr>
-<tr><td>1</td><td>Closed-loop flush verification (re-measure after flush, compute effectiveness)</td><td><strong>HIGH</strong></td><td>No surveyed prior art performs post-flush quality verification with quantitative effectiveness scoring. Existing flush/clean systems operate open-loop (actuate, then assume success).</td></tr>
-<tr><td>2</td><td>Selective bottom-layer flush (not full-tank drain)</td><td><strong>HIGH</strong></td><td>Prior art cleaning systems (IN202441068267) drain the entire tank. Industrial sludge systems (CN223988161U) use cameras and are for sedimentation tanks. The concept of a timed, partial flush that removes only the sediment-enriched bottom layer from a domestic tank is novel.</td></tr>
-<tr><td>3</td><td>Trend-predictive TankScore with event classification for flush triggering</td><td><strong>HIGH</strong></td><td>Prior art monitoring systems use simple threshold alerts. The composite score with 14-day slope analysis, acceleration detection, and three-way event classification (degradation vs refill contamination vs resuspension) is a novel computational method.</td></tr>
-<tr><td>4</td><td>Single integrated unit: sensing + scoring + actuation + power + local UI</td><td><strong>MEDIUM-HIGH</strong></td><td>While individual subsystems are known, their integration into a single tank-lid-mounted, solar-powered, cloud-free unit is a novel combination. Prior art splits these functions across separate devices or requires external infrastructure.</td></tr>
-<tr><td>5</td><td>Sludge resuspension detection (turbidity spike without level change)</td><td><strong>MEDIUM-HIGH</strong></td><td>This specific event classification — distinguishing resuspension from source contamination by correlating turbidity with level data — is not found in surveyed prior art.</td></tr>
-<tr><td>6</td><td>Edge-only IoT architecture (no cloud) for tank monitoring</td><td><strong>MEDIUM-HIGH</strong></td><td>All surveyed IoT water monitoring systems rely on cloud platforms for analysis and dashboards. Here the entire control loop — sensing, scoring, trend regression, event classification, flush decision and verification — executes on the device, with a self-hosted HTTP/mDNS dashboard. Deliberate architectural distinction with practical benefits (privacy, cost, offline operation, outage immunity).</td></tr>
-<tr><td>7</td><td>Duty-cycled edge sensing with switched sensor power rail (solar autonomy)</td><td><strong>MEDIUM-HIGH</strong></td><td>Combining deep-sleep MCU duty cycling with switched sensor excitation rails to achieve multi-week solar autonomy while maintaining a continuous logical monitoring loop is a specific power-architecture contribution not disclosed in surveyed prior art.</td></tr>
+<tr><td>1</td><td>Trend-predictive TankScore with event classification</td><td><strong>HIGH</strong></td><td>Prior art monitoring systems use simple threshold alerts. The composite score with 14-day slope analysis, acceleration detection and three-way event classification (degradation vs refill contamination vs resuspension) is a novel computational method.</td></tr>
+<tr><td>2</td><td>Sludge resuspension detection (turbidity spike without level change)</td><td><strong>MEDIUM-HIGH</strong></td><td>This specific event classification — distinguishing resuspension from source contamination by correlating turbidity with level data — is not found in surveyed prior art.</td></tr>
+<tr><td>3</td><td>Edge-only IoT architecture (no cloud) for tank monitoring</td><td><strong>MEDIUM-HIGH</strong></td><td>All surveyed IoT water monitoring systems rely on cloud platforms for analysis and dashboards. Here the entire control loop — sensing, scoring, trend regression, event classification and alerting — executes on the device, with a self-hosted HTTP/mDNS dashboard. Deliberate architectural distinction with practical benefits (privacy, cost, offline operation, outage immunity).</td></tr>
+<tr><td>4</td><td>Duty-cycled edge sensing with switched sensor power rail (solar autonomy)</td><td><strong>MEDIUM-HIGH</strong></td><td>Combining deep-sleep MCU duty cycling with switched sensor excitation rails to achieve multi-week solar autonomy while maintaining a continuous logical monitoring loop is a specific power-architecture contribution not disclosed in surveyed prior art.</td></tr>
+<tr><td>5</td><td>Two-unit architecture with mains-isolated pump control and fail-safe link timeout</td><td><strong>MEDIUM</strong></td><td>Pump controllers and tank level monitors exist separately, but the combination of edge-computed tank health, a separate opto-relay/contactor pump stage and a forced-OFF fail-safe on link loss is not disclosed in the surveyed references.</td></tr>
 </table>
 
 <h2>8. PRIOR ART SEARCH SUMMARY</h2>
 
 <table>
 <tr><th style="width:15%;">Reference</th><th style="width:25%;">Title / Assignee</th><th style="width:20%;">Relevance</th><th>Distinction from Present Invention</th></tr>
-<tr><td>CN223988161U</td><td>Automatic sludge discharge control system (Chengdu, China)</td><td>Sludge discharge with valve</td><td>Uses camera-based image analysis, not water quality sensors. Designed for municipal sedimentation tanks (industrial scale), not domestic storage tanks. No water quality scoring, no closed-loop verification.</td></tr>
-<tr><td>IN202311028143</td><td>Smart Water Tank Management System (Uttaranchal University, India)</td><td>Tank quality monitoring with sensors</td><td>Sensor-only system. Alerts user via mobile app but provides no automated remediation. No flush valve, no actuation. Cleaning is manual, triggered only by alert.</td></tr>
-<tr><td>IN202441068267</td><td>Automatic Cleaning of Overhead Water Tanks (SR University, India)</td><td>Automated tank cleaning</td><td>Uses a mechanical wiper to scrub walls + chlorine doser + full drain. Requires manual initiation. Does not use water quality sensors to trigger cleaning. Drains entire tank (water wastage). No sediment-selective flush.</td></tr>
-<tr><td>IN (Marwadi University)</td><td>Water Purity Monitoring and Automated Purification Device</td><td>Sensing + treatment</td><td>Tests water in a separate chamber (not in-tank), then dispenses chemical treatments. Complex multi-chamber design. Chemical approach, not physical sediment removal.</td></tr>
-<tr><td>ILONNATI Innovations</td><td>Smart Intelligent Water Monitoring</td><td>IoT sensors + motorized valves</td><td>Designed for piped water supply networks, not storage tanks. Monitors supply quality at multiple network points. No in-tank sensing, no sediment flush.</td></tr>
-<tr><td>WO2024173389A1</td><td>Water Quality Monitoring System (AS America Inc, USA)</td><td>Multi-sensor monitoring + phone app</td><td>Pure monitoring system. No actuation, no cleaning, no flush valve. Monitors water in pipes, not in storage tanks.</td></tr>
-<tr><td>US (Delta Faucet)</td><td>Smart Water Sensing and Management System</td><td>Sensors + valve actuation</td><td>Monitors water at point-of-use (faucets/showers) using ORP and conductivity. Actuates valves to purge pipe water, not tank sludge. Tiered purge logic for plumbing systems, not for stored-water tanks.</td></tr>
+<tr><td>CN223988161U</td><td>Automatic sludge discharge control system (Chengdu, China)</td><td>Industrial sludge discharge</td><td>Uses camera-based image analysis, not water quality sensors. Designed for municipal sedimentation tanks (industrial scale), not domestic storage tanks. No composite water-quality scoring or trend prediction.</td></tr>
+<tr><td>IN202311028143</td><td>Smart Water Tank Management System (Uttaranchal University, India)</td><td>Tank quality monitoring with sensors</td><td>Sensor-only system. Alerts the user via a mobile app with raw readings or simple thresholds; no composite trend-aware score, no pump control, no local-network dashboard.</td></tr>
+<tr><td>IN202441068267</td><td>Automatic Cleaning of Overhead Water Tanks (SR University, India)</td><td>Automated tank cleaning</td><td>Uses a mechanical wiper to scrub walls + chlorine doser + full drain. Requires manual initiation and does not use in-tank water quality sensors to decide when cleaning is due; no predictive scoring.</td></tr>
+<tr><td>IN (Marwadi University)</td><td>Water Purity Monitoring and Automated Purification Device</td><td>Sensing + treatment</td><td>Tests water in a separate chamber (not in-tank), then dispenses chemical treatments. Complex multi-chamber design; no continuous in-tank trend monitoring and no pump control.</td></tr>
+<tr><td>ILONNATI Innovations</td><td>Smart Intelligent Water Monitoring</td><td>IoT sensors + motorized valves</td><td>Designed for piped water supply networks, not storage tanks. Monitors supply quality at multiple network points. No in-tank sensing and no pump control.</td></tr>
+<tr><td>WO2024173389A1</td><td>Water Quality Monitoring System (AS America Inc, USA)</td><td>Multi-sensor monitoring + phone app</td><td>Pure monitoring system with no pump control or local dashboard. Monitors water in pipes, not in storage tanks.</td></tr>
+<tr><td>US (Delta Faucet)</td><td>Smart Water Sensing and Management System</td><td>Sensors + valve actuation</td><td>Monitors water at point-of-use (faucets/showers) using ORP and conductivity. Actuates valves to purge pipe water; not a tank monitor and not a pump controller. Tiered purge logic for plumbing systems, not stored-water tanks.</td></tr>
 </table>
 
 <h2>9. PATENTABILITY ASSESSMENT</h2>
 
 <div class="novelty-box">
-<p><strong>Novelty (Section 32 of Indian Patents Act, 1970):</strong> The claimed subject matter is not anticipated by any single prior art reference found in the preliminary search. The combination of in-tank multi-parameter sensing, trend-predictive composite scoring, selective bottom-flush actuation, and closed-loop flush verification in a single self-powered unit is not disclosed in any surveyed reference.</p>
+<p><strong>Novelty (Section 32 of Indian Patents Act, 1970):</strong> The claimed subject matter is not anticipated by any single prior art reference found in the preliminary search. The combination of in-tank multi-parameter sensing, trend-predictive composite scoring with event classification, a cloud-free local dashboard, and a separate mains-isolated pump controller with fail-safe link timeout is not disclosed in any surveyed reference.</p>
 </div>
 
 <div class="novelty-box">
-<p><strong>Inventive Step / Non-Obviousness:</strong> While each individual component (ESP32, sensors, solenoid valve, MOSFET driver, solar panel, embedded web server) is known in isolation, their specific combination and integration into a closed-loop edge-IoT system that (a) distinguishes settled-sediment contamination from other contamination sources at the network edge, (b) triggers a selective partial flush (not full drain), and (c) verifies flush effectiveness by re-measurement, is not obvious to a person skilled in the art of water tank maintenance or IoT sensor systems. The closed-loop verification step in particular represents a non-trivial technical contribution that addresses a real problem (silent flush failure due to valve clogging or insufficient duration) that is not recognised in prior art; and the decision to execute the entire control loop on-device while serving the dashboard over the local network only — eliminating the cloud dependency universal in prior-art IoT water monitors — is an architecturally significant and non-obvious design choice.</p>
+<p><strong>Inventive Step / Non-Obviousness:</strong> While each individual component (ESP8266/ESP32, sensors, relay, contactor, solar panel, embedded web server) is known in isolation, their specific combination is not obvious to a person skilled in the art of water tank maintenance or IoT sensor systems. In particular: (a) the computational method distinguishes settled-sediment resuspension from source-water contamination at the network edge by correlating turbidity with level changes and trend slope, rather than using a single threshold; (b) the entire health-assessment loop runs on-device with a self-hosted dashboard, eliminating the cloud dependency universal in prior-art IoT water monitors; and (c) pump control is deliberately split into a separate unit with an opto-isolated relay, a motor-rated contactor and a forced-OFF fail-safe on link loss, satisfying a safety constraint that prior-art monitor-plus-app systems do not address.</p>
 </div>
 
 <div class="novelty-box">
@@ -376,13 +367,12 @@
 
 <ol>
   <li><strong>Independent System Claim (Claim 1):</strong> Broadest claim covering the complete integrated system. Drafted above.</li>
-  <li><strong>Dependent Claim — Closed-Loop Verification:</strong> The system of Claim 1, wherein the processor is configured to compute a flush effectiveness metric by comparing pre-flush and post-flush composite scores, and to issue a secondary flush command or a manual-cleaning alert when the flush effectiveness metric is below a predetermined threshold.</li>
-  <li><strong>Dependent Claim — Trend-Predictive Triggering:</strong> The system of Claim 1, wherein the composite score incorporates a trend component derived from linear regression analysis of historical turbidity and TDS readings over a period of 7 to 30 days, and wherein the flush actuation signal is generated when the trend component indicates a rate of degradation that would cause the instantaneous parameters to exceed safe thresholds within a predetermined number of days, even if the instantaneous parameters have not yet exceeded said thresholds.</li>
+  <li><strong>Dependent Claim — Trend-Predictive Alerting:</strong> The system of Claim 1, wherein the composite score incorporates a trend component derived from linear regression analysis of historical turbidity and TDS readings over a period of 7 to 30 days, and wherein the cleaning alert is generated when the trend component indicates a rate of degradation that would cause the instantaneous parameters to exceed safe thresholds within a predetermined number of days, even if the instantaneous parameters have not yet exceeded said thresholds.</li>
   <li><strong>Dependent Claim — Event Classification:</strong> The system of Claim 1, wherein the processor classifies water quality events into a plurality of event types based on correlated multi-parameter signatures, said event types comprising at least: gradual degradation, source-water contamination, and sludge resuspension, and wherein each event type produces a different TankScore contribution and a different recommended remediation action.</li>
-  <li><strong>Dependent Claim — Selective Partial Flush:</strong> The system of Claim 1, wherein the flush valve open duration is determined based on at least one of: tank volume, pre-flush turbidity level, and a user-configurable sludge thickness parameter, and wherein said open duration is selected to discharge no more than 15% of total tank volume.</li>
-  <li><strong>Dependent Claim — Edge/IoT Architecture:</strong> The system of Claim 1, wherein all scoring, trend analysis, event classification and flush decision logic execute locally on the on-device processor, with the full control loop operating without internet, cloud, subscription or account, and the local wireless interface being the sole user-facing data path. (Claim 7 above.)</li>
+  <li><strong>Dependent Claim — Mains Isolation and Fail-Safe:</strong> The system of Claim 1, wherein the pump-control enclosure comprises an optocoupler barrier between the controller and the relay coil, and a watchdog configured to de-energise the relay and stop the pump when communication with the tank unit is lost for more than 60 seconds or when the controller resets.</li>
+  <li><strong>Dependent Claim — Edge/IoT Architecture:</strong> The system of Claim 1, wherein all scoring, trend analysis, event classification and alerting logic execute locally on the on-device processor, with the full control loop operating without internet, cloud, subscription or account, and the local wireless interface being the sole user-facing data path. (Claim 7 above.)</li>
   <li><strong>Dependent Claim — Duty-Cycled Edge Sensing:</strong> The system of Claim 1, wherein the processor sleeps between measurement cycles and wakes on timer to energise a switched sensor rail, acquire, compute, decide and serve requests, enabling multi-week solar autonomy. (Claim 8 above.)</li>
-  <li><strong>Method Claim:</strong> A method of maintaining water quality in a storage tank using an IoT edge device, comprising: waking from low-power sleep; energising a sensor power rail; continuously measuring turbidity, TDS, pH, temperature, and water level in stored water; computing a composite water quality score with trend analysis at the edge; classifying the score into quality states; actuating a bottom-mounted flush valve when the score indicates sediment removal is needed; re-measuring water quality after flush completion; computing a flush effectiveness metric; logging the effectiveness metric locally on the device; serving the results on a local-network dashboard; and returning to sleep.</li>
+  <li><strong>Method Claim:</strong> A method of monitoring water quality in a storage tank and controlling a pump using an IoT edge device, comprising: waking from low-power sleep; energising a sensor power rail; measuring turbidity, TDS, pH, temperature and water level in stored water; computing a composite water quality score with trend analysis at the edge; classifying the score into quality states; raising a prioritised cleaning alert when the score indicates cleaning is due; publishing the score, state and level to a separate indoor controller; switching the pump through an opto-isolated relay and a motor-rated contactor in dependence on the published level and a manual override input; forcing the pump OFF when the link is lost for a predetermined timeout; logging the event locally on the device; serving the results on a local-network dashboard; and returning to sleep.</li>
 </ol>
 
 <p style="margin-top:20pt; font-size:9pt; color:#666; text-align:center;">— End of Patentability Disclosure —<br>This document is a confidential draft prepared for internal assessment purposes. It does not constitute legal advice.<br>Consult a registered Indian patent agent before filing.</p>

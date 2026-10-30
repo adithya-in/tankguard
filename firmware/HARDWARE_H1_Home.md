@@ -5,8 +5,8 @@ The H1 module lives **inside the house, next to the pump motor switch**. It:
 1. **Receives** tank data (level, turbidity, TDS, pH, temperature, TankScore) from the tank-side module over Wi-Fi.
 2. **Shows** status on a **1.8″ ST7735 TFT** (128×160, SPI) plus LEDs/buzzer and a small web page.
 3. **Optionally automates the pump motor** — switches it ON/OFF based on tank level.
-4. Has **two physical override buttons**: one to **flush the tank** and one to **override the motor**.
-5. Can send a **flush command** back to the tank-side valve.
+4. Has a **physical override button** for the **motor**.
+5. Controls the pump only; there is **no tank-side actuator** (draining/flushing is manual).
 
 > **SAFETY — read first.** The pump runs on **230 V AC mains**. The ESP8266 must never
 > touch mains. It drives an **opto-isolated relay**, which in turn drives a **motor-rated
@@ -23,9 +23,9 @@ The H1 module lives **inside the house, next to the pump motor switch**. It:
  ┌───────────────────────────┐   Wi-Fi     ┌──────────────────────────────────────┐
  │ ESP8266 + ADS1115         │  HTTP/ESP-  │ ESP8266 (H1)                         │
  │  turbidity/TDS/pH/temp    │  NOW/MQTT   │  ├─ ST7735 TFT status               │
- │  ultrasonic level         │ ──────────► │  ├─ FLUSH / MOTOR buttons           │
- │  12 V flush valve (M2)    │ ◄────────── │  ├─ buzzer / LEDs / web dashboard   │
- └───────────────────────────┘  commands   │  └─ opto-relay ──► contactor ──► PUMP│
+ │  ultrasonic level         │ ──────────► │  ├─ MOTOR button                    │
+ │                           │             │  ├─ buzzer / LEDs / web dashboard   │
+ └───────────────────────────┘             │  └─ opto-relay ──► contactor ──► PUMP│
                                             │       (5 V)         (230 V coil)     │
                                             └──────────────────────────────────────┘
                                                      │
@@ -90,8 +90,8 @@ This guide assumes **HTTP polling** (default) but the wiring is identical for al
 | Function | NodeMCU pin | GPIO | Notes |
 |---|---|---|---|
 | Relay IN | **D6** | GPIO12 | see level note below |
-| Button **FLUSH** | **D3** | GPIO0 | 10 kΩ pull-up to 3.3 V, button to GND |
 | Button **MOTOR** | **D4** | GPIO2 | 10 kΩ pull-up to 3.3 V, button to GND |
+| Spare | **D3** | GPIO0 | free (boot strap: must be HIGH at boot) |
 | Buzzer / LEDs | **D8** | GPIO15 | via NPN; LOW at boot = off |
 | Current sensor (optional) | A0 | ADC | ACS712 output (0–3.3 V safe) |
 
@@ -116,13 +116,12 @@ This guide assumes **HTTP polling** (default) but the wiring is identical for al
 
 | Button | Short press (<2 s) | Long press (≥2 s) |
 |---|---|---|
-| **FLUSH** | Request flush (tank side decides if it is safe) | **Force flush** (bypasses TankScore) |
 | **MOTOR** | Toggle pump ON/OFF (manual) | Toggle **Auto ⇄ Manual** mode |
 
-Safety rules for the buttons:
-- **FLUSH** is ignored if the tank link is down; valve auto-closes after a max of **90 s**.
+Safety rules for the button:
 - **MOTOR** manual override **auto-releases after 10 min** (configurable) to prevent dry-run.
-- Buttons are debounced in firmware; **do not hold either button at power-up** — D3/D4 are boot-strap pins (GPIO0/GPIO2).
+- The button is debounced in firmware; **do not hold it at power-up** — D4 is a boot-strap
+  pin (GPIO2).
 
 ---
 
@@ -171,10 +170,8 @@ Only enable auto mode if the tank sensor is reliable. Default logic:
 | Level < **LOW** setpoint (e.g. 20 %) and pump idle | Pump **ON** |
 | Level > **HIGH** setpoint (e.g. 95 %) | Pump **OFF** |
 | Level not rising after 60 s of running (optional current/level check) | Pump **OFF** + red LED + buzzer (dry-run / no-flow) |
-| TankScore poor and flush due | Send **flush** command to tank side (optional) |
 | **MOTOR** long-press → Manual | Automation disabled; button/web controls pump |
 | **MOTOR** short-press (Manual) | Toggle pump ON/OFF; auto-release after 10 min |
-| **FLUSH** short/long press | Send flush request / force flush to tank side |
 | Comms lost > 60 s | Pump **OFF** (fail-safe) + alert |
 
 > **Fail-safe rule:** if the ESP8266 loses contact with the tank, or reboots, the relay
@@ -191,8 +188,7 @@ Only enable auto mode if the tank sensor is reliable. Default logic:
   - live values + last-update age
   - Auto / Off / Manual buttons
   - Setpoints (LOW/HIGH %) editable
-  - "Flush now" button (sends command to tank side)
-  - same two override actions as the physical buttons
+  - same override action as the physical button
 
 ---
 
@@ -207,7 +203,6 @@ Only enable auto mode if the tank sensor is reliable. Default logic:
 | Contactor (no pump) | Relay on | contactor pulls in, releases |
 | Pump (electrician) | Auto mode, low level | pump starts; stops at HIGH |
 | Fail-safe | Unplug tank side | pump stops within 60 s, red alert |
-| **FLUSH** button | Short press / long press | tank side receives request / forced flush |
 | **MOTOR** button | Short press | pump toggles; auto-releases after 10 min |
 | **MOTOR** button | Long press | Auto ⇄ Manual toggles; TFT shows mode |
 | Boot safety | Power-cycle with pump wired | pump stays OFF; buttons not held |

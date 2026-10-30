@@ -5,12 +5,9 @@
  *   ST7735 1.8" TFT (128x160, SPI):
  *     SCLK=D5(14)  MOSI=D7(13)  CS=D0(16)  DC=D1(5)  RST=D2(4)
  *   Relay IN  = D6 (GPIO12)
- *   FLUSH btn = D3 (GPIO0)   (10k pull-up, button to GND)
  *   MOTOR btn = D4 (GPIO2)   (10k pull-up, button to GND)
  *
  * Behaviour:
- *   FLUSH short press -> request flush from tank side
- *   FLUSH long press  -> force flush
  *   MOTOR short press -> toggle pump (enters MANUAL)
  *   MOTOR long press  -> toggle AUTO <-> MANUAL
  *
@@ -98,8 +95,6 @@ bool linkOk = false;
 bool demo = false;
 unsigned long lastFetchMs = 0;
 unsigned long lastManualOnMs = 0;
-unsigned long flushMsgMs = 0;
-String flushMsg = "READY";
 
 #if USE_NRF24
 unsigned long lastRadioMs = 0;
@@ -111,7 +106,6 @@ float levelShown = 0;
 float scoreShown = 0;
 float wavePhase = 0;
 float impellerAngle = 0;
-float flushPhase = 0;
 int lastSeg = -1;
 int lastScoreInt = -1;
 bool lastLinkDraw = false;
@@ -125,23 +119,14 @@ int16_t prevTop[TANK_IW];
 int lastLvlInt = -1;
 int lastPumpDrawn = -1;
 int lastModeDrawn = -1;
-String lastFlushDrawn = "";
-bool flushShown = false;
-bool chevronsOn = false;
 
 // ------------------------------- buttons ----------------------------------
 #if USE_NRF24
-// Resistor ladder on A0: idle ~3.3 V, FLUSH ~1.05 V, MOTOR ~0.30 V.
-bool rawFlushPressed() {
-  int v = analogRead(BTN_ADC);
-  return v > 240 && v < 430;
-}
+// MOTOR button on A0: idle ~3.3 V, pressed ~0.30 V.
 bool rawMotorPressed() {
-  int v = analogRead(BTN_ADC);
-  return v < 160;
+  return analogRead(BTN_ADC) < 160;
 }
 #else
-bool rawFlushPressed() { return digitalRead(BTN_FLUSH) == LOW; }
 bool rawMotorPressed() { return digitalRead(BTN_MOTOR) == LOW; }
 #endif
 
@@ -156,7 +141,6 @@ struct Button {
   bool longEvt = false;
 };
 
-Button btnFlush = { rawFlushPressed };
 Button btnMotor = { rawMotorPressed };
 
 void pollButton(Button &b) {
@@ -253,37 +237,6 @@ bool fetchTank() {
   return true;
 }
 
-void sendFlush(bool force) {
-#if USE_NRF24
-  CmdPacket c;
-  c.magic = TG_MAGIC;
-  c.cmd = force ? 2 : 1;
-  radio.stopListening();
-  bool ok = radio.write(&c, sizeof(c));
-  radio.startListening();
-  flushMsg = ok ? (force ? "FORCED" : "SENT") : "NO LINK";
-  flushMsgMs = millis();
-#else
-  if (demo || WiFi.status() != WL_CONNECTED) {
-    flushMsg = "NO LINK";
-    flushMsgMs = millis();
-    return;
-  }
-  String url = String(TANK_FLUSH_URL) + (force ? "?force=1" : "?force=0");
-  WiFiClient client;
-  HTTPClient http;
-  http.setTimeout(1500);
-  if (http.begin(client, url)) {
-    int code = http.GET();
-    http.end();
-    flushMsg = (code == 200) ? (force ? "FORCED" : "SENT") : "ERR " + String(code);
-  } else {
-    flushMsg = "ERR";
-  }
-  flushMsgMs = millis();
-#endif
-}
-
 // ------------------------------- radio ------------------------------------
 #if USE_NRF24
 void radioBegin() {
@@ -311,9 +264,6 @@ void radioPoll() {
   linkOk = true;
   lastRadioMs = millis();
   lastFetchMs = lastRadioMs;
-
-  if (p.flush == 1)      flushMsg = "FLUSHING";
-  else if (p.flush == 2) flushMsg = "DONE";
 
   newPacket = true;
 }
@@ -361,16 +311,6 @@ void drawImpeller(int cx, int cy, float ang, uint16_t col) {
   tft.drawPixel(cx, cy, col);
 }
 
-void drawChevrons() {
-  int x = TANK_IX + TANK_IW / 2;
-  for (int i = 0; i < 3; i++) {
-    int y = 76 + (((int)flushPhase + i * 10) % 30);
-    uint16_t c = (i == 0) ? C_ACCENT : C_WATER_HI;
-    tft.drawLine(x - 6, y, x, y + 5, c);
-    tft.drawLine(x, y + 5, x + 6, y, c);
-  }
-}
-
 void drawTank() {
   float lv = levelShown;
   if (lv < 0) lv = 0;
@@ -405,17 +345,6 @@ void drawTank() {
   for (int p = 25; p <= 75; p += 25) {
     int ty = TANK_BOT - (int)((p / 100.0f) * TANK_IH);
     tft.drawFastHLine(TANK_IX + TANK_IW - 5, ty, 5, C_FRAME);
-  }
-
-  bool flushActive = (millis() - flushMsgMs < 4000);
-  if (flushActive) {
-    drawChevrons();
-    chevronsOn = true;
-  } else if (chevronsOn) {
-    // flush just ended: one clean repaint removes the chevrons
-    chevronsOn = false;
-    tft.fillRect(TANK_IX, TANK_IY, TANK_IW, TANK_IH, C_BG);
-    for (int i = 0; i < TANK_IW; i++) prevTop[i] = TANK_BOT;
   }
 
   int li = (int)(lv + 0.5f);
@@ -523,19 +452,6 @@ void drawBottom() {
     tft.setCursor(126, BAR_Y + 1);
     tft.print(mode == MODE_AUTO ? "AUTO" : "MAN");
   }
-
-  bool flushActive = (millis() - flushMsgMs < 4000);
-  if (flushActive && (!flushShown || flushMsg != lastFlushDrawn)) {
-    flushShown = true;
-    lastFlushDrawn = flushMsg;
-    tft.fillRect(64, BAR_Y + 1, 62, 9, C_BG);
-    tft.setTextColor(C_ACCENT, C_BG);
-    tft.setCursor(66, BAR_Y + 1);
-    tft.print(flushMsg);
-  } else if (!flushActive && flushShown) {
-    flushShown = false;
-    tft.fillRect(64, BAR_Y + 1, 62, 9, C_BG);
-  }
 }
 
 void animate() {
@@ -547,7 +463,6 @@ void animate() {
   scoreShown += (data.score - scoreShown) * 0.18f;
   wavePhase += 0.28f;
   if (pumpOn) impellerAngle += 0.55f;
-  if (millis() - flushMsgMs < 4000) flushPhase += 0.9f;
 #endif
   drawTank();
   drawDial();
@@ -563,15 +478,6 @@ void applyAutoLogic() {
   } else if (pumpOn && data.level >= LEVEL_HIGH) {
     setPump(false);
   }
-}
-
-void handleFlush(bool force) {
-  flushMsg = "SENDING";
-  flushMsgMs = millis();
-  flushPhase = 0;
-  sendFlush(force);
-  flushMsgMs = millis();
-  flushPhase = 0;
 }
 
 void handleMotorShort() {
@@ -603,7 +509,6 @@ void setup() {
 #endif
 
 #if !USE_NRF24
-  pinMode(BTN_FLUSH, INPUT_PULLUP);
   pinMode(BTN_MOTOR, INPUT_PULLUP);
 #endif
 
@@ -635,11 +540,8 @@ void setup() {
 void loop() {
   unsigned long now = millis();
 
-  pollButton(btnFlush);
   pollButton(btnMotor);
 
-  if (btnFlush.shortEvt) { btnFlush.shortEvt = false; handleFlush(false); }
-  if (btnFlush.longEvt)  { btnFlush.longEvt  = false; handleFlush(true);  }
   if (btnMotor.shortEvt) { btnMotor.shortEvt = false; handleMotorShort(); }
   if (btnMotor.longEvt)  { btnMotor.longEvt  = false; handleMotorLong();  }
 

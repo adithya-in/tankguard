@@ -63,13 +63,11 @@ nRF means moving a few signals. Two options:
 | DS18B20 DQ | **D4** | 2 | **moved from D6**, 4.7 kΩ pull-up |
 | JSN-SR04T TRIG | **TX** | 1 | **moved from D7** |
 | JSN-SR04T ECHO | **RX** | 3 | **moved from D5**, 1k/1k divider |
-| Valve gate | D8 | 15 | unchanged, 10 kΩ pulldown |
 
 Consequences:
 - **Serial debug is lost** (TX/RX now drive the ultrasonic).
 - GPIO0 (CSN) must be HIGH at boot → the 10 kΩ pull-up satisfies it.
 - GPIO2 (DS18B20) must be HIGH at boot → the 4.7 kΩ pull-up satisfies it.
-- GPIO15 (valve) must be LOW at boot → MOSFET pulldown satisfies it.
 
 ### 3.2 Home side
 
@@ -82,23 +80,22 @@ Consequences:
 | nRF CSN | D3 | 0 | new, **10 kΩ pull-up to 3V3** |
 | TFT CS / DC / RST | D0 / D1 / D2 | 16 / 5 / 4 | unchanged |
 | Relay IN | **D8** | 15 | **moved from D6**; use an **active-HIGH** relay module |
-| FLUSH / MOTOR buttons | **A0** | ADC | shared **resistor ladder** (2 buttons on one pin) |
+| MOTOR button | **A0** | ADC | **moved from D4** (single button on A0) |
 
 Consequences:
 - The relay moves to GPIO15, so it **must be active-HIGH with a pulldown**
   (GPIO15 is low at boot → pump OFF). An active-LOW module needs an inverter.
-- Both buttons move to a resistor ladder on A0; firmware reads two voltage bands.
+- The MOTOR button moves to A0; firmware reads the pressed voltage band.
 
-### 3.3 Button ladder (home, A0)
+### 3.3 Button wiring (home, A0)
 
 ```
 3V3 ──[10k]──┬── A0
              │
-      FLUSH ─┴─[4.7k]── GND     (pressed: ~1.05 V)
-      MOTOR ───[1.0k]── GND     (pressed: ~0.30 V)
+      MOTOR ──┴─[1.0k]── GND     (pressed: ~0.30 V)
 ```
-Idle ≈ 3.3 V. Firmware treats: >2.6 V = none, 0.7–1.6 V = FLUSH, <0.55 V = MOTOR
-(adjust after measuring).
+Idle ≈ 3.3 V, pressed <0.55 V. Firmware treats `<0.52 V` as pressed
+(adjust the threshold after measuring).
 
 ---
 
@@ -122,19 +119,12 @@ no rewiring of the sensor or display boards, and serial debug can be kept on the
 struct __attribute__((packed)) TankPacket {
   uint16_t magic;   // 0x5447
   float score, level, ph, turb, tds, temp;
-  uint8_t flush;    // 0 idle, 1 running, 2 done
-  uint8_t valve;    // 0/1
-  uint16_t crc;     // optional
-};
-struct __attribute__((packed)) CmdPacket {
-  uint16_t magic;   // 0x5447
-  uint8_t cmd;      // 1 = flush, 2 = force flush
 };
 ```
 
 - Tank writes `TankPacket` every sample (5 s).
-- Home writes `CmdPacket` when FLUSH is pressed.
-- Use a fixed 32-byte payload, auto-ack, and a short RX window on the tank.
+- One-way link: the home unit only receives; there is no command channel.
+- Use a fixed payload, auto-ack, and CRC 2 bytes.
 
 ---
 
@@ -142,13 +132,12 @@ struct __attribute__((packed)) CmdPacket {
 
 | Tank side (`m1_tank`) | Home side (`h1_home`) |
 |---|---|
-| Listens for commands, sends a `TankPacket` every `SAMPLE_MS` (5 s) | Listens for packets, updates the TFT on each one |
-| FLUSH command → normal flush; FORCE → force flush | FLUSH button → sends `CmdPacket` (short=1, long=2) |
+| Sends a `TankPacket` every `SAMPLE_MS` (5 s) | Listens for packets, updates the TFT on each one |
 | Serial debug off, Wi-Fi/HTTP server off | Wi-Fi/HTTP off; DEMO off |
-| Link loss: no packets for 15 s → `linkOk=false` | Pump is forced OFF after 60 s without a packet |
+| — | Link loss: no packets for 15 s → `linkOk=false`; pump forced OFF after 60 s |
 
-The radio is half-duplex: each side writes to the same `"TANK1"` pipe and listens
-between sends. Command latency is at most one sample interval (5 s).
+The link is one-way (tank → home). The home unit still controls its own pump relay
+locally; nothing is sent back to the tank.
 
 ---
 
@@ -160,4 +149,4 @@ between sends. Command latency is at most one sample interval (5 s).
 | You want to keep the sensor wiring untouched | **Option B** — UART bridges |
 | Range through thick walls is the main problem | Use **LoRa SX1278 (433 MHz)** instead; it is SPI too but reaches much farther |
 
-None of this is enabled in the current firmware; the shipped build is Wi-Fi.
+The default build is Wi-Fi; enable nRF by setting `USE_NRF24=1` in both configs.

@@ -62,7 +62,7 @@
   <h1>TankGuard</h1>
   <p class="subtitle">Smart Water Tank Monitor — Know Exactly When to Clean Your Tank</p>
   <div class="tags">
-    <span>Solar Powered</span><span>No Internet Needed</span><span>Phone Dashboard</span><span>Auto Flush Valve</span>
+    <span>Solar Powered</span><span>No Internet Needed</span><span>Phone Dashboard</span><span>Auto Pump Control</span>
   </div>
 </header>
 
@@ -128,7 +128,7 @@
     <li><strong>Before:</strong> Clean every 6 months (waste effort) or wait for bad smell (too late)</li>
     <li><strong>After:</strong> Clean <em>exactly when needed</em> — get an alert on your phone</li>
     <li><strong>Before:</strong> Climb the tank, open the lid, guess</li>
-    <li><strong>After:</strong> Open phone → see TankScore → tap "Flush Sludge" → done</li>
+    <li><strong>After:</strong> Open phone → see TankScore → pump runs only when needed</li>
     <li><strong>No WiFi? No internet? No problem.</strong> Works completely offline. Your data never leaves your home.</li>
   </ul>
 </div>
@@ -161,19 +161,17 @@
   <tr class="totalrow"><td colspan="3">Core Kit Total</td><td class="num"><strong>₹15,500</strong></td></tr>
 </table>
 
-<h3>Sludge Flush Module (M2) — Auto-Clean the Tank Bottom</h3>
-<p><strong>NEW:</strong> When TankScore says <code>CLEAN NOW</code>, press "Flush Sludge" on your phone. A 1-inch valve at the tank bottom opens for 30–120 seconds, blasting out settled dirt <strong>without emptying the tank</strong>. Manual bypass included.</p>
+<h3>Auto Pump Control Module (M2) — Safe Pump Automation</h3>
+<p><strong>NEW:</strong> A home-side unit next to the motor switch shows live tank status and switches the pump through an <strong>opto-relay + motor-rated contactor</strong> — the ESP8266 never touches mains. One button overrides the pump; a crash or lost link forces the pump <strong>OFF</strong>.</p>
 
 <table class="avoidbrk">
-  <caption>Sludge Flush Module — ₹3,970</caption>
+  <caption>Auto Pump Control Module — ₹1,080</caption>
   <tr><th>Part</th><th>What It Does</th><th class="center">Qty</th><th class="num">Cost</th></tr>
-  <tr><td><strong>1″ Brass Solenoid Valve</strong></td><td>Food-grade, high-flow, normally-closed — opens on command</td><td class="center">1</td><td class="num"><strong>₹2,500</strong></td></tr>
-  <tr><td>1″ PVC Drain Kit</td><td>Reinforced hose, manual bypass valve, unions</td><td class="center">1</td><td class="num">₹450</td></tr>
-  <tr><td>Stainless Mounting Bracket</td><td>SS304, vibration-proof tank wall mount</td><td class="center">1</td><td class="num">₹180</td></tr>
-  <tr><td>Valve Driver Board</td><td>Safe 12V switching from main unit</td><td class="center">1</td><td class="num">₹95</td></tr>
-  <tr><td>Outdoor Cable (5m) + Waterproof Connectors</td><td>IP68 rated, UV resistant</td><td class="center">1</td><td class="num">₹220</td></tr>
-  <tr><td>Integration & Testing</td><td>Valve wiring, logic config, flush calibration</td><td class="center">1</td><td class="num">₹525</td></tr>
-  <tr class="totalrow"><td colspan="3">Flush Module Total</td><td class="num"><strong>₹3,970</strong></td></tr>
+  <tr><td><strong>Opto-isolated Relay Module</strong></td><td>5 V, 10 A / 250 V, isolates the ESP8266 from mains</td><td class="center">1</td><td class="num"><strong>₹180</strong></td></tr>
+  <tr><td>Motor-rated Contactor</td><td>AC-3, 9 A, switches the pump safely</td><td class="center">1</td><td class="num">₹450</td></tr>
+  <tr><td>1.8″ ST7735 TFT</td><td>Live level, TankScore, pump/mode status</td><td class="center">1</td><td class="num">₹300</td></tr>
+  <tr><td>Enclosure, terminals, MCB</td><td>Separate LV/mains compartments, fusing</td><td class="center">1</td><td class="num">₹150</td></tr>
+  <tr class="totalrow"><td colspan="3">Pump Control Module Total</td><td class="num"><strong>₹1,080</strong></td></tr>
 </table>
 
 <h3>Total Project Cost (Parts Only)</h3>
@@ -182,12 +180,12 @@
   <caption>Complete System Pricing — Parts Only</caption>
   <tr><th>Module</th><th class="num">Cost</th></tr>
   <tr><td>Core Monitor (M1)</td><td class="num">₹15,500</td></tr>
-  <tr><td>Sludge Flush Valve (M2)</td><td class="num">₹3,970</td></tr>
-  <tr class="totalrow"><td><strong>Total Parts Cost</strong></td><td class="num"><strong>₹19,470</strong></td></tr>
+  <tr><td>Auto Pump Control (M2)</td><td class="num">₹1,080</td></tr>
+  <tr class="totalrow"><td><strong>Total Parts Cost</strong></td><td class="num"><strong>₹16,580</strong></td></tr>
 </table>
 
 <div class="note">
-<strong>Note:</strong> ₹19,470 is parts-only (excludes GST, freight, installation). 1″ brass solenoid valve (₹2,500) handles high flow for effective sludge removal — smaller ½″ valves clog. Optional Pump Control module (M3) adds ₹1,080 if needed later.
+<strong>Note:</strong> ₹16,580 is parts-only (excludes GST, freight, installation). The pump module is deliberately isolated: opto-relay → contactor → pump, with fail-safe OFF on crash or link loss. Mains wiring by a licensed electrician.
 </div>
 
 <div class="pagebreak"></div>
@@ -204,9 +202,9 @@
   <tr><td>3–4</td><td>Calibrate each sensor with standard solutions (pH 4/7/9, TDS, turbidity)</td><td>Each sensor accurate within 2%</td></tr>
   <tr><td>5</td><td>Build solar+battery power; program deep-sleep (wakes every 3 hours)</td><td>Runs 48+ hours on battery alone</td></tr>
   <tr><td rowspan="4"><strong>Week 2</strong></td><td>6–7</td><td>Build TankScore brain: GOOD / WATCH / CLEAN NOW logic + trend detection</td><td>Brain correctly flags test water samples</td></tr>
-  <tr><td>8–9</td><td>Build phone dashboard: gauges, charts, "Flush Sludge" button, "Tank Cleaned" button</td><td>Open <code>tankmon.local</code> on phone — works offline</td></tr>
-  <tr><td>10</td><td>Mount in weatherproof box; install on real tank; connect 1″ flush valve</td><td>Fully installed, solar panel angled</td></tr>
-  <tr><td>11–13</td><td>Real-world test: 3-hour readings, watch TankScore change, test flush valve</td><td>72 hrs data; flush works; score matches reality</td></tr>
+  <tr><td>8–9</td><td>Build phone dashboard: gauges, charts, pump status, "Tank Cleaned" button</td><td>Open <code>tankmon.local</code> on phone — works offline</td></tr>
+  <tr><td>10</td><td>Mount in weatherproof box; install on real tank; wire relay → contactor</td><td>Fully installed, solar panel angled</td></tr>
+  <tr><td>11–13</td><td>Real-world test: 3-hour readings, watch TankScore change, test pump start/stop</td><td>72 hrs data; pump control works; score matches reality</td></tr>
   <tr><td>14</td><td>Final report, user guide, live demo</td><td><strong>Working system ready to use</strong></td></tr>
 </table>
 
@@ -217,12 +215,12 @@
     <li><strong>Sensors drift?</strong> Calibrated Day 3–4; monitored daily during 72-hr test</li>
     <li><strong>Not enough sun?</strong> Battery sized for 3 weeks without sun; tested Day 5</li>
     <li><strong>WiFi weak at tank?</strong> Device creates its own hotspot as fallback; data never lost (stored locally)</li>
-    <li><strong>Valve clogs?</strong> 1″ bore chosen for sludge; manual bypass valve always available</li>
+    <li><strong>Pump safety?</strong> Opto-relay + contactor; pump forced OFF on crash or lost link</li>
   </ul>
 </div>
 
 <div class="highlight">
-  <strong>In 14 days you get:</strong> A solar-powered tank monitor (₹13,550) + 1″ auto-flush valve (₹3,445) = <strong>₹16,995 parts</strong> → <strong>~₹20,500 installed</strong>. Phone dashboard works offline. Tells you <em>exactly when to clean</em> and lets you flush sludge with one tap. No cloud. No subscription. No guesswork.
+  <strong>In 14 days you get:</strong> A solar-powered tank monitor + a safe home pump controller = <strong>₹16,580 parts</strong>. Phone dashboard works offline. Tells you <em>exactly when the water needs attention</em> and runs the pump only when needed. No cloud. No subscription. No guesswork.
 </div>
 
 <p class="footnote">Prepared: October 2026 · For project submission · Prices indicative (Indian market), subject to vendor confirmation</p>
