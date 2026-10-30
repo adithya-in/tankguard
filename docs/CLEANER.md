@@ -149,8 +149,12 @@ M1 tank unit (ESP8266, solar)            cleaner controller (ESP-class, own powe
 
 ### Safety rules this mechanism needs (in addition to the repo's existing ones)
 
-1. **Cable twist.** Continuous rotation winds the brush cables. Either a slip
-   ring through the pipe, or constrain the sweep to **±170°** with a cable loop.
+1. **No continuous rotation — oscillate.** The water hose and the brush wires
+   run down the pipe, so the arm must reverse rather than wind up. It sweeps
+   between **−L and +L** and returns to neutral every cycle. Coverage of the full
+   circle then requires **2·L·N ≥ 360°** (N arms): one arm needs **±180°**, two
+   arms need only ±90° (half the twist), three ±60°. Anything less leaves a
+   dead sector spanning every radius — measured in section 7.
 2. **Stall detection.** Cut brush power within ~200 ms of a jam — a stalled
    motor in water is a cooked motor and a fire risk.
 3. **Water interlock.** Never spin the brushes dry: require `level ≥ 15 %`
@@ -205,38 +209,58 @@ default 30°; dwell 6 s; brush current over cap for 300 ms → `FAULT:stall`.
 ## 7. Swept-area model (`tools/swept_area.py`)
 
 A small matplotlib model that stamps the actual brush discs as the arm moves, so
-coverage is measured rather than assumed.
+coverage is measured rather than assumed. It models the **no-continuous-rotation
+constraint**: the arm oscillates between −L and +L (the hose and wires unwind on
+the way back), and the tool reports the resulting twist and any dead sector.
 
 ```
-python tools/swept_area.py                          # spiral, on screen
-python tools/swept_area.py --mode concentric
-python tools/swept_area.py --brush 4                # ⌀8 heads: shows the gap
-python tools/swept_area.py --pump 25                # draw the ⌀5 cup at r = 25
+python tools/swept_area.py                          # 1 arm, +/-180, concentric
+python tools/swept_area.py --arms 2 --limit 90      # two arms, half the twist
+python tools/swept_area.py --limit 170              # shows the dead sector
+python tools/swept_area.py --mode spiral --osc 3
+python tools/swept_area.py --brush 4                # dia-8 heads: shows the gap
+python tools/swept_area.py --pump 25                # draw the dia-5 cup at r = 25
 python tools/swept_area.py --save sweep.gif --still sweep-final.png
 ```
 
-Measured (⌀10 brushes, tank r 50, arm 20 + 20):
+### Coverage needs 2·L·N ≥ 360°
+
+| arms | sweep | hose twist each way | coverage |
+|---|---|---|---|
+| 1 | ±180° | ±180° | **78.9 %** — full circle |
+| 2 | ±90° | ±90° | **78.9 %** — full circle |
+| 3 | ±60° | ±60° | full circle |
+| 1 | ±170° | ±170° | 77.7 % — **20° dead sector** |
+
+A single arm at ±180° is the only one-arm option that reaches every angle. Any
+less leaves a wedge that spans all radii, so no number of radial passes fixes
+it — measured loss 1.2 points (the brush radius softens the wedge edges). If
+±180° of hose twist is too much, **add arms, not sweep**: two opposite arms halve
+the twist and keep full coverage.
+
+### Pattern under oscillation
 
 | pattern | coverage | note |
 |---|---|---|
-| spiral, 3 turns + dwell at each end | **78.9 %** | smooth motion, one continuous pass |
-| concentric, passes at r = 20/28/36/40 | **78.9 %** | dwells at fixed radii; simpler to command |
-| either, with ⌀8 brushes | 72.3 % | **2 cm gap** opens between the two brush tracks (r 14–16) |
+| concentric, passes at r = 20 / 28 / 36 / 40 | **78.9 %** | one oscillation per radius — the recommended cycle |
+| spiral, 3 oscillations + dwell at each end | 77.0 % | works, but no better than concentric |
+| spiral, 2 oscillations | 73.1 % | pitch 10 cm = band width → gaps |
+| either, with dia-8 brushes | 72.3 % | **2 cm gap** between the two brush tracks (r 14–16) |
 
 Three rules fall out of the model:
 
-1. **Brush radius ≥ 5 cm (⌀10)** — the inner track covers r 5–15 and the outer
+1. **Brush radius ≥ 5 cm (dia 10)** — the inner track covers r 5–15 and the outer
    starts at 15; a smaller head leaves an unscrubbed ring between them
    (`10 − 2·brush_radius` cm wide).
 2. **Overlap the tracks.** Passes spaced at exactly the band width (2 × brush
-   radius) touch tangentially and leave scalloped rings — visible in the first
-   version of the concentric render at r = 15 / 25 / 35. Spacing 1.6 × brush
+   radius) touch tangentially and leave scalloped rings. Spacing 1.6 × brush
    radius removes them.
-3. **Dwell a full turn at r = 20 and at r = 40.** A monotonic spiral visits each
-   extreme radius at one angle only, costing ~6 points of coverage (measured:
-   64.3 % before the dwells, 78.9 % after).
+3. **Dwell at both extreme radii.** A monotonic spiral visits each extreme at a
+   single angle, costing ~6 points (measured: 64.3 % before the dwells, 78.9 %
+   after).
 
-Renders: [`sweep-spiral.png`](sweep-spiral.png) · [`sweep-concentric.png`](sweep-concentric.png)
+Renders: [`sweep-1arm.png`](sweep-1arm.png) · [`sweep-2arms.png`](sweep-2arms.png) ·
+[`sweep-dead-sector.png`](sweep-dead-sector.png)
 
 ---
 
