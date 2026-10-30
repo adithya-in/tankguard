@@ -37,27 +37,32 @@
 #define PIN_ESTOP     19   // LOW = loop intact, HIGH = pressed / broken
 #define PIN_LID       21   // LOW = lid closed, HIGH = open / broken
 
-// ---- drivetrain (NO gearbox — PWM in time, not amplitude) ------------------
-// Motors: 12 V DC, 350 rpm rated (both joints) = 2100 deg/s direct drive.
-// A loaded DC motor stalls below ~15 % duty, and 45 deg/s would need ~2 %, so
-// continuous PWM cannot produce a cleaning sweep. Instead the joint is driven
-// in full-duty BURSTS with a dwell between them:
+// ---- drivetrain (TJX28ZRM / ZX6091 — RS395 12 V + 21.5:1 planetary) --------
+// Datasheet (tyhemotors.com/tjx28zrm), 12 V, ratio 21.5, 2 stages, 72 % eff:
+//   no-load 348.8 rpm · rated 279 rpm · rated torque 11.3 N.cm
+//   motor stall 21.9 mN.m -> ~34 N.cm at the output · rated 0.62 A · stall 4.5 A
 //
-//   drive BURST_MS at 255  ->  the arm advances DEG_PER_BURST degrees
-//   coast PAUSE_MS         ->  brush dwells (which also scrubs better)
+// 279 rpm loaded is still 1674 deg/s, and a loaded DC motor stalls below ~15 %
+// duty, so the sweep is PWM in TIME: a full-duty burst, then a coast.
 //
-// average speed = DEG_PER_BURST / (BURST_MS + PAUSE_MS)
-// with 10 deg / (15 + 200) ms that is ~46 deg/s, i.e. the planner's 45 deg/s.
+// Torque reality: the arm sweeps horizontally, so gravity is a bearing load.
+// The joint fights brush friction (~24 N.cm at 0.2 kg pressure), water drag
+// (~5-10) and inertia (~10-20). That lands at ~30 N.cm against 11.3 rated /
+// ~34 stall — MARGINAL. Keep the brush head light (<= 0.2 kg) and expect
+// 15-25 deg/s loaded, i.e. a 90-130 s cycle, not the planner's 44 s.
 //
-// Every pulse starts from rest, so it is far more repeatable than running the
-// motor at 2 % duty. Calibrate DEG_PER_BURST (it includes the coast) on the
-// bench, in water, brush loaded.
-#define MOTOR_RPM_RATED  350.0f
+// The same motor is available with an optional 12 PPR magnetic encoder (A&B):
+// 12 * 4 * 21.5 = 1032 counts/rev = 0.35 deg/count. Order it if you can — it
+// turns this dead-reckoned controller into a closed-loop one.
+#define MOTOR_RPM_RATED  279.0f
+#define MOTOR_RPM_NOLOAD 348.8f
+#define MOTOR_TORQUE_NCM 11.3f
+#define MOTOR_STALL_NCM  34.0f
 #define BURST_DUTY       255
-#define BURST_MS         15
+#define BURST_MS         250
 #define PAUSE_MS         200
-#define SH_DEG_PER_BURST 10.0f
-#define EL_DEG_PER_BURST 10.0f
+#define SH_DEG_PER_BURST 8.0f
+#define EL_DEG_PER_BURST 8.0f
 // Belt/pulley or friction transmission would be a reduction too — out of scope
 // here: the build is direct drive with no gearbox.
 

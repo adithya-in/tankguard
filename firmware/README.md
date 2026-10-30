@@ -136,21 +136,21 @@ mitigation, not a bigger number in the planner.
 | e-stop | 19 | NC loop, HIGH = unsafe (fail-safe) |
 | lid switch | 21 | NC to GND, HIGH = open |
 
-### Drivetrain (12 V, 350 rpm, **no gearbox**)
+### Drivetrain (TJX28ZRM — RS395 12 V + 21.5:1, 11.3 N·cm rated)
 
-350 rpm is **2,100 °/s** direct drive; the sweep needs 45 °/s, and a loaded DC
-motor stalls below ~15 % duty, so continuous PWM cannot do it. The controller
-modulates **in time**: a 15 ms full-duty burst, then 200 ms of coast. Each burst
-advances ~10°, so the average is ~46 °/s — the planner's speed — with every
-pulse at full torque, and the dwell helps the brush.
+Datasheet: 348.8 rpm no-load, **279 rpm rated**, **11.3 N·cm rated / ~34 N·cm
+stall**, 0.62 A rated / 4.5 A stall. 279 rpm at the joint is 1,674 °/s, so the
+controller pulses: **250 ms full duty, 200 ms coast**, ~8° per burst.
 
-**Torque is the gate.** The joint needs ~40–70 kg·cm (≈20 kg·cm to hold a 1 kg
-arm at 20 cm, plus brush drag). A small 350 rpm motor makes 2–5 kg·cm — check
-the stall torque before building; if it is short, no PWM scheme fixes it.
+**Torque is marginal, by design of the motor:** the joint needs ~30 N·cm (brush
+friction ~24 at 0.2 kg + water 5–10 + inertia 10–20) against 11.3 rated / 34
+stall. Keep the **brush head ≤ 0.2 kg**, expect **15–25 °/s loaded** and a
+**90–130 s cycle**. Order the **12 PPR encoder option** if you can — 0.35°/count
+turns this into a closed-loop controller.
 
 ### Calibration
 
-1. `BURST_DUTY` stays 255; `BURST_MS` / `PAUSE_MS` set the rhythm (15 / 200 ms).
+1. `BURST_DUTY` stays 255; `BURST_MS` / `PAUSE_MS` set the rhythm (250 / 200 ms).
 2. Measure the **advance per burst**: command a long move (e.g. 180°), count the
    pulses the firmware prints, and divide by the angle the arm actually covered
    — the coast is included in that number.

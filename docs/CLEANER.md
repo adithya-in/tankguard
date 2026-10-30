@@ -147,35 +147,42 @@ M1 tank unit (ESP8266, solar)            cleaner controller (ESP-class, own powe
    brushes through the pipe with a shaft — no motors in water, no glands to
    trust. The second is strongly preferred for potable water.
 
-### Drivetrain — 12 V, 350 rpm motors, **no gearbox**
+### Drivetrain — TJX28ZRM (RS395 12 V + 21.5:1 planetary)
 
-Direct drive at 350 rpm is 2,100 °/s, while the sweep needs 45 °/s, and a loaded
-DC motor stalls below ~15 % duty — so **continuous PWM cannot produce a cleaning
-sweep** (45 °/s would be ~2 % duty). The controller therefore modulates in
-*time*, not amplitude:
+Datasheet (`tyhemotors.com/tjx28zrm`), 12 V, 21.5:1, two stages, 72 % efficiency:
 
-| phase | value |
+| spec | value |
 |---|---|
-| burst | 15 ms at full duty (255) |
-| coast / dwell | 200 ms, bridge off |
-| advance per burst | ~10° (calibrated, includes the coast) |
-| average speed | 10° / 0.215 s ≈ **46 °/s** — the planner's speed |
+| no-load / rated speed (output) | **348.8 / 279 rpm** |
+| rated torque | **11.3 N·cm** |
+| stall torque (output) | **~34 N·cm** |
+| rated / stall current | 0.62 A / 4.5 A at 12 V |
 
-Every pulse starts from rest, so it is far more repeatable than 2 % duty, and the
-dwell actually scrubs better than a continuous skim. Cycle motion is
-1,991° / 10° ≈ 199 bursts ≈ **43 s**, plus three re-homes.
+279 rpm loaded is **1,674 °/s**; the sweep needs 45 °/s, i.e. 2.7 % duty — below
+where a loaded DC motor turns. The controller therefore pulses: **250 ms at full
+duty, then 200 ms of coast**, ~8° per burst (calibrate).
 
-**Torque is the open question.** Holding a ~1 kg arm with its CoM ~20 cm out
-takes ~20 kg·cm; brush drag in water adds 20–50 kg·cm, so the joint needs
-**~40–70 kg·cm**. A bare 350 rpm 12 V motor makes a few hundred g·cm and a small
-350 rpm gearmotor 2–5 kg·cm — both are 10–20× short. Direct drive only works if
-the motors are large, high-torque units at that speed (a 350 rpm worm gearmotor
-in the 40 kg·cm class). **Check the stall torque before building**: burst mode
-raises the starting torque over low-duty running, but it cannot create torque
-that the motor does not have.
+**Torque verdict: marginal.** The arm sweeps horizontally, so gravity is a
+bearing load, not drive torque. The joint fights:
 
-If the motors turn out to be small, the choices are: a heavier-duty motor, or a
-reduction after all (gear, belt or friction wheel — all are transmissions).
+| load | estimate |
+|---|---|
+| brush friction (0.2 kg pressure, μ 0.3, r 0.40 m) | ~24 N·cm |
+| water drag | ~5–10 N·cm |
+| inertia per burst | ~10–20 N·cm |
+| **total** | **~30 N·cm** |
+
+Against **11.3 rated / ~34 stall** that is between the two limits: the motor will
+move the arm, but loaded and warm. Consequences:
+
+- **brush head ≤ 0.2 kg** — at 0.5 kg the friction alone (~60 N·cm) exceeds stall;
+- expect **15–25 °/s loaded**, so the cycle is **90–130 s**, not the planner's 44 s;
+- bursts keep it out of continuous stall (4.5 A would cook a 28 mm motor).
+
+**Order the encoder option.** The same motor is sold with a 12 PPR magnetic
+encoder (A&B, 5–24 V): 12 × 4 × 21.5 = **1,032 counts/rev ≈ 0.35 °/count** — enough
+to close the position loop and execute the planner's arcs instead of
+dead-reckoning them.
 
 ### Safety rules this mechanism needs (in addition to the repo's existing ones)
 
