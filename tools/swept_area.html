@@ -92,8 +92,8 @@
     <div class="group">
       <span class="group-title">Planner</span>
       <label class="ctl">
-        <span class="ctl-head">Band overlap <output id="o-margin">0.0 cm</output></span>
-        <input id="i-margin" type="range" min="0" max="3" step="0.25" value="0">
+        <span class="ctl-head">Band overlap <output id="o-margin">0.3 cm</output></span>
+        <input id="i-margin" type="range" min="0" max="3" step="0.1" value="0.3">
       </label>
       <label class="ctl">
         <span class="ctl-head">Joint speed <output id="o-jointspeed">45°/s</output></span>
@@ -163,7 +163,7 @@ const px = (cm) => (cm + LIM) * scale;
 const deg = (r) => (r * 180) / Math.PI;
 const rad = (d) => (d * Math.PI) / 180;
 
-const state = { l1: 180, l2: 180, brush: 8, t1: 0, t2: 0, traced: 0, running: false, traceDur: 12, margin: 0, jointSpeed: 45, planPath: [] };
+const state = { l1: 180, l2: 180, brush: 8, t1: 0, t2: 0, traced: 0, running: false, traceDur: 12, margin: 0.3, jointSpeed: 45, planPath: [] };
 
 const inTank = new Uint8Array(N * N);
 const tipOk = new Uint8Array(N * N);
@@ -321,6 +321,20 @@ function draw() {
     ctx.restore();
   }
 
+  // ghost of the rest pose, so the park position is part of the picture
+  const hp = parkPose();
+  const ha1 = rad(hp.t1), ha2 = rad(hp.t1 + hp.t2);
+  ctx.save();
+  ctx.setLineDash([2, 4]);
+  ctx.strokeStyle = "rgba(138,144,153,.8)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(px(0), px(0));
+  ctx.lineTo(px(L1 * Math.cos(ha1)), px(L1 * Math.sin(ha1)));
+  ctx.lineTo(px(L1 * Math.cos(ha1) + L2 * Math.cos(ha2)), px(L1 * Math.sin(ha1) + L2 * Math.sin(ha2)));
+  ctx.stroke();
+  ctx.restore();
+
   const p = tipPosition();
   ctx.lineCap = "round"; ctx.strokeStyle = "#14171b";
   ctx.lineWidth = 4.5;
@@ -468,10 +482,14 @@ document.getElementById("reset").addEventListener("click", () => {
 -------------------------------------------------------------------------- */
 
 function planRings(b, margin) {
-  const span = L1 + L2 - b; // from the first ring to full extension
-  const n = Math.max(2, Math.ceil(span / (2 * b - margin)) + 1);
+  const step = Math.max(0.5, 2 * b - margin); // band width minus the requested overlap
   const rings = [];
-  for (let k = 0; k < n; k++) rings.push(b + (span * k) / (n - 1));
+  for (let r = b; r <= L1 + L2 + 1e-6; r += step) rings.push(r);
+  // If the ladder falls short of full extension by less than half a step, stop
+  // there: adding one more ring would stack a huge overlap on the wall band.
+  const last = rings[rings.length - 1];
+  const shortfall = L1 + L2 - last;
+  if (shortfall > 1e-6 && shortfall >= step * 0.5) rings.push(L1 + L2);
   return rings;
 }
 
@@ -579,7 +597,15 @@ function orderArcs(arcs, startPose) {
 
   const full = size - 1;
   let best = INF, bi = 0, bo = 0;
-  for (let i = 0; i < n; i++) for (let o = 0; o < 2; o++) if (dp[full][i][o] < best) { best = dp[full][i][o]; bi = i; bo = o; }
+  for (let i = 0; i < n; i++) {
+    for (let o = 0; o < 2; o++) {
+      if (!isFinite(dp[full][i][o])) continue;
+      const end = o ? arcs[i][0] : arcs[i][arcs[i].length - 1];
+      // the cycle must return to the rest pose, so price that leg in
+      const total = dp[full][i][o] + d(end, startPose);
+      if (total < best) { best = total; bi = i; bo = o; }
+    }
+  }
 
   const seq = [];
   let mask = full, i = bi, o = bo;
@@ -593,19 +619,27 @@ function orderArcs(arcs, startPose) {
   return seq.map(({ i, o }) => (o ? arcs[i].slice().reverse() : arcs[i]));
 }
 
+/* Rest pose: both links folded back on themselves, tip at the centre. That is
+   the most compact form the arm can take (occupies one 20 cm radius line), the
+   least loaded on both joints, and it never parks against the wall. */
+function parkPose() {
+  return { t1: 0, t2: Math.min(180, state.l2) };
+}
+
 function buildPlan() {
   const rings = planRings(state.brush, state.margin);
   const perRing = rings.map((r) => ringArcs(r));
   const arcs = perRing.flat();
 
-  const ordered = orderArcs(arcs, { t1: state.t1, t2: state.t2 });
+  const park = parkPose();
+  const ordered = orderArcs(arcs, park);
 
   // ---- full path: arcs plus interpolated reconfiguration moves ----------
   const path = [];
   let cleanTravel = 0;
   let moveTravel = 0;
   let moves = 0;
-  let prevPose = { t1: state.t1, t2: state.t2 };
+  let prevPose = { t1: park.t1, t2: park.t2 };
 
   const interp = (from, to) => {
     const d1 = to.t1 - from.t1;
@@ -634,6 +668,14 @@ function buildPlan() {
       path.push({ t1: p.t1, t2: p.t2, move: false });
     }
     prevPose = arc[arc.length - 1];
+  }
+
+  // return to the rest pose so every cycle starts and ends parked
+  const backGap = Math.abs(park.t1 - prevPose.t1) + Math.abs(park.t2 - prevPose.t2);
+  if (backGap > 0.5) {
+    path.push(...interp(prevPose, park));
+    moveTravel += backGap;
+    moves++;
   }
 
   const travel = cleanTravel + moveTravel;
@@ -670,6 +712,15 @@ document.getElementById("run").addEventListener("click", () => {
   if (!poses.length) return;
   publishPlan(plan);
 
+  // every cycle starts from rest
+  const home = parkPose();
+  state.t1 = home.t1;
+  state.t2 = home.t2;
+  t1El.value = String(state.t1);
+  t2El.value = String(state.t2);
+  document.getElementById("o-t1").textContent = state.t1.toFixed(0) + "°";
+  document.getElementById("o-t2").textContent = state.t2.toFixed(0) + "°";
+
   state.running = true;
   const btn = document.getElementById("run");
   btn.disabled = true; btn.textContent = "Tracing…";
@@ -680,7 +731,7 @@ document.getElementById("run").addEventListener("click", () => {
     return { x: L1 * Math.cos(a1) + L2 * Math.cos(a2), y: L1 * Math.sin(a1) + L2 * Math.sin(a2), move: !!p.move };
   });
 
-  document.getElementById("o-rings").textContent = plan.rings.map((r) => r.toFixed(0)).join(" / ") + " cm";
+  document.getElementById("o-rings").textContent = plan.rings.map((r) => r.toFixed(1)).join(" / ") + " cm";
   document.getElementById("o-travel").textContent = plan.travel.toFixed(0) + "°";
   document.getElementById("o-time").textContent = (plan.travel / state.jointSpeed).toFixed(0) + " s";
   document.getElementById("o-moves").textContent = String(plan.moves);

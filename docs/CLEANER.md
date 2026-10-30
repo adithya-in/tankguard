@@ -252,51 +252,57 @@ it can, so the model is consistent.
 
 Screenshot: [`workspace-2r.png`](workspace-2r.png)
 
-### Coverage planner — minimal passes, zero duplication
+### Coverage planner — minimal passes, no wasted floor
 
-The brush is a disc of radius *b*, so one full circular pass at radius *r*
-scrubs the annulus **[r − b, r + b] exactly**. Tiling the reachable disc with
-concentric passes spaced **2b** therefore covers everything with **no overlap**:
-it is the minimum number of passes, and any tighter spacing re-cleans floor.
+The brush is a disc of radius *b*, so one full circular pass at radius *r* scrubs
+the annulus **[r − b, r + b] exactly**. Tiling the reachable disc with
+concentric passes spaced **2b − overlap** covers everything with only the
+overlap you ask for — the minimum number of passes, and no other duplication.
 
-With **b = 8 cm** the whole floor is three rings:
+**Final configuration: b = 8 cm, 0.3 cm band overlap, single tip brush, both
+joints ±180°, cycle starts and ends parked.**
 
 | ring | band scrubbed | note |
 |---|---|---|
-| r = 8 cm | 0 – 16 cm | tip folded (elbow ≈ ±157°) |
-| r = 24 cm | 16 – 32 cm | elbow ≈ ±106° |
-| r = 40 cm | 32 – 48 cm | fully extended (elbow 0°) |
-
-Planner output (both joints ±180°, elbow brush off):
+| r = 8.0 cm | 0 – 16 cm | tip folded (elbow ≈ ±157°) |
+| r = 23.7 cm | 15.7 – 31.7 cm | elbow ≈ ±106° |
+| r = 39.4 cm | 31.4 – 47.4 cm | nearly extended (elbow ≈ ±20°) |
 
 | metric | value |
 |---|---|
-| coverage | **91.0 %** of the floor (the rest is the 2 cm ring + 1.2 % centre) |
-| duplicate area | **0 %** |
-| arcs | 5 (inner and middle rings split once by the elbow branch flip; outer ring 1) |
-| joint travel | **1,704°** — 1,076° scrubbing + **628° repositioning** |
-| cycle time | **38 s** at 45 °/s joint speed |
+| coverage | **90.0 %** of the floor |
+| duplicate area | **1.13 %** — exactly the 0.3 cm overlap, nothing else |
+| arcs | 6 — each ring splits once at its elbow branch flip |
+| reposition moves | 7 — park → ring 1, five ring/branch transitions, ring 3 → park |
+| joint travel | **1,991°** — 1,074° scrubbing + **917° repositioning** |
+| cycle time | **44 s** at 45 °/s joint speed |
 
-Two findings the planner makes obvious:
+**Park pose.** Every cycle starts and ends in the same rest form: both links
+folded back on themselves, θ1 = 0°, θ2 = ±180°, tip at the tank centre. That is
+the most compact shape the arm can take (one 20 cm line), loads both joints the
+least, and never rests against the wall. The tool draws it as a ghost so the
+resting position is part of the picture, and the planner prices the two park legs
+into the ordering — it solves for a *cycle*, not an open path.
 
-1. **The tip brush alone closes the tiling.** Rings at 8 / 24 / 40 scrub
-   0–48 cm with no gaps and no overlap — a second brush at the elbow would
-   scrub 12–28 cm again (25.6 % of the floor twice) for nothing. One brush is
-   both simpler and faster.
-2. **Overlap margin is expensive.** A 2 cm margin pushes the plan to four rings
-   (8 / 19 / 29 / 40 cm), +6 % joint travel and **10.2 % duplicate area** — for
-   no coverage gain. Keep the margin at 0 and rely on the brush's compliance.
+**Why 0.3 cm costs 2.4 points of floor.** The rings must fit inside the 40 cm
+reach, so a tighter ladder trades wall band for overlap: at 0.3 cm the outermost
+ring sits at 39.4 and the wall ring grows from 2.0 to 2.6 cm. Forcing a fourth
+ring to hold the wall at 40 would stack 5.3 cm of overlap on every boundary and
+duplicate **20 %** of the floor. Three rings at 15.7 cm is the right call.
 
-The planner also splits each ring into arcs wherever a joint limit or an elbow
-branch flip forces a reconfiguration, orders those arcs **exactly** (Held-Karp
-over the arcs and their two directions — greedy was leaving ~200° on the table),
-and interpolates the moves between arcs so the animation shows the real
-movement instead of teleporting. Repositioning is 37 % of the cycle and is
-dominated by one unavoidable elbow flip: the inner ring needs both branches
-(±157°) to keep the shoulder inside ±180°.
+**Where the repositioning goes.** 917° is 46 % of the cycle, and almost all of it
+is three elbow flips (one per ring, ≈300° each). A ring below r = 40 cannot be
+swept by one elbow branch inside a ±180° shoulder limit — the branch must flip at
+some angle. Only a wider shoulder limit removes that, not a better algorithm.
 
-The tool draws the whole plan before running it — grey for scrubbing passes,
-dashed amber for repositioning moves — so the cycle can be read at a glance.
+The planner splits rings into arcs where a limit or branch flip forces a
+reconfiguration, orders those arcs **exactly** (Held-Karp over arcs × directions,
+priced as a cycle back to park), and interpolates every move so the animation
+shows the real motion. The whole plan is drawn before it runs — grey for
+scrubbing passes, dashed amber for repositioning.
+
+**One brush.** A second brush at the elbow would scrub 12–28 cm, which the r = 8
+and r = 23.7 passes already cover — 25.6 % of the floor twice, for nothing.
 
 ---
 
