@@ -112,9 +112,16 @@ bool moveTo(Joint &j, float deg) { return moveBy(j, deg - j.estDeg); }
 // brush + sensors
 // ---------------------------------------------------------------------------
 uint8_t brushDuty = 0;
+void setPump(bool on) {
+  digitalWrite(PUMP_PIN, (on == (PUMP_ACTIVE_HIGH != 0)) ? HIGH : LOW);
+}
+
 void setBrush(uint8_t duty) {
   brushDuty = duty;
   pwmWrite(BRUSH_PWM, 2, duty);
+  // the pump follows the brush: suction only while scrubbing, so the head never
+  // sits sealed against the floor between passes
+  setPump(duty > 0);
 }
 
 bool estopOk() { return digitalRead(PIN_ESTOP) == LOW; }
@@ -256,6 +263,7 @@ String statusJson() {
   s += ",\"t1\":" + (isnan(sh.estDeg) ? String("null") : String(sh.estDeg, 2));
   s += ",\"t2\":" + (isnan(el.estDeg) ? String("null") : String(el.estDeg, 2));
   s += ",\"brush\":" + String(brushDuty);
+  s += ",\"pump\":" + String(brushDuty > 0 ? 1 : 0);
   s += ",\"level\":" + String(g_levelPct, 1);
   s += ",\"levelAge\":" + String(g_levelAt ? (millis() - g_levelAt) / 1000 : -1);
   s += ",\"lid\":" + String(lidClosed() ? 1 : 0);
@@ -355,6 +363,8 @@ void setup() {
   pinMode(PIN_ESTOP, INPUT_PULLUP);
   pinMode(PIN_LID, INPUT_PULLUP);
   pinMode(STATUS_LED, OUTPUT);
+  pinMode(PUMP_PIN, OUTPUT);
+  setPump(false);
 
   pwmAttach(SH_PWM, 0);
   pwmAttach(EL_PWM, 1);

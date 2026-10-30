@@ -26,10 +26,20 @@
 #define EL_HOME       18
 #define EL_DIR_INVERT 0
 
-// ---- brush ----------------------------------------------------------------
+// ---- brush head + suction ------------------------------------------------
+// The head is a ring brush: bristles on the perimeter only, the centre is the
+// pump intake. Scrubbing only loosens the sludge — the pump carries it away —
+// so the bristles run light.
 #define BRUSH_PWM     13
 #define BRUSH_IS      36
 #define BRUSH_IS_ENABLED 0 // 1 once a current-sense resistor is fitted
+
+// Suction pump relay/MOSFET. The bristle field is sparse, so the head cannot
+// seal — there is no vacuum downforce to worry about. The pump is still
+// sequenced with the brush (on while scrubbing, off between passes) to save
+// power and to avoid stirring sludge during repositioning, not as a safety gate.
+#define PUMP_PIN          23
+#define PUMP_ACTIVE_HIGH  1
 
 // ---- safety chain ---------------------------------------------------------
 // Both normally-closed to GND with a pull-up: a broken wire reads HIGH, which
@@ -46,10 +56,10 @@
 // duty, so the sweep is PWM in TIME: a full-duty burst, then a coast.
 //
 // Torque reality: the arm sweeps horizontally, so gravity is a bearing load.
-// The joint fights brush friction (~24 N.cm at 0.2 kg pressure), water drag
-// (~5-10) and inertia (~10-20). That lands at ~30 N.cm against 11.3 rated /
+// The joint fights a light ring of bristles (sparse: ~4-8 N.cm), water drag
+// (~4-8) and inertia (~10-20). That lands at ~8-16 N.cm against 11.3 rated /
 // ~34 stall — MARGINAL. Keep the brush head light (<= 0.2 kg) and expect
-// 15-25 deg/s loaded, i.e. a 90-130 s cycle, not the planner's 44 s.
+// there is no suction downforce; expect 25-35 deg/s and a 55-80 s cycle.
 //
 // The same motor is available with an optional 12 PPR magnetic encoder (A&B):
 // 12 * 4 * 21.5 = 1032 counts/rev = 0.35 deg/count. Order it if you can — it
@@ -61,8 +71,8 @@
 #define BURST_DUTY       255
 #define BURST_MS         250
 #define PAUSE_MS         200
-#define SH_DEG_PER_BURST 8.0f
-#define EL_DEG_PER_BURST 8.0f
+#define SH_DEG_PER_BURST 10.0f
+#define EL_DEG_PER_BURST 10.0f
 // Belt/pulley or friction transmission would be a reduction too — out of scope
 // here: the build is direct drive with no gearbox.
 
