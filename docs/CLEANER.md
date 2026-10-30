@@ -273,8 +273,9 @@ Planner output (both joints ±180°, elbow brush off):
 |---|---|
 | coverage | **91.0 %** of the floor (the rest is the 2 cm ring + 1.2 % centre) |
 | duplicate area | **0 %** |
-| joint travel | **1,802°** (≈ 1,080° shoulder + elbow reconfigurations) |
-| cycle time | **40 s** at 45 °/s joint speed |
+| arcs | 5 (inner and middle rings split once by the elbow branch flip; outer ring 1) |
+| joint travel | **1,704°** — 1,076° scrubbing + **628° repositioning** |
+| cycle time | **38 s** at 45 °/s joint speed |
 
 Two findings the planner makes obvious:
 
@@ -287,11 +288,15 @@ Two findings the planner makes obvious:
    no coverage gain. Keep the margin at 0 and rely on the brush's compliance.
 
 The planner also splits each ring into arcs wherever a joint limit or an elbow
-branch flip forces a reconfiguration, and orders the arcs greedily (both
-directions allowed) to minimise travel. The reconfigurations are why travel is
-1,802° rather than the 1,080° of pure shoulder sweep — the inner ring is the
-expensive one, because the elbow has to flip from −157° to +157° to keep the
-shoulder inside ±180°.
+branch flip forces a reconfiguration, orders those arcs **exactly** (Held-Karp
+over the arcs and their two directions — greedy was leaving ~200° on the table),
+and interpolates the moves between arcs so the animation shows the real
+movement instead of teleporting. Repositioning is 37 % of the cycle and is
+dominated by one unavoidable elbow flip: the inner ring needs both branches
+(±157°) to keep the shoulder inside ±180°.
+
+The tool draws the whole plan before running it — grey for scrubbing passes,
+dashed amber for repositioning moves — so the cycle can be read at a glance.
 
 ---
 

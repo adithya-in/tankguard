@@ -133,6 +133,8 @@
         <div class="row"><span>tip reach</span><span id="o-reach">—</span></div>
         <div class="row"><span>plan rings</span><span id="o-rings">—</span></div>
         <div class="row"><span>joint travel</span><span id="o-travel">—</span></div>
+        <div class="row"><span>reposition moves</span><span id="o-moves">—</span></div>
+        <div class="row"><span>reposition travel</span><span id="o-movetravel">—</span></div>
         <div class="row"><span>cycle time</span><span id="o-time">—</span></div>
         <div class="row"><span>duplicate area</span><span id="o-dup">—</span></div>
       </div>
@@ -161,7 +163,7 @@ const px = (cm) => (cm + LIM) * scale;
 const deg = (r) => (r * 180) / Math.PI;
 const rad = (d) => (d * Math.PI) / 180;
 
-const state = { l1: 180, l2: 180, brush: 8, t1: 0, t2: 0, traced: 0, running: false, traceDur: 12, margin: 0, jointSpeed: 45 };
+const state = { l1: 180, l2: 180, brush: 8, t1: 0, t2: 0, traced: 0, running: false, traceDur: 12, margin: 0, jointSpeed: 45, planPath: [] };
 
 const inTank = new Uint8Array(N * N);
 const tipOk = new Uint8Array(N * N);
@@ -176,9 +178,12 @@ for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) inTank[j * N + i] = cell
 function ik(x, y) {
   const d2 = x * x + y * y;
   const d = Math.sqrt(d2);
-  if (d > L1 + L2 || d < 1e-6) return [];
-  const c2 = (d2 - L1 * L1 - L2 * L2) / (2 * L1 * L2);
-  if (c2 < -1 || c2 > 1) return [];
+  // tolerance: the outer ring sits exactly at full extension, and float noise
+  // must not make half its samples "unreachable"
+  if (d > L1 + L2 + 1e-6 || d < 1e-9) return [];
+  const c2raw = (d2 - L1 * L1 - L2 * L2) / (2 * L1 * L2);
+  if (c2raw < -1 - 1e-6 || c2raw > 1 + 1e-6) return [];
+  const c2 = Math.max(-1, Math.min(1, c2raw));
   const t2a = Math.acos(Math.max(-1, Math.min(1, c2)));
   const out = [];
   for (const t2 of [t2a, -t2a]) {
@@ -302,6 +307,20 @@ function draw() {
   ctx.strokeStyle = "#14171b"; ctx.lineWidth = 1.6;
   ctx.beginPath(); ctx.arc(px(0), px(0), TANK_R * scale, 0, 2 * Math.PI); ctx.stroke();
 
+  if (state.planPath.length > 1) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(px(0), px(0), TANK_R * scale, 0, 2 * Math.PI); ctx.clip();
+    for (let i = 1; i < state.planPath.length; i++) {
+      const a = state.planPath[i - 1], b = state.planPath[i];
+      ctx.beginPath(); ctx.moveTo(px(a.x), px(a.y)); ctx.lineTo(px(b.x), px(b.y));
+      if (b.move) { ctx.strokeStyle = "rgba(201,122,8,.85)"; ctx.setLineDash([4, 3]); ctx.lineWidth = 1.6; }
+      else { ctx.strokeStyle = "rgba(20,23,27,.22)"; ctx.setLineDash([]); ctx.lineWidth = 1; }
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
   const p = tipPosition();
   ctx.lineCap = "round"; ctx.strokeStyle = "#14171b";
   ctx.lineWidth = 4.5;
@@ -389,6 +408,7 @@ function rebuild() {
   buildWorkspace();
   traced.fill(0);
   state.traced = 0;
+  state.planPath = [];
   draw();
   updatePanel();
 }
@@ -428,6 +448,7 @@ speedEl.addEventListener("input", () => {
 
 document.getElementById("reset").addEventListener("click", () => {
   traced.fill(0);
+  state.planPath = [];
   draw();
   updatePanel();
 });
@@ -457,17 +478,28 @@ function planRings(b, margin) {
 function ringArcs(r) {
   const chosen = [];
   let prev = null;
+  let prevSign = 0;
   for (let a = -180; a <= 180; a += 2) {
     const x = r * Math.cos(rad(a)), y = r * Math.sin(rad(a));
     const sols = ik(x, y).filter((s) => Math.abs(s.t1) <= state.l1 && Math.abs(s.t2) <= state.l2);
-    if (!sols.length) { chosen.push(null); prev = null; continue; }
-    let best = sols[0], bestD = Infinity;
-    for (const s of sols) {
-      const d = prev ? Math.abs(s.t1 - prev.t1) + Math.abs(s.t2 - prev.t2) : Math.abs(s.t2);
-      if (d < bestD) { bestD = d; best = s; }
+    if (!sols.length) { chosen.push(null); prev = null; prevSign = 0; continue; }
+
+    // hysteresis: stay on the current elbow branch while it is feasible, so the
+    // arm flips once per ring instead of chattering at the branch boundary
+    let pick = null;
+    if (prevSign !== 0) pick = sols.find((s) => Math.sign(s.t2) === prevSign) ?? null;
+    if (!pick) {
+      pick = sols
+        .slice()
+        .sort((s1, s2) =>
+          prev
+            ? Math.abs(s1.t1 - prev.t1) + Math.abs(s1.t2 - prev.t2) - (Math.abs(s2.t1 - prev.t1) + Math.abs(s2.t2 - prev.t2))
+            : Math.abs(s1.t2) - Math.abs(s2.t2),
+        )[0];
     }
-    chosen.push({ a, r, t1: best.t1, t2: best.t2 });
-    prev = best;
+    prevSign = Math.sign(pick.t2) || prevSign;
+    chosen.push({ a, r, t1: pick.t1, t2: pick.t2 });
+    prev = pick;
   }
   const arcs = [];
   let cur = [];
@@ -483,37 +515,128 @@ function ringArcs(r) {
   return arcs;
 }
 
+/* Exact arc ordering (Held-Karp over arcs and their two directions).
+   With ≤ 10 arcs this is instant and removes the greedy planner's wasted
+   repositioning. */
+function orderArcs(arcs, startPose) {
+  const n = arcs.length;
+  if (!n) return [];
+  const d = (a, b) => Math.abs(a.t1 - b.t1) + Math.abs(a.t2 - b.t2);
+
+  // greedy fallback keeps the page responsive if a pathological configuration
+  // produces many arcs (2^n DP is only cheap for small n)
+  if (n > 11) {
+    const out = [];
+    const left = arcs.slice();
+    let pose = startPose;
+    while (left.length) {
+      let bi = 0, brev = false, bd = Infinity;
+      for (let i = 0; i < left.length; i++) {
+        const a = left[i];
+        const d0 = d(pose, a[0]);
+        const d1 = d(pose, a[a.length - 1]);
+        if (d0 < bd) { bd = d0; bi = i; brev = false; }
+        if (d1 < bd) { bd = d1; bi = i; brev = true; }
+      }
+      let arc = left.splice(bi, 1)[0];
+      if (brev) arc = arc.slice().reverse();
+      out.push(arc);
+      pose = arc[arc.length - 1];
+    }
+    return out;
+  }
+
+  const size = 1 << n;
+  const INF = Infinity;
+  const dp = Array.from({ length: size }, () => Array.from({ length: n }, () => [INF, INF]));
+  const from = Array.from({ length: size }, () => Array.from({ length: n }, () => [null, null]));
+
+  for (let i = 0; i < n; i++) {
+    for (let o = 0; o < 2; o++) {
+      const s = o ? arcs[i][arcs[i].length - 1] : arcs[i][0];
+      dp[1 << i][i][o] = d(startPose, s);
+    }
+  }
+  for (let mask = 1; mask < size; mask++) {
+    for (let i = 0; i < n; i++) {
+      if (!(mask & (1 << i))) continue;
+      for (let o = 0; o < 2; o++) {
+        const cur = dp[mask][i][o];
+        if (!isFinite(cur)) continue;
+        const end = o ? arcs[i][0] : arcs[i][arcs[i].length - 1];
+        for (let j = 0; j < n; j++) {
+          if (mask & (1 << j)) continue;
+          for (let o2 = 0; o2 < 2; o2++) {
+            const s2 = o2 ? arcs[j][arcs[j].length - 1] : arcs[j][0];
+            const nm = mask | (1 << j);
+            const c = cur + d(end, s2);
+            if (c < dp[nm][j][o2]) { dp[nm][j][o2] = c; from[nm][j][o2] = [mask, i, o]; }
+          }
+        }
+      }
+    }
+  }
+
+  const full = size - 1;
+  let best = INF, bi = 0, bo = 0;
+  for (let i = 0; i < n; i++) for (let o = 0; o < 2; o++) if (dp[full][i][o] < best) { best = dp[full][i][o]; bi = i; bo = o; }
+
+  const seq = [];
+  let mask = full, i = bi, o = bo;
+  while (true) {
+    seq.push({ i, o });
+    const p = from[mask][i][o];
+    if (!p) break;
+    [mask, i, o] = p;
+  }
+  seq.reverse();
+  return seq.map(({ i, o }) => (o ? arcs[i].slice().reverse() : arcs[i]));
+}
+
 function buildPlan() {
   const rings = planRings(state.brush, state.margin);
-  let arcs = [];
-  for (const r of rings) arcs.push(...ringArcs(r));
+  const perRing = rings.map((r) => ringArcs(r));
+  const arcs = perRing.flat();
 
-  const ordered = [];
-  const left = arcs.slice();
-  let pose = { t1: state.t1, t2: state.t2 };
-  while (left.length) {
-    let bi = 0, brev = false, bd = Infinity;
-    for (let i = 0; i < left.length; i++) {
-      const a = left[i];
-      const d0 = Math.abs(a[0].t1 - pose.t1) + Math.abs(a[0].t2 - pose.t2);
-      const d1 = Math.abs(a[a.length - 1].t1 - pose.t1) + Math.abs(a[a.length - 1].t2 - pose.t2);
-      if (d0 < bd) { bd = d0; bi = i; brev = false; }
-      if (d1 < bd) { bd = d1; bi = i; brev = true; }
-    }
-    let arc = left.splice(bi, 1)[0];
-    if (brev) arc = arc.slice().reverse();
-    ordered.push(arc);
-    pose = arc[arc.length - 1];
-  }
+  const ordered = orderArcs(arcs, { t1: state.t1, t2: state.t2 });
 
-  let travel = 0;
-  let prev = { t1: state.t1, t2: state.t2 };
+  // ---- full path: arcs plus interpolated reconfiguration moves ----------
+  const path = [];
+  let cleanTravel = 0;
+  let moveTravel = 0;
+  let moves = 0;
+  let prevPose = { t1: state.t1, t2: state.t2 };
+
+  const interp = (from, to) => {
+    const d1 = to.t1 - from.t1;
+    const d2 = to.t2 - from.t2;
+    const dist = Math.abs(d1) + Math.abs(d2);
+    const n = Math.max(1, Math.ceil(dist / 2)); // ≤2° per step
+    const out = [];
+    for (let i = 1; i <= n; i++) out.push({ t1: from.t1 + (d1 * i) / n, t2: from.t2 + (d2 * i) / n, move: true });
+    return out;
+  };
+
   for (const arc of ordered) {
-    for (const p of arc) {
-      travel += Math.abs(p.t1 - prev.t1) + Math.abs(p.t2 - prev.t2);
-      prev = p;
+    const first = arc[0];
+    const gap = Math.abs(first.t1 - prevPose.t1) + Math.abs(first.t2 - prevPose.t2);
+    if (gap > 0.5) {
+      const seg = interp(prevPose, first);
+      moveTravel += gap;
+      moves++;
+      path.push(...seg);
     }
+    for (const p of arc) {
+      if (path.length) {
+        const last = path[path.length - 1];
+        cleanTravel += Math.abs(p.t1 - last.t1) + Math.abs(p.t2 - last.t2);
+      }
+      path.push({ t1: p.t1, t2: p.t2, move: false });
+    }
+    prevPose = arc[arc.length - 1];
   }
+
+  const travel = cleanTravel + moveTravel;
 
   // duplicate area: overlap margin between rings
   const floor = Math.PI * TANK_R ** 2;
@@ -522,23 +645,46 @@ function buildPlan() {
     for (let k = 1; k < rings.length; k++) dup += 2 * Math.PI * (rings[k] - state.brush) * state.margin;
   }
 
-  return { rings, arcs: ordered, travel, dupPct: (100 * dup) / floor };
+  return { rings, perRing: perRing.map((a) => a.length), arcs: ordered, path, travel, cleanTravel, moveTravel, moves, dupPct: (100 * dup) / floor };
+}
+
+/* expose the last plan for probing / debugging */
+function publishPlan(plan) {
+  window.__plan = {
+    rings: plan.rings.map((r) => +r.toFixed(2)),
+    perRing: plan.perRing,
+    arcs: plan.arcs.length,
+    points: plan.path.length,
+    moves: plan.moves,
+    travel: +plan.travel.toFixed(1),
+    moveTravel: +plan.moveTravel.toFixed(1),
+    dupPct: +plan.dupPct.toFixed(2),
+  };
 }
 
 let raf = 0;
 document.getElementById("run").addEventListener("click", () => {
   if (state.running) return;
   const plan = buildPlan();
-  const poses = plan.arcs.flat();
+  const poses = plan.path;
   if (!poses.length) return;
+  publishPlan(plan);
 
   state.running = true;
   const btn = document.getElementById("run");
   btn.disabled = true; btn.textContent = "Tracing…";
 
+  // draw the whole plan first, so the reconfiguration moves are visible
+  state.planPath = poses.map((p) => {
+    const a1 = rad(p.t1), a2 = rad(p.t1 + p.t2);
+    return { x: L1 * Math.cos(a1) + L2 * Math.cos(a2), y: L1 * Math.sin(a1) + L2 * Math.sin(a2), move: !!p.move };
+  });
+
   document.getElementById("o-rings").textContent = plan.rings.map((r) => r.toFixed(0)).join(" / ") + " cm";
   document.getElementById("o-travel").textContent = plan.travel.toFixed(0) + "°";
   document.getElementById("o-time").textContent = (plan.travel / state.jointSpeed).toFixed(0) + " s";
+  document.getElementById("o-moves").textContent = String(plan.moves);
+  document.getElementById("o-movetravel").textContent = plan.moveTravel.toFixed(0) + "°";
   const dupEl = document.getElementById("o-dup");
   dupEl.textContent = plan.dupPct > 0.05 ? plan.dupPct.toFixed(1) + " %" : "none";
   dupEl.className = plan.dupPct > 0.05 ? "bad" : "good";
