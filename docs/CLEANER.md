@@ -48,23 +48,28 @@ motors, no cables, no slip ring in the water; the rotary seal lives at the lid.
 |---|---|---|
 | tank radius | 50 cm | floor area 7,854 cm² |
 | main arm: pipe → outer motor | 20 cm | inner brush covers ≈ r = 0–12 cm |
-| secondary arm: outer motor → brush | 20 cm (fully extended) | outer brush at **r = 40 cm** |
-| swept disc | r = 40 cm | 5,027 cm² |
-| **unreachable ring** | **r = 40–50 cm (10 cm)** | **2,827 cm² = 36 % of the floor** |
+| secondary arm: outer motor → brush | 20 cm (fully extended) | outer brush axis at **r = 40 cm** |
+| brush heads | ⌀ 10 cm assumed (radius 5) | outer edge reaches **r = 45 cm** |
+| **unreachable ring** | **r = 45–50 cm (5 cm)** | **1,492 cm² = 19 % of the floor** |
 | pump suction cup | ⌀ 5 cm | 19.6 cm² footprint (0.25 % of the floor) |
 | 2020 extrusion stock | 500 mm | **fully used**: 200 + 200 mm + joints — no idle beam |
+
+Measured with `tools/swept_area.py` (section 7): **78.9 % of the floor covered**,
+the missing 21 % being the 5 cm ring plus the pipe footprint at the centre. With
+a point-sized brush the ring would be 10 cm / 36 % — the ⌀10 head is doing real
+work here.
 
 **The ring is the real constraint.** It is exactly the wall base, where sludge
 settles hardest. Options, cheapest first:
 
 | option | change | result |
 |---|---|---|
-| **A — accept it** | add a fixed wall-base brush/skirt at the tip | ring still 36 %, but the fillet gets scrubbed |
-| **B — longer second stage** | secondary arm 20 → 30 cm (needs > 500 mm stock: a 1 m extrusion cut down) | outer brush reaches r = 50 cm → ring closed |
+| **A — accept it** | add a fixed wall-base brush/skirt at the tip | ring stays 19 %, but the fillet gets scrubbed |
+| **B — longer second stage** | secondary arm 20 → 25 cm (1 m extrusion cut down) | brush edge reaches 50 cm → ring closed |
 | **C — third stage** | telescoping stage beyond r = 40 | ring closed, most mass and torque at the tip |
 
-Brush diameter cannot substitute: touching the wall from r = 40 needs a ⌀ 20 cm
-brush — heavy, high torque, and it would scrub at a different surface speed.
+Brush diameter alone cannot close it: touching the wall from r = 40 needs a
+⌀20 cm brush — heavy, high torque, and it scrubs at a different surface speed.
 
 **Off-centre pivot is not a fix.** A 40 cm reach pivoted *d* from the centre
 sweeps a disc of radius 40 around the pivot; at d = 40 it trades the 10 cm inner
@@ -197,7 +202,45 @@ default 30°; dwell 6 s; brush current over cap for 300 ms → `FAULT:stall`.
 
 ---
 
-## 7. Open questions (blocking firmware)
+## 7. Swept-area model (`tools/swept_area.py`)
+
+A small matplotlib model that stamps the actual brush discs as the arm moves, so
+coverage is measured rather than assumed.
+
+```
+python tools/swept_area.py                          # spiral, on screen
+python tools/swept_area.py --mode concentric
+python tools/swept_area.py --brush 4                # ⌀8 heads: shows the gap
+python tools/swept_area.py --pump 25                # draw the ⌀5 cup at r = 25
+python tools/swept_area.py --save sweep.gif --still sweep-final.png
+```
+
+Measured (⌀10 brushes, tank r 50, arm 20 + 20):
+
+| pattern | coverage | note |
+|---|---|---|
+| spiral, 3 turns + dwell at each end | **78.9 %** | smooth motion, one continuous pass |
+| concentric, passes at r = 20/28/36/40 | **78.9 %** | dwells at fixed radii; simpler to command |
+| either, with ⌀8 brushes | 72.3 % | **2 cm gap** opens between the two brush tracks (r 14–16) |
+
+Three rules fall out of the model:
+
+1. **Brush radius ≥ 5 cm (⌀10)** — the inner track covers r 5–15 and the outer
+   starts at 15; a smaller head leaves an unscrubbed ring between them
+   (`10 − 2·brush_radius` cm wide).
+2. **Overlap the tracks.** Passes spaced at exactly the band width (2 × brush
+   radius) touch tangentially and leave scalloped rings — visible in the first
+   version of the concentric render at r = 15 / 25 / 35. Spacing 1.6 × brush
+   radius removes them.
+3. **Dwell a full turn at r = 20 and at r = 40.** A monotonic spiral visits each
+   extreme radius at one angle only, costing ~6 points of coverage (measured:
+   64.3 % before the dwells, 78.9 % after).
+
+Renders: [`sweep-spiral.png`](sweep-spiral.png) · [`sweep-concentric.png`](sweep-concentric.png)
+
+---
+
+## 8. Open questions (blocking firmware)
 
 1. **Motors** — what are the planetary units, and what drives the sweep axis:
    brushed DC with gearbox, or a stepper? (Voltage/current/gearing decide the
