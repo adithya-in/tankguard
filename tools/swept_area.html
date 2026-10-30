@@ -86,7 +86,7 @@
         <span class="ctl-head">Brush radius <output id="o-brush">8.0 cm</output></span>
         <input id="i-brush" type="range" min="2" max="8" step="0.5" value="8">
       </label>
-      <label class="check"><input id="i-elbow" type="checkbox"> brush at the elbow (r = 20)</label>
+      <span class="hint">One brush, at the tip (the elbow is a joint, not a scrubber).</span>
     </div>
 
     <div class="group">
@@ -161,11 +161,10 @@ const px = (cm) => (cm + LIM) * scale;
 const deg = (r) => (r * 180) / Math.PI;
 const rad = (d) => (d * Math.PI) / 180;
 
-const state = { l1: 180, l2: 180, brush: 8, elbowBrush: false, t1: 0, t2: 0, traced: 0, running: false, traceDur: 12, margin: 0, jointSpeed: 45 };
+const state = { l1: 180, l2: 180, brush: 8, t1: 0, t2: 0, traced: 0, running: false, traceDur: 12, margin: 0, jointSpeed: 45 };
 
 const inTank = new Uint8Array(N * N);
 const tipOk = new Uint8Array(N * N);
-const elbowOk = new Uint8Array(N * N);
 const covered = new Uint8Array(N * N);
 const traced = new Uint8Array(N * N);
 let dist = new Float32Array(N * N);
@@ -193,7 +192,6 @@ function ik(x, y) {
 function buildWorkspace() {
   const b = state.brush;
   tipOk.fill(0);
-  elbowOk.fill(0);
 
   // tip reachability: any IK solution inside both joint limits
   for (let j = 0; j < N; j++) {
@@ -211,13 +209,6 @@ function buildWorkspace() {
     }
   }
 
-  // elbow brush: an arc of radius L1 swept by the shoulder
-  const steps = Math.max(8, Math.round((2 * state.l1) / 1.5));
-  for (let s = 0; s <= steps; s++) {
-    const a = rad(-state.l1 + (2 * state.l1 * s) / steps);
-    const ex = L1 * Math.cos(a), ey = L1 * Math.sin(a);
-    stampDisc(elbowOk, ex, ey, b);
-  }
 
   // dilate the tip set by the brush radius (chamfer distance transform)
   dist = new Float32Array(N * N);
@@ -250,8 +241,7 @@ function buildWorkspace() {
 
   const bCells = b / RES;
   for (let k = 0; k < covered.length; k++) {
-    const tip = dist[k] * RES <= b;
-    covered[k] = tip || (state.elbowBrush && elbowOk[k]) ? 1 : 0;
+    covered[k] = dist[k] * RES <= b ? 1 : 0;
   }
 }
 
@@ -324,7 +314,6 @@ function draw() {
 
   ctx.setLineDash([3, 3]); ctx.strokeStyle = "#8a9099"; ctx.lineWidth = 1;
   ctx.beginPath(); ctx.arc(px(p.x), px(p.y), state.brush * scale, 0, 2 * Math.PI); ctx.stroke();
-  if (state.elbowBrush) { ctx.beginPath(); ctx.arc(px(p.ex), px(p.ey), state.brush * scale, 0, 2 * Math.PI); ctx.stroke(); }
   ctx.setLineDash([]);
 
   ctx.fillStyle = "#14171b";
@@ -417,10 +406,6 @@ bind("i-l1", "l1", (v) => v + "°");
 bind("i-l2", "l2", (v) => v + "°");
 bind("i-brush", "brush", (v) => v.toFixed(1) + " cm");
 
-document.getElementById("i-elbow").addEventListener("change", (e) => {
-  state.elbowBrush = e.target.checked;
-  rebuild();
-});
 
 const t1El = document.getElementById("i-t1");
 const t2El = document.getElementById("i-t2");
@@ -530,13 +515,9 @@ function buildPlan() {
     }
   }
 
-  // duplicate area: elbow brush (if on) + overlap margin between rings
+  // duplicate area: overlap margin between rings
   const floor = Math.PI * TANK_R ** 2;
   let dup = 0;
-  if (state.elbowBrush) {
-    const lo = Math.max(0, L1 - state.brush), hi = L1 + state.brush;
-    dup += Math.PI * (hi ** 2 - lo ** 2);
-  }
   if (state.margin > 0 && rings.length > 1) {
     for (let k = 1; k < rings.length; k++) dup += 2 * Math.PI * (rings[k] - state.brush) * state.margin;
   }
@@ -577,7 +558,6 @@ document.getElementById("run").addEventListener("click", () => {
       const s = poses[idx];
       last = s;
       const a1 = rad(s.t1), a2 = rad(s.t1 + s.t2);
-      stampDisc(traced, L1 * Math.cos(a1), L1 * Math.sin(a1), state.brush);
       stampDisc(traced, L1 * Math.cos(a1) + L2 * Math.cos(a2), L1 * Math.sin(a1) + L2 * Math.sin(a2), state.brush);
     }
     if (progress < 1) {

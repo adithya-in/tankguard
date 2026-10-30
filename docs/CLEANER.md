@@ -17,21 +17,21 @@ guesses.
   - **link 1 (shoulder)** pivots on the pipe, θ1;
   - **link 2 (elbow)** pivots on the motor at the end of link 1, θ2, and is driven
     independently.
-- A **brush at each end**: one at the elbow (r = 20 cm), one at the tip
-  (r = 0–40 cm depending on the elbow angle).
-- Assembly tree: `Rigid 4` (brush mounts), `Revolute 3` (the elbow) and
+- A **single brush at the tip** (r = 0–40 cm depending on the elbow angle). The
+  elbow is a joint — a motor, not a scrubber.
+- Assembly tree: `Rigid 4` (brush mount), `Revolute 3` (the elbow) and
   `Revolute 1` (the shoulder), body `mainarm`.
 
-**Motion implied:** a planar 2R arm. The tip reaches any point with r ≤ 40 cm;
-both joints oscillate inside their own limits (the hose and wires must not wind
-up), so the *reachable* floor depends on those limits — that is the dead-area
-question, and `tools/swept_area.html` solves it numerically.
+**Motion implied:** a planar 2R arm with one scrubber at the tip. The tip reaches
+any point with r ≤ 40 cm; both joints oscillate inside their own limits (the hose
+and wires must not wind up), so the *reachable* floor depends on those limits —
+that is the dead-area question, and `tools/swept_area.html` solves it numerically.
 
 | axis | joint | job |
 |---|---|---|
 | shoulder | Revolute 1 | swing the whole arm; ±L1 |
 | elbow | Revolute 3 | fold the second link; ±L2 |
-| brush 1 / brush 2 | Rigid 4 | scrub, independently |
+| brush | Rigid 4 | the only scrubber, at the tip |
 
 Open: which revolute is the sweep vs the fold, and whether the pipe is also a
 linear axis (the CAD shows it fixed).
@@ -48,7 +48,7 @@ motors, no cables, no slip ring in the water; the rotary seal lives at the lid.
 | given | value | derived |
 |---|---|---|
 | tank radius | 50 cm | floor area 7,854 cm² |
-| link 1 (shoulder) | 20 cm fixed | elbow brush at r = 20 cm |
+| link 1 (shoulder) | 20 cm fixed | elbow joint at r = 20 cm |
 | link 2 (elbow) | 20 cm fixed | tip at r = 0–40 cm depending on θ2 |
 | brush heads | ⌀ 16 cm (radius 8, the build maximum) | outer edge reaches **r = 48 cm** |
 | **unreachable ring** | **r = 48–50 cm (2 cm)** | **616 cm² = 7.8 % of the floor** |
@@ -278,12 +278,12 @@ Planner output (both joints ±180°, elbow brush off):
 
 Two findings the planner makes obvious:
 
-1. **The elbow brush is pure duplication at ⌀16.** It scrubs 12–28 cm, which the
-   r = 8 and r = 24 rings already cover — **25.6 % of the floor cleaned twice**.
-   Drop it (one less motor, one less cable) or the cycle wastes a quarter of its
-   time.
+1. **The tip brush alone closes the tiling.** Rings at 8 / 24 / 40 scrub
+   0–48 cm with no gaps and no overlap — a second brush at the elbow would
+   scrub 12–28 cm again (25.6 % of the floor twice) for nothing. One brush is
+   both simpler and faster.
 2. **Overlap margin is expensive.** A 2 cm margin pushes the plan to four rings
-   (8 / 19 / 29 / 40 cm), +14 % joint travel and **10.2 % duplicate area** — for
+   (8 / 19 / 29 / 40 cm), +6 % joint travel and **10.2 % duplicate area** — for
    no coverage gain. Keep the margin at 0 and rely on the brush's compliance.
 
 The planner also splits each ring into arcs wherever a joint limit or an elbow
