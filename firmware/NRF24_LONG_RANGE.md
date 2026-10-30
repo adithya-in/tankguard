@@ -1,0 +1,143 @@
+# nRF24L01+ Long-Range Link
+
+Adds a **2.4 GHz nRF24L01+ PA/LNA** radio link between the tank and the home unit,
+as an alternative (or backup) to Wi-Fi. At **250 kbps** the PA/LNA modules reach
+roughly **1 km line-of-sight** and hold up better through walls than high-rate Wi-Fi.
+
+> **Status:** design + wiring plan. The current firmware build uses Wi-Fi. Enabling
+> nRF requires the pin remap below (hardware rewire) and a firmware build with
+> `USE_NRF24`.
+
+---
+
+## 1. Power (the usual failure point)
+
+| Rule | Why |
+|---|---|
+| **3.3 V ONLY** | 5 V destroys the nRF24L01 instantly |
+| **100 µF electrolytic + 10 µF ceramic** across VCC/GND, at the module | current spikes during TX (~115 mA) |
+| **Separate AMS1117-3.3** (or the module's adapter board) | the NodeMCU 3V3 rail is already loaded and sags |
+| Wires **< 10 cm**, twisted VCC/GND | reduces drop and noise |
+| Antenna clear of metal/water, upright | water absorbs 2.4 GHz |
+
+Module pins: `GND VCC CE CSN SCK MOSI MISO IRQ` (IRQ not used).
+
+Recommended radio settings:
+- Channel **76** (2.476 GHz, above Wi-Fi 1–13)
+- Data rate **250 kbps** (`RF24_250KBPS`)
+- PA **MAX** (`RF24_PA_MAX`)
+- Auto-ack on, CRC 2 bytes, pipe address `"TANK1"`
+
+---
+
+## 2. Why a remap is needed
+
+The nRF24 uses **hardware SPI** on the ESP8266: `SCK=D5(14)`, `MOSI=D7(13)`,
+`MISO=D6(12)`. Both boards currently use those pins for sensors/display, so enabling
+nRF means moving a few signals. Two options:
+
+- **Option A — direct remap** (cheapest, needs rewiring).
+- **Option B — UART bridge** (no sensor remap, two extra ESP-01 + nRF boards).
+
+---
+
+## 3. Option A — direct remap
+
+### 3.1 Tank side
+
+| Signal | NodeMCU | GPIO | Change |
+|---|---|---|---|
+| nRF SCK | D5 | 14 | new |
+| nRF MOSI | D7 | 13 | new |
+| nRF MISO | D6 | 12 | new |
+| nRF CE | D0 | 16 | new |
+| nRF CSN | D3 | 0 | new, **10 kΩ pull-up to 3V3** |
+| ADS1115 SDA | D2 | 4 | unchanged |
+| ADS1115 SCL | D1 | 5 | unchanged |
+| DS18B20 DQ | **D4** | 2 | **moved from D6**, 4.7 kΩ pull-up |
+| JSN-SR04T TRIG | **TX** | 1 | **moved from D7** |
+| JSN-SR04T ECHO | **RX** | 3 | **moved from D5**, 1k/1k divider |
+| Valve gate | D8 | 15 | unchanged, 10 kΩ pulldown |
+
+Consequences:
+- **Serial debug is lost** (TX/RX now drive the ultrasonic).
+- GPIO0 (CSN) must be HIGH at boot → the 10 kΩ pull-up satisfies it.
+- GPIO2 (DS18B20) must be HIGH at boot → the 4.7 kΩ pull-up satisfies it.
+- GPIO15 (valve) must be LOW at boot → MOSFET pulldown satisfies it.
+
+### 3.2 Home side
+
+| Signal | NodeMCU | GPIO | Change |
+|---|---|---|---|
+| nRF SCK | D5 | 14 | shared with TFT |
+| nRF MOSI | D7 | 13 | shared with TFT |
+| nRF MISO | D6 | 12 | **was relay** |
+| nRF CE | D4 | 2 | new, **10 kΩ pull-up to 3V3** |
+| nRF CSN | D3 | 0 | new, **10 kΩ pull-up to 3V3** |
+| TFT CS / DC / RST | D0 / D1 / D2 | 16 / 5 / 4 | unchanged |
+| Relay IN | **D8** | 15 | **moved from D6**; use an **active-HIGH** relay module |
+| FLUSH / MOTOR buttons | **A0** | ADC | shared **resistor ladder** (2 buttons on one pin) |
+
+Consequences:
+- The relay moves to GPIO15, so it **must be active-HIGH with a pulldown**
+  (GPIO15 is low at boot → pump OFF). An active-LOW module needs an inverter.
+- Both buttons move to a resistor ladder on A0; firmware reads two voltage bands.
+
+### 3.3 Button ladder (home, A0)
+
+```
+3V3 ──[10k]──┬── A0
+             │
+      FLUSH ─┴─[4.7k]── GND     (pressed: ~1.05 V)
+      MOTOR ───[1.0k]── GND     (pressed: ~0.30 V)
+```
+Idle ≈ 3.3 V. Firmware treats: >2.6 V = none, 0.7–1.6 V = FLUSH, <0.55 V = MOTOR
+(adjust after measuring).
+
+---
+
+## 4. Option B — UART bridge (no sensor remap)
+
+Keep every sensor where it is. Use two tiny bridge boards:
+
+- **Tank bridge:** ESP-01 + nRF24, UART RX ← tank `TX` (JSON lines).
+- **Home bridge:** ESP-01 + nRF24, UART TX → home `RX` (JSON lines).
+
+The tank ESP keeps its current pinout and prints a JSON line per sample; the bridge
+transmits it. The home bridge receives and feeds the H1 over UART. Cost ≈ ₹400 extra,
+no rewiring of the sensor or display boards, and serial debug can be kept on the tank
+(shared TX).
+
+---
+
+## 5. Packet format
+
+```c
+struct __attribute__((packed)) TankPacket {
+  uint16_t magic;   // 0x5447
+  float score, level, ph, turb, tds, temp;
+  uint8_t flush;    // 0 idle, 1 running, 2 done
+  uint8_t valve;    // 0/1
+  uint16_t crc;     // optional
+};
+struct __attribute__((packed)) CmdPacket {
+  uint16_t magic;   // 0x5447
+  uint8_t cmd;      // 1 = flush, 2 = force flush
+};
+```
+
+- Tank writes `TankPacket` every sample (5 s).
+- Home writes `CmdPacket` when FLUSH is pressed.
+- Use a fixed 32-byte payload, auto-ack, and a short RX window on the tank.
+
+---
+
+## 6. Recommendation
+
+| If | Choose |
+|---|---|
+| You can rewire both boards | **Option A** — cheapest, one radio per board |
+| You want to keep the sensor wiring untouched | **Option B** — UART bridges |
+| Range through thick walls is the main problem | Use **LoRa SX1278 (433 MHz)** instead; it is SPI too but reaches much farther |
+
+None of this is enabled in the current firmware; the shipped build is Wi-Fi.
