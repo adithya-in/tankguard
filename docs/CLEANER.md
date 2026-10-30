@@ -50,21 +50,22 @@ motors, no cables, no slip ring in the water; the rotary seal lives at the lid.
 | tank radius | 50 cm | floor area 7,854 cm² |
 | link 1 (shoulder) | 20 cm fixed | elbow brush at r = 20 cm |
 | link 2 (elbow) | 20 cm fixed | tip at r = 0–40 cm depending on θ2 |
-| brush heads | ⌀ 10 cm assumed (radius 5) | outer edge reaches **r = 45 cm** |
-| **unreachable ring** | **r = 45–50 cm (5 cm)** | **1,492 cm² = 19 % of the floor** |
+| brush heads | ⌀ 16 cm (radius 8, the build maximum) | outer edge reaches **r = 48 cm** |
+| **unreachable ring** | **r = 48–50 cm (2 cm)** | **616 cm² = 7.8 % of the floor** |
 | pump suction cup | ⌀ 5 cm | 19.6 cm² footprint (0.25 % of the floor) |
 
-Measured with `tools/swept_area.html` (section 7): with **both joints free
-(±180°)**, 80.4 % of the floor is reachable — 19 % is the wall ring and 0.6 % is
-the centre singularity. The ring, not the joints, is the dominant dead area.
+Measured with `tools/swept_area.html` (section 7): with both joints free
+(±180°) **91.0 % of the floor is reachable** — 7.8 % is the wall ring and 1.2 %
+is the joint-limited centre. The ring, not the joints, is the remaining dead
+area, and with ⌀16 brushes it is down to 2 cm.
 
 **The ring is the real constraint.** It is exactly the wall base, where sludge
 settles hardest. Options, cheapest first:
 
 | option | change | result |
 |---|---|---|
-| **A — accept it** | add a fixed wall-base brush/skirt at the tip | ring stays 19 %, but the fillet gets scrubbed |
-| **B — longer second link** | 20 → 25 cm (1 m extrusion cut down) | brush edge reaches 50 cm → ring closed |
+| **A — accept it** | add a fixed wall-base brush/skirt at the tip | ring stays 7.8 %, but the fillet gets scrubbed |
+| **B — longer second link** | 20 → 22 cm | brush edge reaches 50 cm → ring closed |
 | **C — bigger head** | brush radius 10 cm (⌀20) | ring closed, heavy and high torque |
 
 Brush diameter alone cannot close it without becoming the whole design: a ⌀20 cm
@@ -224,33 +225,73 @@ Open it directly: `start tools/swept_area.html` (or drag it into a browser).
 | Trace duration (2–40 s) | how slowly the path runs — adjustable mid-trace |
 | Trace a path | walks the reachable area the way a cycle would (paints what it actually scrubs) |
 
-### Measured trade-off (⌀10 brushes, tank r 50, links 20 + 20)
+### Measured trade-off (⌀16 brushes, tank r 50, links 20 + 20)
 
 | shoulder ± | coverage | | elbow ± | coverage |
 |---|---|---|---|---|
-| 180° | **80.4 %** | | 180° | **80.4 %** |
-| 150° | 79.5 % | | 150° | 79.2 % |
-| 120° | 74.0 % | | 120° | 71.4 % |
-| 90° | 63.6 % | | 90° | 71.4 % |
-| 60° | 51.0 % | | 60° | 60.9 % |
-| — | — | | 30° | 50.7 % |
+| 180° | **91.0 %** | | 180° | **91.0 %** |
+| 150° | 90.1 % | | 150° | 90.7 % |
+| 120° | 84.4 % | | 120° | 85.1 % |
+| 90° | 73.6 % | | 90° | 74.2 % |
+| 60° | 59.9 % | | 60° | 62.1 % |
 
 Three things this settles:
 
 1. **The ring, not the joints, is the main dead area.** Even with both joints
-   free, 19 % (the 5 cm wall ring) is unreachable. Loosening joints cannot fix
+   free, 7.8 % (the 2 cm wall ring) is unreachable. Loosening joints cannot fix
    it; only reach can.
 2. **Shoulder ±150° is nearly free** — 0.9 points. If ±180° of hose twist is
    unacceptable, ±150° buys almost the same coverage; below ±120° it collapses
-   (74 % → 63.6 % at ±90°).
-3. **The elbow tolerates less than the shoulder** but still needs ~±150° to stay
-   above 79 %; at ±60° it costs 20 points.
+   (84.4 % → 73.6 % at ±90°).
+3. **The elbow tolerates ±150° well** (90.7 %) but falls off faster below that:
+   ±120° costs 6 points, ±90° costs 17.
 
 The "Trace a path" run reaches 80.9 % against the 80.4 % workspace — i.e. a
 concentric cycle over the reachable set actually scrubs what the analysis says
 it can, so the model is consistent.
 
 Screenshot: [`workspace-2r.png`](workspace-2r.png)
+
+### Coverage planner — minimal passes, zero duplication
+
+The brush is a disc of radius *b*, so one full circular pass at radius *r*
+scrubs the annulus **[r − b, r + b] exactly**. Tiling the reachable disc with
+concentric passes spaced **2b** therefore covers everything with **no overlap**:
+it is the minimum number of passes, and any tighter spacing re-cleans floor.
+
+With **b = 8 cm** the whole floor is three rings:
+
+| ring | band scrubbed | note |
+|---|---|---|
+| r = 8 cm | 0 – 16 cm | tip folded (elbow ≈ ±157°) |
+| r = 24 cm | 16 – 32 cm | elbow ≈ ±106° |
+| r = 40 cm | 32 – 48 cm | fully extended (elbow 0°) |
+
+Planner output (both joints ±180°, elbow brush off):
+
+| metric | value |
+|---|---|
+| coverage | **91.0 %** of the floor (the rest is the 2 cm ring + 1.2 % centre) |
+| duplicate area | **0 %** |
+| joint travel | **1,802°** (≈ 1,080° shoulder + elbow reconfigurations) |
+| cycle time | **40 s** at 45 °/s joint speed |
+
+Two findings the planner makes obvious:
+
+1. **The elbow brush is pure duplication at ⌀16.** It scrubs 12–28 cm, which the
+   r = 8 and r = 24 rings already cover — **25.6 % of the floor cleaned twice**.
+   Drop it (one less motor, one less cable) or the cycle wastes a quarter of its
+   time.
+2. **Overlap margin is expensive.** A 2 cm margin pushes the plan to four rings
+   (8 / 19 / 29 / 40 cm), +14 % joint travel and **10.2 % duplicate area** — for
+   no coverage gain. Keep the margin at 0 and rely on the brush's compliance.
+
+The planner also splits each ring into arcs wherever a joint limit or an elbow
+branch flip forces a reconfiguration, and orders the arcs greedily (both
+directions allowed) to minimise travel. The reconfigurations are why travel is
+1,802° rather than the 1,080° of pure shoulder sweep — the inner ring is the
+expensive one, because the elbow has to flip from −157° to +157° to keep the
+shoulder inside ±180°.
 
 ---
 
