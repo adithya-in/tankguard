@@ -100,6 +100,75 @@ Tank-side JSON expected by `fetchTank()`:
 {"score":82,"level":64,"ph":7.2,"turb":12,"tds":310,"temp":27.5}
 ```
 
+## Cleaner firmware (C1 — ESP32, open loop)
+
+[`c1_cleaner/`](c1_cleaner/) drives the 2R cleaning arm: two fixed 20 cm links,
+one brush at the tip, both joints on generic DC gear motors. It is a **separate
+unit with its own power**, not part of M1 or H1.
+
+**Why ESP32:** 2 PWM + 2 DIR, two home switches, brush PWM, e-stop, lid and the
+level link — more I/O than a NodeMCU exposes.
+
+**No position feedback.** There are no encoders on this build, so the firmware
+cannot servo to an angle. It drives each joint at a **calibrated duty for a
+computed time** and dead-reckons the angle. The design absorbs that:
+
+- both joints **re-home at every ring** (three per cycle), so drift never spans
+  more than one pass;
+- the planner's **arcs** are the unit of motion — the elbow holds one angle while
+  the shoulder sweeps it, so each move is a single timed segment;
+- the status JSON says `"openLoop": true` and its angles are estimates, not
+  measurements.
+
+Expected accuracy: a few degrees per ring, not the planner's 0.3 cm overlap. The
+16 cm brush tolerates that; a wider overlap (or a compliant brush skirt) is the
+mitigation, not a bigger number in the planner.
+
+### Wiring (ESP32 DevKit)
+
+| signal | pin | notes |
+|---|---|---|
+| shoulder PWM / DIR | 25 / 26 | H-bridge, 20 kHz LEDC |
+| elbow PWM / DIR | 27 / 14 | H-bridge |
+| shoulder / elbow home | 39 / 18 | NC switch to GND, trips at θ = 0 |
+| brush PWM | 13 | MOSFET or second bridge channel |
+| brush current | 36 | optional, ADC |
+| e-stop | 19 | NC loop, HIGH = unsafe (fail-safe) |
+| lid switch | 21 | NC to GND, HIGH = open |
+
+### Calibration
+
+1. Set `SH_MOVE_DUTY` / `EL_MOVE_DUTY` (start at ~170/255).
+2. Command a known move, e.g. 180°, and time it with a stopwatch (or home
+   before and after and read the difference on the mechanism).
+3. `DPS = degrees / seconds` → `SH_DPS` / `EL_DPS`. Do it **in water, brush
+   loaded** — that is the number the cycle will see.
+4. Re-check after the first few cycles; gearmotor speed drifts with voltage and
+   wear, which is why the cycle re-homes.
+
+### Path
+
+```
+node tools/export-plan.mjs 9225 file:///.../tools/swept_area.html firmware/c1_cleaner/plan.json
+node tools/plan-to-header.mjs firmware/c1_cleaner/plan.json firmware/c1_cleaner/path.h
+```
+
+`path.h` holds six arcs (three rings × two elbow branches). The tool's
+"Export path (JSON)" button produces the same file without a headless browser.
+
+### API
+
+| request | effect |
+|---|---|
+| `GET /clean` | status: phase, ring/arc, estimates t1/t2, brush, level, lid, e-stop, fault |
+| `GET /clean?mode=start` | home, then run the cycle (409 with a reason if interlocked) |
+| `GET /clean?mode=stop` | stop after the current move, then park |
+| `GET /clean?mode=home` / `reset` | re-home; clears a latched fault |
+| `GET /` | tiny status page |
+
+Interlocks are enforced on the device: e-stop, lid, level ≥ 15 % (from M1), and
+optional brush-stall cut-out. Any fault cuts motor power, stops the brush and
+latches until `reset`.
 ## Tank-side firmware
 
 The tank-side firmware lives in [`m1_tank/`](m1_tank/) (Arduino sketch, ESP8266).

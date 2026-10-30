@@ -119,6 +119,9 @@
         <button class="btn primary" id="run">Trace a path</button>
         <button class="btn" id="reset">Reset</button>
       </div>
+      <div class="actions">
+        <button class="btn" id="export">Export path (JSON)</button>
+      </div>
       <span class="hint">Drag either joint to move the arm. “Trace a path” walks the reachable area the way a cleaning cycle would — the duration slider sets how slowly it runs (you can change it mid-trace).</span>
     </div>
 
@@ -772,6 +775,48 @@ document.getElementById("run").addEventListener("click", () => {
   };
   cancelAnimationFrame(raf);
   raf = requestAnimationFrame(step);
+});
+
+/* ---------- export the planned path for the firmware ---------- */
+window.__exportPlan = () => {
+  const plan = buildPlan();
+  return JSON.stringify({
+    generated: new Date().toISOString(),
+    config: { brushCm: state.brush, overlapCm: state.margin, l1LimitDeg: state.l1, l2LimitDeg: state.l2 },
+    rings: plan.rings.map((r) => +r.toFixed(2)),
+    park: parkPose(),
+    metrics: {
+      points: plan.path.length,
+      travelDeg: +plan.travel.toFixed(1),
+      moveTravelDeg: +plan.moveTravel.toFixed(1),
+      moves: plan.moves,
+      dupPct: +plan.dupPct.toFixed(2),
+    },
+    // [theta1, theta2, move] in degrees
+    poses: plan.path.map((p) => [+p.t1.toFixed(2), +p.t2.toFixed(2), p.move ? 1 : 0]),
+    // arcs: the executable unit for an open-loop controller — the elbow angle is
+    // constant across an arc, so the shoulder just has to sweep it
+    arcs: plan.arcs.map((a, i) => ({
+      ring: plan.rings.indexOf(a[0].r) + 1,
+      r: +a[0].r.toFixed(2),
+      a0: +a[0].a.toFixed(1),
+      a1: +a[a.length - 1].a.toFixed(1),
+      t1a: +a[0].t1.toFixed(1),
+      t1b: +a[a.length - 1].t1.toFixed(1),
+      t2: +a[0].t2.toFixed(1),
+      order: i,
+    })),
+  });
+};
+
+document.getElementById("export").addEventListener("click", () => {
+  const json = window.__exportPlan();
+  const blob = new Blob([json], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "tankguard-clean-plan.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
 });
 
 /* planner controls */

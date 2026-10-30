@@ -166,43 +166,68 @@ M1 tank unit (ESP8266, solar)            cleaner controller (ESP-class, own powe
 
 ---
 
-## 5. Proposed control contract (v1 — for the dashboard)
+## 5. Control contract (v1 — implemented by `firmware/c1_cleaner`)
 
-Only what the cleaner can actually measure. The dashboard reflects interlocks;
-it never bypasses them.
+Only what the cleaner can actually measure — and it can measure very little: there
+are **no encoders**, so joint angles are dead-reckoned from calibrated speed and
+flagged as estimates. The dashboard reflects interlocks; it never bypasses them.
 
 ```jsonc
 // GET /clean
 {
-  "phase": "idle | homing | sweeping | retracting | fault",
-  "progress": 0,            // 0-100 across the cycle
-  "angleDeg": 0,            // current sweep angle, -180..180
-  "brushes": [ { "amps": 0.0 }, { "amps": 0.0 } ],
-  "levelPct": 0,            // from M1, for the interlock display
-  "lidClosed": true,
-  "startedAt": null,
-  "fault": null             // "stall" | "dry" | "estop" | "timeout" | "home"
+  "openLoop": true,          // angles are estimates, not measurements
+  "phase": "boot|homing|parked|running|parking|fault",
+  "ring": 2,                 // current ring (1..3)
+  "arc": 3,                  // current arc (0..5)
+  "arcCount": 6,
+  "progress": 50.0,          // arcs completed, %
+  "t1": 23.50,               // shoulder estimate, deg (null after a fault)
+  "t2": -156.90,             // elbow estimate, deg
+  "brush": 200,              // PWM duty, 0 = off
+  "level": 63.0,             // from M1 /data
+  "levelAge": 4,             // seconds since the last successful read
+  "lid": 1,
+  "estop": 0,
+  "fault": null,             // "home" | "estop" | "lid" | "dry" | "stall"
+  "cycleS": 42,
+  "uptime": 812
 }
 
-// POST /clean  {"mode": "start" | "stop" | "home"}
+// GET /clean?mode=start|stop|home|reset
 ```
 
-Interlocks live on the device: `start` returns `409` with a reason when
-`levelPct < 15`, `lidClosed == false`, or a fault is latched.
+`start` returns `409` with a reason when the e-stop is open, the lid is open, the
+level is stale or below 15 %, or a fault is latched.
+
+**Accuracy budget.** With timed moves the position error grows with load, supply
+sag and wear; the firmware bounds it by re-homing at every ring. Expect a few
+degrees per pass, not the 0.3 cm the planner talks about — the 16 cm brush
+absorbs that, which is why the overlap margin is not the thing to tune here.
+Adding an AS5600 magnetic encoder (~₹300) per joint would turn this into the
+closed-loop controller the planner was written for; the firmware keeps the joint
+interface small so that swap is contained.
 
 ---
 
-## 6. Firmware state machine (sketch)
+## 6. Firmware state machine (implemented)
 
 ```
-IDLE ──start──► HOME ──► SWEEP ⇄ (n passes) ──► RETRACT ──► IDLE
-                  │        │ brush on, watch amps
-                  │        └─ pass: set angle → dwell → next
-                  └─ fail ─► FAULT (motors off, alarm, latch until reset)
+BOOT ──► HOMING ──► PARKED ──start──► RUNNING ──► PARKING ──► PARKED
+           │                            │
+           │                            ├─ ring 1: arcs → re-home
+           │                            ├─ ring 2: arcs → re-home
+           │                            └─ ring 3: arcs
+           └─ fail ─► FAULT ◄───────────┘ (e-stop, lid, dry, stall)
 ```
 
-Per pass: `angle = -sweep + 2·sweep·k/(n-1)`; n = ceil(2·sweep / step); step
-default 30°; dwell 6 s; brush current over cap for 300 ms → `FAULT:stall`.
+Per arc: `elbow → t2`, `shoulder → t1a`, brush on, `shoulder → t1b`, brush off.
+Moves are timed (no feedback): `duty` fixed, `duration = angle / calibrated_dps`.
+Stop is honoured between moves, never mid-move — a move cut short invalidates the
+angle estimate, so the next action is always a re-home.
+
+**Re-homing is the accuracy mechanism**, not an overhead: three homes per cycle
+bound the drift to a single pass. Any change to `SH_DPS` / `EL_DPS` changes the
+cycle time proportionally, so calibrate in water with the brush loaded.
 
 ---
 
