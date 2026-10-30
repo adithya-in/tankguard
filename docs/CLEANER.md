@@ -147,6 +147,29 @@ M1 tank unit (ESP8266, solar)            cleaner controller (ESP-class, own powe
    brushes through the pipe with a shaft — no motors in water, no glands to
    trust. The second is strongly preferred for potable water.
 
+### Drivetrain — 12 V, 350 rpm motors
+
+The joints use 12 V DC gearmotors rated **350 rpm**. That is 2,100 °/s at the
+shaft, while the planned sweep is 45 °/s — a factor of 47 — and PWM cannot
+throttle a DC motor down to 2 % duty (it stalls). The reduction is therefore
+chosen so that **rated speed equals cleaning speed**:
+
+| reduction | joint speed at full duty | note |
+|---|---|---|
+| 20:1 | 105 °/s | 2.3× too fast |
+| **47:1** | **44.7 °/s** | matches the planner |
+| 50:1 | 42 °/s | 7 % under, easiest to source |
+| 100:1 | 21 °/s | cycle doubles |
+
+Torque budget: arm ≈ 0.8 kg with CoM ~15 cm out → ~12 kg·cm of gravity, plus
+10–20 kg·cm of brush drag in water ≈ **25 kg·cm at the joint**. Through 50:1 at
+70 % efficiency the motor supplies ~0.7 kg·cm — inside a 350 rpm gearmotor's
+1–3 kg·cm, and the gearbox holds the arm parked unpowered.
+
+Two consequences for the controller: full duty is the most repeatable speed
+without feedback (good for open-loop timing), and gearbox backlash (1–2°) adds
+to the drift budget.
+
 ### Safety rules this mechanism needs (in addition to the repo's existing ones)
 
 1. **No continuous rotation — oscillate.** The water hose and the brush wires

@@ -136,9 +136,30 @@ mitigation, not a bigger number in the planner.
 | e-stop | 19 | NC loop, HIGH = unsafe (fail-safe) |
 | lid switch | 21 | NC to GND, HIGH = open |
 
+### Drivetrain (12 V, 350 rpm motors)
+
+Direct drive is not usable: 350 rpm is **2,100 °/s**, while the planner sweeps at
+45 °/s, and PWM cannot throttle a DC motor to 2 % duty (it stalls). The joints
+therefore need a **reduction chosen so rated speed equals cleaning speed**:
+
+| reduction | joint speed at full duty | note |
+|---|---|---|
+| 20:1 | 105 °/s | 2.3× too fast |
+| **47:1** | **44.7 °/s** | matches the planner |
+| 50:1 | 42 °/s | 7 % under, easiest to source |
+| 100:1 | 21 °/s | cycle doubles |
+
+Torque: arm ≈ 0.8 kg with its CoM ~15 cm out → ~12 kg·cm of gravity, plus
+10–20 kg·cm of brush drag in water ≈ **25 kg·cm at the joint**. Through 50:1 at
+70 % efficiency the motor only supplies ~0.7 kg·cm, well inside a 350 rpm
+gearmotor's 1–3 kg·cm — and the gearbox holds the arm parked unpowered.
+
+Backlash in the gearbox (1–2°) adds to the open-loop drift budget, which is
+already the dominant error.
+
 ### Calibration
 
-1. Set `SH_MOVE_DUTY` / `EL_MOVE_DUTY` (start at ~170/255).
+1. Set `SH_MOVE_DUTY` / `EL_MOVE_DUTY` — with a 50:1 box, **255** (full duty).
 2. Command a known move, e.g. 180°, and time it with a stopwatch (or home
    before and after and read the difference on the mechanism).
 3. `DPS = degrees / seconds` → `SH_DPS` / `EL_DPS`. Do it **in water, brush

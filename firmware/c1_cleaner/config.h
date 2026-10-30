@@ -37,14 +37,28 @@
 #define PIN_ESTOP     19   // LOW = loop intact, HIGH = pressed / broken
 #define PIN_LID       21   // LOW = lid closed, HIGH = open / broken
 
-// ---- speed calibration ----------------------------------------------------
-// Drive a joint at MOVE_DUTY from its home switch for a known time, measure the
-// angle it actually covered, and set DPS = degrees / seconds. Start with the
-// motor's no-load rating and correct on the bench, in water, with the brush
-// loaded — that is the number that matters.
-#define SH_MOVE_DUTY  170
-#define SH_DPS        42.0f   // deg/s at SH_MOVE_DUTY, loaded
-#define EL_MOVE_DUTY  170
+// ---- drivetrain -----------------------------------------------------------
+// Motors: 12 V DC, 350 rpm rated (both joints). Direct drive would sweep
+// 2100 deg/s — 47x faster than the planner's 45 deg/s — and PWM cannot throttle
+// it (45 deg/s is ~2 % duty, below stiction). So each joint gets a reduction
+// chosen so that rated speed IS the cleaning speed, and runs at full duty:
+//
+//   350 rpm / 50 = 7 rpm = 42 deg/s      (47:1 gives 44.7 deg/s)
+//
+// Full duty is also the most repeatable speed available without feedback.
+// Torque: arm ~0.8 kg with CoM ~15 cm -> ~12 kg.cm, brush drag ~10-20 kg.cm,
+// so ~25 kg.cm at the joint; through 50:1 at 70 % that is ~0.7 kg.cm at the
+// motor, well inside a 350 rpm gearmotor's 1-3 kg.cm.
+#define MOTOR_RPM_RATED 350.0f
+#define SH_GEAR_RATIO   50.0f
+#define EL_GEAR_RATIO   50.0f
+
+// Joint speed at full duty = MOTOR_RPM_RATED / GEAR_RATIO * 6 deg/s.
+// Calibrate these on the bench anyway: gearbox efficiency, supply sag and load
+// all move the real number. Backlash (~1-2 deg) adds to the drift budget.
+#define SH_MOVE_DUTY  255
+#define SH_DPS        42.0f
+#define EL_MOVE_DUTY  255
 #define EL_DPS        42.0f
 
 // A short full-duty kick breaks stiction; its distance is folded into the
