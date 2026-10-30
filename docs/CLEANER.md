@@ -12,24 +12,25 @@ guesses.
 
 ## 1. What the model shows (mechanical)
 
-- A **vertical pipe** through the tank lid — the arm's spine.
-- A **main arm** in 2020 aluminium extrusion: **pipe → outer motor at r = 20 cm**.
-- **Two planetary-motor units** beneath the arm: one near the pipe driving a
-  direct brush (covers roughly r = 0–12 cm), one at **r = 20 cm** driving the
-  **secondary arm** (`arm1` / `arm2`), which extends to **r = 40 cm** fully
-  extended, with its brush at the end.
-- Assembly tree: `Rigid 4` (brush mounts), `Revolute 3` (the secondary arm's
-  hinge at the outer motor) and `Revolute 1` (the main arm's rotation about the
-  pipe), body `mainarm`.
+- A **vertical pipe** through the tank lid — the arm's spine and the shoulder axis.
+- **Two rigid 20 cm links**, no telescoping:
+  - **link 1 (shoulder)** pivots on the pipe, θ1;
+  - **link 2 (elbow)** pivots on the motor at the end of link 1, θ2, and is driven
+    independently.
+- A **brush at each end**: one at the elbow (r = 20 cm), one at the tip
+  (r = 0–40 cm depending on the elbow angle).
+- Assembly tree: `Rigid 4` (brush mounts), `Revolute 3` (the elbow) and
+  `Revolute 1` (the shoulder), body `mainarm`.
 
-**Motion implied:** the whole arm rotates about the pipe axis; the outer motor
-extends/retracts the secondary arm to follow the annulus; both brush heads spin
-on their own axes.
+**Motion implied:** a planar 2R arm. The tip reaches any point with r ≤ 40 cm;
+both joints oscillate inside their own limits (the hose and wires must not wind
+up), so the *reachable* floor depends on those limits — that is the dead-area
+question, and `tools/swept_area.html` solves it numerically.
 
 | axis | joint | job |
 |---|---|---|
-| sweep | Revolute 1 | rotate the arm across the floor |
-| reach | Revolute 3 | extend the secondary arm 20 → 40 cm |
+| shoulder | Revolute 1 | swing the whole arm; ±L1 |
+| elbow | Revolute 3 | fold the second link; ±L2 |
 | brush 1 / brush 2 | Rigid 4 | scrub, independently |
 
 Open: which revolute is the sweep vs the fold, and whether the pipe is also a
@@ -47,17 +48,15 @@ motors, no cables, no slip ring in the water; the rotary seal lives at the lid.
 | given | value | derived |
 |---|---|---|
 | tank radius | 50 cm | floor area 7,854 cm² |
-| main arm: pipe → outer motor | 20 cm | inner brush covers ≈ r = 0–12 cm |
-| secondary arm: outer motor → brush | 20 cm (fully extended) | outer brush axis at **r = 40 cm** |
+| link 1 (shoulder) | 20 cm fixed | elbow brush at r = 20 cm |
+| link 2 (elbow) | 20 cm fixed | tip at r = 0–40 cm depending on θ2 |
 | brush heads | ⌀ 10 cm assumed (radius 5) | outer edge reaches **r = 45 cm** |
 | **unreachable ring** | **r = 45–50 cm (5 cm)** | **1,492 cm² = 19 % of the floor** |
 | pump suction cup | ⌀ 5 cm | 19.6 cm² footprint (0.25 % of the floor) |
-| 2020 extrusion stock | 500 mm | **fully used**: 200 + 200 mm + joints — no idle beam |
 
-Measured with `tools/swept_area.py` (section 7): **78.9 % of the floor covered**,
-the missing 21 % being the 5 cm ring plus the pipe footprint at the centre. With
-a point-sized brush the ring would be 10 cm / 36 % — the ⌀10 head is doing real
-work here.
+Measured with `tools/swept_area.html` (section 7): with **both joints free
+(±180°)**, 80.4 % of the floor is reachable — 19 % is the wall ring and 0.6 % is
+the centre singularity. The ring, not the joints, is the dominant dead area.
 
 **The ring is the real constraint.** It is exactly the wall base, where sludge
 settles hardest. Options, cheapest first:
@@ -65,11 +64,11 @@ settles hardest. Options, cheapest first:
 | option | change | result |
 |---|---|---|
 | **A — accept it** | add a fixed wall-base brush/skirt at the tip | ring stays 19 %, but the fillet gets scrubbed |
-| **B — longer second stage** | secondary arm 20 → 25 cm (1 m extrusion cut down) | brush edge reaches 50 cm → ring closed |
-| **C — third stage** | telescoping stage beyond r = 40 | ring closed, most mass and torque at the tip |
+| **B — longer second link** | 20 → 25 cm (1 m extrusion cut down) | brush edge reaches 50 cm → ring closed |
+| **C — bigger head** | brush radius 10 cm (⌀20) | ring closed, heavy and high torque |
 
-Brush diameter alone cannot close it: touching the wall from r = 40 needs a
-⌀20 cm brush — heavy, high torque, and it scrubs at a different surface speed.
+Brush diameter alone cannot close it without becoming the whole design: a ⌀20 cm
+head is a floor polisher, not a tank brush.
 
 **Off-centre pivot is not a fix.** A 40 cm reach pivoted *d* from the centre
 sweeps a disc of radius 40 around the pivot; at d = 40 it trades the 10 cm inner
@@ -206,61 +205,51 @@ default 30°; dwell 6 s; brush current over cap for 300 ms → `FAULT:stall`.
 
 ---
 
-## 7. Swept-area model (`tools/swept_area.py`)
+## 7. Workspace explorer (`tools/swept_area.html`)
 
-A small matplotlib model that stamps the actual brush discs as the arm moves, so
-coverage is measured rather than assumed. It models the **no-continuous-rotation
-constraint**: the arm oscillates between −L and +L (the hose and wires unwind on
-the way back), and the tool reports the resulting twist and any dead sector.
+A self-contained page (no build, no dependencies) that solves the real question:
+**given joint limits, which parts of the floor can this arm reach at all?** It
+computes the reachable workspace analytically — inverse kinematics on a 0.25 cm
+grid, then dilates by the brush radius — so the dead area is exact, not the
+result of one guessed path.
 
-```
-python tools/swept_area.py                          # 1 arm, +/-180, concentric
-python tools/swept_area.py --arms 2 --limit 90      # two arms, half the twist
-python tools/swept_area.py --limit 170              # shows the dead sector
-python tools/swept_area.py --mode spiral --osc 3
-python tools/swept_area.py --brush 4                # dia-8 heads: shows the gap
-python tools/swept_area.py --pump 25                # draw the dia-5 cup at r = 25
-python tools/swept_area.py --save sweep.gif --still sweep-final.png
-```
+Open it directly: `start tools/swept_area.html` (or drag it into a browser).
 
-### Coverage needs 2·L·N ≥ 360°
+| control | what it changes |
+|---|---|
+| Shoulder ±L1, Elbow ±L2 | joint limits = hose/wire twist |
+| Brush radius | head size; also sets the outer edge (40 + b) |
+| Brush at the elbow | the r = 20 brush on/off |
+| θ1 / θ2 sliders | move the arm by hand |
+| Trace a path | walks the reachable area the way a cycle would (paints what it actually scrubs) |
 
-| arms | sweep | hose twist each way | coverage |
-|---|---|---|---|
-| 1 | ±180° | ±180° | **78.9 %** — full circle |
-| 2 | ±90° | ±90° | **78.9 %** — full circle |
-| 3 | ±60° | ±60° | full circle |
-| 1 | ±170° | ±170° | 77.7 % — **20° dead sector** |
+### Measured trade-off (⌀10 brushes, tank r 50, links 20 + 20)
 
-A single arm at ±180° is the only one-arm option that reaches every angle. Any
-less leaves a wedge that spans all radii, so no number of radial passes fixes
-it — measured loss 1.2 points (the brush radius softens the wedge edges). If
-±180° of hose twist is too much, **add arms, not sweep**: two opposite arms halve
-the twist and keep full coverage.
+| shoulder ± | coverage | | elbow ± | coverage |
+|---|---|---|---|---|
+| 180° | **80.4 %** | | 180° | **80.4 %** |
+| 150° | 79.5 % | | 150° | 79.2 % |
+| 120° | 74.0 % | | 120° | 71.4 % |
+| 90° | 63.6 % | | 90° | 71.4 % |
+| 60° | 51.0 % | | 60° | 60.9 % |
+| — | — | | 30° | 50.7 % |
 
-### Pattern under oscillation
+Three things this settles:
 
-| pattern | coverage | note |
-|---|---|---|
-| concentric, passes at r = 20 / 28 / 36 / 40 | **78.9 %** | one oscillation per radius — the recommended cycle |
-| spiral, 3 oscillations + dwell at each end | 77.0 % | works, but no better than concentric |
-| spiral, 2 oscillations | 73.1 % | pitch 10 cm = band width → gaps |
-| either, with dia-8 brushes | 72.3 % | **2 cm gap** between the two brush tracks (r 14–16) |
+1. **The ring, not the joints, is the main dead area.** Even with both joints
+   free, 19 % (the 5 cm wall ring) is unreachable. Loosening joints cannot fix
+   it; only reach can.
+2. **Shoulder ±150° is nearly free** — 0.9 points. If ±180° of hose twist is
+   unacceptable, ±150° buys almost the same coverage; below ±120° it collapses
+   (74 % → 63.6 % at ±90°).
+3. **The elbow tolerates less than the shoulder** but still needs ~±150° to stay
+   above 79 %; at ±60° it costs 20 points.
 
-Three rules fall out of the model:
+The "Trace a path" run reaches 80.9 % against the 80.4 % workspace — i.e. a
+concentric cycle over the reachable set actually scrubs what the analysis says
+it can, so the model is consistent.
 
-1. **Brush radius ≥ 5 cm (dia 10)** — the inner track covers r 5–15 and the outer
-   starts at 15; a smaller head leaves an unscrubbed ring between them
-   (`10 − 2·brush_radius` cm wide).
-2. **Overlap the tracks.** Passes spaced at exactly the band width (2 × brush
-   radius) touch tangentially and leave scalloped rings. Spacing 1.6 × brush
-   radius removes them.
-3. **Dwell at both extreme radii.** A monotonic spiral visits each extreme at a
-   single angle, costing ~6 points (measured: 64.3 % before the dwells, 78.9 %
-   after).
-
-Renders: [`sweep-1arm.png`](sweep-1arm.png) · [`sweep-2arms.png`](sweep-2arms.png) ·
-[`sweep-dead-sector.png`](sweep-dead-sector.png)
+Screenshot: [`workspace-2r.png`](workspace-2r.png)
 
 ---
 
