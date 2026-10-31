@@ -179,8 +179,8 @@ is why, not the toolchain):
 ```
 M1 tank unit (ESP8266, solar)            cleaner controller (ESP32, own power)
   sensors → GET /data  ──── Wi-Fi ────►  cycle orchestration + interlocks
-  no motors, unchanged                    ├─ H-bridge → shoulder (θ1)
-                                          ├─ H-bridge → elbow (θ2)
+  no motors, unchanged                    ├─ dual-PWM driver → shoulder (θ1)
+                                          ├─ dual-PWM driver → elbow (θ2)
                                           ├─ brush driver → one tip brush
                                           ├─ pump relay
                                           └─ home switches, lid, e-stop, alarm
@@ -190,9 +190,9 @@ M1 tank unit (ESP8266, solar)            cleaner controller (ESP32, own power)
 
 1. **Motor drivers.** Nothing in the repo drives a motor directly; H1 switches a
    pump through an opto-relay + contactor, which is on/off only. The shoulder and
-   elbow need PWM + direction H-bridges, plus a channel for the brush. Brush
-   current sensing is optional in this build but is the only way to detect a jam
-   rather than infer it.
+   elbow use dual-PWM drivers (RPWM / LPWM per joint), plus a channel for the
+   brush. Brush current sensing is optional in this build but is the only way to
+   detect a jam rather than infer it.
 2. **Power budget.** The 12 V tree (`CN3791 → 18650 → LM2596`) is sized for
    sensors, the ESP8266 and occasional relay switching. Motors are a different
    class: the cleaner should get its own supply (mains at the pump point is the

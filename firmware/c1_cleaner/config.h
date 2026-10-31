@@ -14,23 +14,25 @@
 //     planner's 0.3 cm overlap is far below the real repeatability.
 // ---------------------------------------------------------------------------
 
-// ---- shoulder joint -------------------------------------------------------
-#define SH_PWM        25
-#define SH_DIR        26
-#define SH_HOME       39   // NC switch to GND, internal pull-up, trips at theta = 0
-#define SH_DIR_INVERT 0
+// ---- arm motors: dual-PWM drivers (RPWM / LPWM per joint) -----------------
+// GPIO numbers as supplied. D5-D8 are NodeMCU names for the same pins on a
+// NodeMCU-labelled header; this build targets the ESP32.
+#define ARM_A_RPWM    14   // D5
+#define ARM_A_LPWM    12   // D6
+#define ARM_B_RPWM    13   // D7
+#define ARM_B_LPWM    15   // D8
 
-// ---- elbow joint ----------------------------------------------------------
-#define EL_PWM        27
-#define EL_DIR        14
+// ---- home switches --------------------------------------------------------
+#define SH_HOME       39   // input-only: needs an external 10k pull-up to 3V3
 #define EL_HOME       18
+#define SH_DIR_INVERT 0
 #define EL_DIR_INVERT 0
 
 // ---- brush head + suction ------------------------------------------------
 // The head is a ring brush: bristles on the perimeter only, the centre is the
-// pump intake. Scrubbing only loosens the sludge — the pump carries it away —
-// so the bristles run light.
-#define BRUSH_PWM     13
+// pump intake. Scrubbing only loosens the sludge; the pump carries it away, so
+// the bristles run light.
+#define BRUSH_PWM     25   // moved off 13, which is now arm B RPWM
 #define BRUSH_IS      36
 #define BRUSH_IS_ENABLED 0 // 1 once a current-sense resistor is fitted
 

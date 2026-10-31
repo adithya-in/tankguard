@@ -40,7 +40,8 @@
 // ---------------------------------------------------------------------------
 struct Joint {
   const char *name;
-  uint8_t pwmPin, dirPin, homePin, pwmCh;
+  uint8_t rpwmPin, lpwmPin, homePin;
+  uint8_t rpwmCh, lpwmCh;
   bool invert;
   float degFwd, degBack; // calibrated advance per burst, per direction
   float estDeg;          // dead-reckoned angle, 0 = home switch
@@ -49,9 +50,9 @@ struct Joint {
   uint32_t bursts;       // bursts fired since the last home
 };
 
-Joint sh = {"shoulder", SH_PWM, SH_DIR, SH_HOME, 0, SH_DIR_INVERT,
+Joint sh = {"shoulder", ARM_A_RPWM, ARM_A_LPWM, SH_HOME, 0, 1, SH_DIR_INVERT,
             SH_DEG_PER_BURST_FWD, SH_DEG_PER_BURST_BACK, 0, 0, 0, 0};
-Joint el = {"elbow", EL_PWM, EL_DIR, EL_HOME, 1, EL_DIR_INVERT,
+Joint el = {"elbow", ARM_B_RPWM, ARM_B_LPWM, EL_HOME, 2, 3, EL_DIR_INVERT,
             EL_DEG_PER_BURST_FWD, EL_DEG_PER_BURST_BACK, 0, 0, 0, 0};
 
 volatile bool stopRequested = false;
@@ -66,21 +67,26 @@ static inline void pwmAttach(uint8_t pin, uint8_t ch) { ledcSetup(ch, 20000, 8);
 static inline void pwmWrite(uint8_t pin, uint8_t ch, uint8_t duty) { (void)pin; ledcWrite(ch, duty); }
 #endif
 
-/** Drive one joint. A reversal coasts first, so the bridge never changes
- *  direction while current is flowing. */
+/** Drive one joint through a dual-PWM driver: RPWM forward, LPWM reverse.
+ *  A reversal coasts first, so the bridge never changes direction under load. */
 void applyDuty(Joint &j, int duty) {
   duty = constrain(duty, -255, 255);
   const int dir = (duty > 0) - (duty < 0);
+  const uint8_t mag = (uint8_t)abs(duty);
   if (dir != 0 && j.lastDir != 0 && dir != j.lastDir) {
-    pwmWrite(j.pwmPin, j.pwmCh, 0);
+    pwmWrite(j.rpwmPin, j.rpwmCh, 0);
+    pwmWrite(j.lpwmPin, j.lpwmCh, 0);
     delay(DEAD_TIME_MS);
   }
-  if (dir != 0) {
+  if (dir == 0) {
+    pwmWrite(j.rpwmPin, j.rpwmCh, 0);
+    pwmWrite(j.lpwmPin, j.lpwmCh, 0);
+  } else {
     const bool forward = (dir > 0) ^ j.invert;
-    digitalWrite(j.dirPin, forward ? HIGH : LOW);
+    pwmWrite(j.rpwmPin, j.rpwmCh, forward ? mag : 0);
+    pwmWrite(j.lpwmPin, j.lpwmCh, forward ? 0 : mag);
     j.lastDir = dir;
   }
-  pwmWrite(j.pwmPin, j.pwmCh, (uint8_t)abs(duty));
   j.duty = duty;
 }
 
@@ -157,7 +163,7 @@ void setPump(bool on) {
 
 void setBrush(uint8_t duty) {
   brushDuty = duty;
-  pwmWrite(BRUSH_PWM, 2, duty);
+  pwmWrite(BRUSH_PWM, 4, duty);
   // the pump follows the brush: suction only while scrubbing, so the head never
   // sits sealed against the floor between passes
   setPump(duty > 0);
@@ -505,8 +511,6 @@ void setup() {
   delay(150);
   Serial.println("\nTankGuard C1 cleaner (open loop)");
 
-  pinMode(SH_DIR, OUTPUT);
-  pinMode(EL_DIR, OUTPUT);
   pinMode(SH_HOME, INPUT_PULLUP);
   pinMode(EL_HOME, INPUT_PULLUP);
   pinMode(PIN_ESTOP, INPUT_PULLUP);
@@ -515,12 +519,16 @@ void setup() {
   pinMode(PUMP_PIN, OUTPUT);
   setPump(false);
 
-  pwmAttach(SH_PWM, 0);
-  pwmAttach(EL_PWM, 1);
-  pwmAttach(BRUSH_PWM, 2);
-  pwmWrite(SH_PWM, 0, 0);
-  pwmWrite(EL_PWM, 1, 0);
-  pwmWrite(BRUSH_PWM, 2, 0);
+  pwmAttach(ARM_A_RPWM, 0);
+  pwmAttach(ARM_A_LPWM, 1);
+  pwmAttach(ARM_B_RPWM, 2);
+  pwmAttach(ARM_B_LPWM, 3);
+  pwmAttach(BRUSH_PWM, 4);
+  pwmWrite(ARM_A_RPWM, 0, 0);
+  pwmWrite(ARM_A_LPWM, 1, 0);
+  pwmWrite(ARM_B_RPWM, 2, 0);
+  pwmWrite(ARM_B_LPWM, 3, 0);
+  pwmWrite(BRUSH_PWM, 4, 0);
 
   if (strlen(WIFI_SSID) == 0) {
     WiFi.mode(WIFI_AP);

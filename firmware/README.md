@@ -132,16 +132,23 @@ encoder on the motor shaft would give 0.35 °/count at the joint if fitted later
 
 ### Wiring (ESP32 DevKit)
 
+The arm motors use dual-PWM drivers: each joint has an RPWM and an LPWM input,
+not a PWM plus DIR pair.
+
 | signal | pin | notes |
 |---|---|---|
-| shoulder PWM / DIR | 25 / 26 | H-bridge, 20 kHz LEDC |
-| elbow PWM / DIR | 27 / 14 | H-bridge |
-| shoulder / elbow home | 39 / 18 | NC switch to GND, trips at θ = 0 |
-| brush PWM | 13 | MOSFET or second bridge channel |
+| arm A (shoulder) RPWM / LPWM | 14 / 12 | D5 / D6 on a NodeMCU-labelled header |
+| arm B (elbow) RPWM / LPWM | 13 / 15 | D7 / D8 |
+| shoulder / elbow home | 39 / 18 | NC switch to GND; **39 is input-only, add an external 10 kΩ to 3V3** |
+| brush PWM | 25 | MOSFET or second bridge channel |
 | pump relay | 23 | suction pump; on only while scrubbing |
 | brush current | 36 | optional, ADC |
 | e-stop | 19 | NC loop, HIGH = unsafe (fail-safe) |
 | lid switch | 21 | NC to GND, HIGH = open |
+
+GPIO12 and GPIO15 are strapping pins on the ESP32: 12 must be low at boot and 15
+high. If the driver board holds either one the wrong way, the board will not
+boot, so check what the driver inputs do before powering up.
 
 ### Drivetrain (TJX28ZRM — RS395 12 V + 21.5:1, 11.3 N·cm rated)
 
