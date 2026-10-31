@@ -262,7 +262,8 @@ SUPPORT = [
     "limits, including the 2 cm wall ring the arm cannot reach.",
     "Coverage planner (tools/swept_area.html) and the generated path used by the "
     "controller (firmware/c1_cleaner/path.h).",
-    "Patentability disclosure and the minimum bill of materials.",
+    "Patentability disclosure (prior-art record, no filing claimed) and the minimum "
+    "bill of materials.",
     "Prototype spend to date: INR 23,587 in parts, with the monitor running at TRL 6.",
 ]
 
