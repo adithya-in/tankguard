@@ -206,9 +206,10 @@
 <tr><td>Event classification</td><td>3 classes — gradual degradation, source-water contamination, sludge resuspension</td></tr>
 <tr><td>State machine</td><td>GOOD (80–100) → WATCH (50–79) → ACTION ADVISED (30–49) → CLEAN REQUIRED (0–29)</td></tr>
 <tr><td>Pump control</td><td>Auto ON below LOW level, OFF above HIGH level; manual override auto-releases after 10 min; pump OFF on link loss</td></tr>
+<tr><td>Verification metrics</td><td>Four separate quantities, never interchangeable: turbidity reduction <code>R_T = (T_pre − T_post)/T_pre × 100</code> (%); estimated sediment reduction <code>R_S = (S_pre − S_post)/S_pre × 100</code> (%, from the NTU→mg/L calibration); TankScore change <code>ΔQ = Q_post − Q_pre</code> (points, positive = better); estimated sediment mass removed <code>m = (S_pre − S_post) × V</code> (g). The ratio form is valid only for reduction metrics — TankScore is higher-is-better and is reported as a point change, never as a percentage of its own baseline.</td></tr>
 <tr><td>Local server</td><td>Embedded HTTP server + mDNS (<code>tankguard.local</code>), AP or STA mode</td></tr>
 <tr><td>Dashboard</td><td>HTML5/JS single-page — gauges, trend charts (24 h / 7 d / 30 d / 90 d), TankScore banner, pump status, history</td></tr>
-<tr><td>Storage</td><td>LittleFS on flash — ring buffer of samples + event log (pre/post scores, effectiveness)</td></tr>
+<tr><td>Storage</td><td>LittleFS on flash — ring buffer of samples + event log (pre/post turbidity, pre/post TankScore, and the derived R_T, R_S, ΔQ and m)</td></tr>
 <tr><td>Connectivity</td><td>Wi-Fi only by default (no cloud); optional MQTT/e-mail/SMS alerts are notification-only, never control</td></tr>
 <tr><td>OTA</td><td>Optional over-the-air firmware update while installed</td></tr>
 <tr><td>Power management</td><td>Deep-sleep scheduler with switched sensor power rail; &lt;1 mA idle</td></tr>

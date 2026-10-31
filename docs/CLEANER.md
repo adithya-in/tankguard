@@ -391,7 +391,58 @@ scrubbing passes, dashed amber for repositioning.
 
 ---
 
-## 10. Open questions (blocking firmware)
+## 10. Verification metrics — four separate quantities
+
+A review of the specification caught a real defect: the flush-era formula
+
+```
+E = (Pre − Post) / Pre × 100
+```
+
+was written against **TankScore**, which is a *higher-is-better* index. The ratio
+form only means "reduction" for a lower-is-better quantity, so on TankScore it
+inverts the sign: a cycle that improves the score from 40 to 75 returns
+**−87.5 %**, i.e. "worse than doing nothing" for water that got better.
+
+The product no longer flushes, and the cleaning cycle must report four distinct
+quantities. They are not interchangeable and must never be printed under one
+label such as "effectiveness".
+
+| # | metric | symbol | formula | unit | better when |
+|---|---|---|---|---|---|
+| 1 | turbidity reduction | `R_T` | `(T_pre − T_post) / T_pre × 100`, `T_pre > 0` | % | higher |
+| 2 | estimated sediment reduction | `R_S` | `(S_pre − S_post) / S_pre × 100`, `S = k·(T − T₀)` | % | higher |
+| 3 | TankScore change | `ΔQ` | `Q_post − Q_pre` | points | higher |
+| 4 | estimated sediment mass removed | `m` | `(S_pre − S_post) × V` | g | higher |
+
+`T` = turbidity (NTU), `S` = suspended-solids estimate (mg/L), `k` and `T₀` from
+the NTU→mg/L calibration, `V` = tank volume (L), `Q` = TankScore (0–100).
+
+Rules:
+
+1. **The ratio form is only valid on a reduction quantity.** Turbidity and the
+   sediment estimate qualify; TankScore does not. Report TankScore as a point
+   change (`ΔQ`, positive = better), never as a percentage of its own baseline.
+2. **Percentages need a baseline.** `R_T` and `R_S` are undefined at `T_pre = 0`
+   and are clamped to `[−100, +100]`; below the detection limit the cycle reports
+   "no measurable change" instead of a number.
+3. **`R_S` and `m` are estimates.** Both depend on the NTU→mg/L calibration, so
+   they are labelled "estimated" wherever shown and are never presented as
+   measured mass.
+4. **A pass/fail threshold must name its metric.** The old "≥ 40 % effectiveness"
+   becomes e.g. `R_T ≥ 40 %` — attached to turbidity, with `ΔQ` reported
+   alongside it for the composite score.
+5. **Worked example.** Pre: turbidity 18 NTU, score 40. Post: turbidity 6 NTU,
+   score 75. Then `R_T = 66.7 %`, `ΔQ = +35 points`, and `R_S`/`m` follow from the
+   calibration and tank volume. The score improved and every number says so.
+
+Where these appear: the spec's storage row (now names the four metrics), the
+design record here, and the dashboard's session log (it keeps turbidity and score
+series separately, so all four are derivable client-side).
+
+---
+
+## 11. Open questions (blocking firmware)
 
 1. **Product narrative** — is the cleaner a separate product, or do the spec and
    patent drafts get rewritten to include an actuator in the tank? (section 3)
