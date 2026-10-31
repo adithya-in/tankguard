@@ -33,6 +33,7 @@
 
 #include "config.h"
 #include "path.h"
+#include "ui.h"
 
 // ---------------------------------------------------------------------------
 // joints (open loop)
@@ -359,6 +360,9 @@ String statusJson() {
   s += ",\"home2\":" + String(digitalRead(EL_HOME) == LOW ? 1 : 0);
   s += ",\"duty1\":" + String(sh.duty);
   s += ",\"duty2\":" + String(el.duty);
+  s += ",\"mode\":\"";
+  s += (strlen(WIFI_SSID) == 0) ? "ap" : "sta";
+  s += "\"";
   s += "}";
   return s;
 }
@@ -465,12 +469,8 @@ void handleJog() {
 #endif
 
 void handleRoot() {
-  String h = "<!doctype html><meta name=viewport content='width=device-width'>";
-  h += "<title>TankGuard cleaner</title><body style='font-family:sans-serif;background:#f2f1ed;color:#14171b'>";
-  h += "<h2>TankGuard C1</h2><pre id=v>loading…</pre>";
-  h += "<script>async function u(){let j=await(await fetch('/clean')).json();";
-  h += "v.textContent=JSON.stringify(j,null,1);}u();setInterval(u,2000);</script></body>";
-  server.send(200, "text/html", h);
+  server.sendHeader("Cache-Control", "no-store");
+  server.send_P(200, "text/html", UI_HTML);
 }
 
 // ---------------------------------------------------------------------------
@@ -524,8 +524,9 @@ void setup() {
 
   if (strlen(WIFI_SSID) == 0) {
     WiFi.mode(WIFI_AP);
-    WiFi.softAP("TankGuard-Cleaner");
-    Serial.print("AP mode, IP: ");
+    WiFi.softAP(AP_SSID, AP_PASS);
+    Serial.printf("hotspot: %s (password %s)\n", AP_SSID, AP_PASS);
+    Serial.print("open http://");
     Serial.println(WiFi.softAPIP());
   } else {
     WiFi.mode(WIFI_STA);

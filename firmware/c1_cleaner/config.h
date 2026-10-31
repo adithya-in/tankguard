@@ -110,6 +110,13 @@
 #define WIFI_PASS ""
 #define M1_DATA_URL "http://192.168.1.50/data"
 
+// ---- access point (standalone demo) --------------------------------------
+// With WIFI_SSID empty the cleaner runs as its own hotspot. Join AP_SSID and
+// open http://192.168.4.1 - no router, no internet, no app to install.
+// WPA2 needs at least 8 characters.
+#define AP_SSID "TankGuard-C1"
+#define AP_PASS "tankguard"
+
 // ---- telemetry ------------------------------------------------------------
 #define SERIAL_BAUD 115200
 #define STATUS_LED   2

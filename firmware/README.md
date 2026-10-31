@@ -160,6 +160,26 @@ no seal and no vacuum downforce. Joint load is ≈ 8–16 N·cm against 11.3 rat
 ~34 stall. Expect **25–35 °/s** and a **55–80 s cycle**. The pump is sequenced
 with the brush for power and sludge behaviour, not as a safety gate.
 
+### Controller page (standalone hotspot)
+
+With `WIFI_SSID` empty (the default) the cleaner runs as its own access point:
+
+1. Join the **TankGuard-C1** hotspot, password **tankguard**.
+2. Open **http://192.168.4.1**.
+3. The page is served from the ESP32 itself, so there is no router, no internet
+   and no app to install. It polls `/clean` once a second and drives the same API
+   as `curl`.
+
+The page has a status grid (ring/arc, both angles, level, bursts, last move), a
+progress bar, the four interlocks as dots, Run controls (Check, Home, Start with
+a ring selector and the bench bypass, Stop, Reset) and a jog panel for
+calibration. Start, Home, Reset and Jog are disabled while the arm is moving;
+Stop stays live.
+
+`levelFresh` will be false in hotspot mode because M1 is not on that network, so
+Start refuses until **Skip level check** is ticked. The e-stop and lid interlocks
+are always live.
+
 ### Calibration
 
 The advance per burst differs by joint **and by direction**, because the shoulder
@@ -181,8 +201,9 @@ and the gearbox, not to change the calibration.
 
 ### Demo runbook
 
-1. Power on with the lid switch closed and the e-stop released. The arm homes at
-   boot; the serial log prints the two switch states.
+1. Power on with the lid switch closed and the e-stop released. Join the
+   **TankGuard-C1** hotspot (password `tankguard`) and open `http://192.168.4.1`.
+   The arm homes at boot; the serial log prints the two switch states.
 2. Pre-flight: `curl "http://<ip>/clean?mode=check"`. Expect `estop:0`, `lid:1`,
    `home1:0`, `home2:0`, `angleValid:1`. `levelFresh:0` is acceptable on a bench
    with no monitor attached.
@@ -220,7 +241,7 @@ same file without a headless browser.
 | `GET /clean?mode=home` / `reset` | re-home; clears a latched fault |
 | `GET /clean?mode=check` | pre-flight: interlocks, home switches, level freshness, angle validity |
 | `GET /jog?joint=sh\|el&bursts=N&dir=1\|-1` | calibration: fire N bursts (max 20), returns the expected angle; 409 if busy or interlocked |
-| `GET /` | tiny status page |
+| `GET /` | controller page, served from flash |
 
 Interlocks are enforced on the device: e-stop (NC), lid (NC), level ≥ 15 % (from
 M1), and optional brush-stall cut-out. Any fault cuts motor power, stops the
