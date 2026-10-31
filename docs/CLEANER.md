@@ -173,11 +173,11 @@ dead-reckoning them. No encoder is fitted in this build.
 
 The repo already has the pattern this fits: an ESP8266 tank unit, a second unit
 near the pump, Wi-Fi as the primary link and nRF24 as the long-range option. The
-cleaner needs the same shape plus motor control, on its own ESP32 (the pin count
-is why, not the toolchain):
+cleaner needs the same shape plus motor control, on its own ESP8266 (the arm needs
+four PWM outputs, two homes, a safety loop, a pump and a brush):
 
 ```
-M1 tank unit (ESP8266, solar)            cleaner controller (ESP32, own power)
+M1 tank unit (ESP8266, solar)            cleaner controller (ESP8266, own power)
   sensors → GET /data  ──── Wi-Fi ────►  cycle orchestration + interlocks
   no motors, unchanged                    ├─ dual-PWM driver → shoulder (θ1)
                                           ├─ dual-PWM driver → elbow (θ2)

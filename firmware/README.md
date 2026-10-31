@@ -100,17 +100,29 @@ Tank-side JSON expected by `fetchTank()`:
 {"score":82,"level":64,"ph":7.2,"turb":12,"tds":310,"temp":27.5}
 ```
 
-## Cleaner firmware (C1 — ESP32, open loop)
+## Cleaner firmware (C1 — ESP8266, open loop)
 
 [`c1_cleaner/`](c1_cleaner/) drives the 2R cleaning arm: two fixed 20 cm links,
 one brush at the tip, both joints on generic DC gear motors. It is a **separate
 unit with its own power**, not part of M1 or H1.
 
-### Why ESP32
+### Why ESP8266
 
-2 PWM + 2 DIR, two home switches, brush PWM, e-stop, lid and the level link —
-more I/O than a NodeMCU exposes. It is the one ESP32 in an otherwise all-ESP8266
-repo.
+The arm needs four PWM outputs, two home switches, one safety loop, a pump relay
+and a brush channel. A NodeMCU exposes exactly enough: D5-D8 drive the two
+dual-PWM drivers, D1/D2 read the homes, D0 drives the brush, D4 the pump and D3
+the safety loop. Serial stays on TX/RX, and the controller page is served from
+flash.
+
+The constraint is boot strapping: D3 (GPIO0), D4 (GPIO2) and D8 (GPIO15) must
+sit in their boot states, so the safety loop and the relay are wired to match.
+
+### Build
+
+```
+arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 firmware/c1_cleaner
+arduino-cli upload  -p COM7 --fqbn esp8266:esp8266:nodemcuv2 firmware/c1_cleaner
+```
 
 ### No position feedback (what it costs)
 
@@ -130,25 +142,25 @@ overlap. The 16 cm brush tolerates that; a wider overlap (or a compliant brush
 skirt) is the mitigation, not a bigger number in the planner. An optional 12 PPR
 encoder on the motor shaft would give 0.35 °/count at the joint if fitted later.
 
-### Wiring (ESP32 DevKit)
+### Wiring (ESP8266 NodeMCU)
 
 The arm motors use dual-PWM drivers: each joint has an RPWM and an LPWM input,
 not a PWM plus DIR pair.
 
 | signal | pin | notes |
 |---|---|---|
-| arm A (shoulder) RPWM / LPWM | 14 / 12 | D5 / D6 on a NodeMCU-labelled header |
-| arm B (elbow) RPWM / LPWM | 13 / 15 | D7 / D8 |
-| shoulder / elbow home | 39 / 18 | NC switch to GND; **39 is input-only, add an external 10 kΩ to 3V3** |
-| brush PWM | 25 | MOSFET or second bridge channel |
-| pump relay | 23 | suction pump; on only while scrubbing |
-| brush current | 36 | optional, ADC |
-| e-stop | 19 | NC loop, HIGH = unsafe (fail-safe) |
-| lid switch | 21 | NC to GND, HIGH = open |
+| arm A (shoulder) RPWM / LPWM | D5 / D6 (14 / 12) | |
+| arm B (elbow) RPWM / LPWM | D7 / D8 (13 / 15) | D8 must be LOW at boot |
+| shoulder / elbow home | D2 / D1 (4 / 5) | NC switch to GND, internal pull-up |
+| brush PWM | D0 (16) | MOSFET or second bridge channel |
+| pump relay | D4 (2) | **active-LOW**; HIGH at boot = off |
+| safety loop | D3 (0) | e-stop + lid in series to 3V3, 10 kΩ pull-down; HIGH = safe |
+| brush current | A0 | optional, single ADC |
+| serial | TX / RX | debug only |
 
-GPIO12 and GPIO15 are strapping pins on the ESP32: 12 must be low at boot and 15
-high. If the driver board holds either one the wrong way, the board will not
-boot, so check what the driver inputs do before powering up.
+GPIO0, GPIO2 and GPIO15 are strapping pins: 0 and 2 must be HIGH at boot, 15
+LOW. The safety loop holds D3 high when closed, and the active-low relay holds
+D4 high when off, so both straps are satisfied by the normal wiring.
 
 ### Drivetrain (TJX28ZRM — RS395 12 V + 21.5:1, 11.3 N·cm rated)
 
@@ -173,7 +185,7 @@ With `WIFI_SSID` empty (the default) the cleaner runs as its own access point:
 
 1. Join the **TankGuard-C1** hotspot, password **tankguard**.
 2. Open **http://192.168.4.1**.
-3. The page is served from the ESP32 itself, so there is no router, no internet
+3. The page is served from the ESP8266 itself, so there is no router, no internet
    and no app to install. It polls `/clean` once a second and drives the same API
    as `curl`.
 

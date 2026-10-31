@@ -1,5 +1,5 @@
 /*
- * TankGuard C1 — cleaning-arm controller (ESP32, OPEN LOOP)
+ * TankGuard C1 — cleaning-arm controller (ESP8266, OPEN LOOP)
  *
  * The 2R arm from the CAD: two fixed 20 cm links, one brush at the tip, both
  * joints on generic DC gear motors. There is no position feedback, so this
@@ -16,19 +16,21 @@
  *     the status JSON ("openLoop": true, angles are estimates).
  *
  * Safety
- *   - e-stop (NC) and lid switch (NC) are fail-safe: a broken wire reads unsafe
+ *   - e-stop and lid are in series on one fail-safe loop (PIN_SAFETY)
  *   - level comes from the M1 tank unit; below MIN_LEVEL_PCT the cycle stops
  *   - brush stall cut-out (optional, BRUSH_IS_ENABLED)
  *   - stop is honoured between moves, never mid-move
  *
  * HTTP
+ *   GET /                               -> controller page (ui.h)
  *   GET /clean                          -> status JSON
- *   GET /clean?mode=start|stop|park|home|reset
+ *   GET /clean?mode=start|stop|park|home|reset|check
+ *   GET /jog?joint=sh|el&bursts=N&dir=1|-1
  */
 
-#include <WiFi.h>
-#include <WebServer.h>
-#include <HTTPClient.h>
+#include <ESP8266WiFi.h>
+#include <ESP8266WebServer.h>
+#include <ESP8266HTTPClient.h>
 #include <ArduinoJson.h>
 
 #include "config.h"
@@ -58,14 +60,16 @@ Joint el = {"elbow", ARM_B_RPWM, ARM_B_LPWM, EL_HOME, 2, 3, EL_DIR_INVERT,
 volatile bool stopRequested = false;
 uint32_t lastMoveMs = 0;
 
-// LEDC API differs across cores: 3.x attaches by pin, 2.x by channel.
-#if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
-static inline void pwmAttach(uint8_t pin, uint8_t ch) { (void)ch; ledcAttach(pin, 20000, 8); }
-static inline void pwmWrite(uint8_t pin, uint8_t ch, uint8_t duty) { (void)ch; ledcWrite(pin, duty); }
-#else
-static inline void pwmAttach(uint8_t pin, uint8_t ch) { ledcSetup(ch, 20000, 8); ledcAttachPin(pin, ch); }
-static inline void pwmWrite(uint8_t pin, uint8_t ch, uint8_t duty) { (void)pin; ledcWrite(ch, duty); }
-#endif
+// ESP8266: analogWrite, 20 kHz and 8-bit range set in setup().
+static inline void pwmAttach(uint8_t pin, uint8_t ch) {
+  (void)ch;
+  pinMode(pin, OUTPUT);
+  analogWrite(pin, 0);
+}
+static inline void pwmWrite(uint8_t pin, uint8_t ch, uint8_t duty) {
+  (void)ch;
+  analogWrite(pin, duty);
+}
 
 /** Drive one joint through a dual-PWM driver: RPWM forward, LPWM reverse.
  *  A reversal coasts first, so the bridge never changes direction under load. */
@@ -169,8 +173,9 @@ void setBrush(uint8_t duty) {
   setPump(duty > 0);
 }
 
-bool estopOk() { return digitalRead(PIN_ESTOP) == LOW; }
-bool lidClosed() { return digitalRead(PIN_LID) == LOW; }
+bool safetyClosed() { return digitalRead(PIN_SAFETY) == HIGH; }
+bool estopOk() { return safetyClosed(); }
+bool lidClosed() { return safetyClosed(); }
 
 volatile float g_levelPct = -1.0f;
 volatile uint32_t g_levelAt = 0;
@@ -335,7 +340,7 @@ bool runCycle() {
 // ---------------------------------------------------------------------------
 // HTTP
 // ---------------------------------------------------------------------------
-WebServer server(80);
+ESP8266WebServer server(80);
 
 String statusJson() {
   const uint8_t total = arcCountFor(runRings);
@@ -482,24 +487,23 @@ void handleRoot() {
 // ---------------------------------------------------------------------------
 // level link (own task so HTTP never blocks a timed move)
 // ---------------------------------------------------------------------------
-void levelTask(void *) {
-  for (;;) {
-    if (WiFi.status() == WL_CONNECTED) {
-      WiFiClient client;
-      HTTPClient http;
-      http.setTimeout(1200);
-      if (http.begin(client, M1_DATA_URL)) {
-        if (http.GET() == 200) {
-          StaticJsonDocument<256> doc;
-          if (!deserializeJson(doc, http.getString()) && doc.containsKey("level")) {
-            g_levelPct = doc["level"].as<float>();
-            g_levelAt = millis();
-          }
-        }
-        http.end();
+void pollLevel() {
+  static uint32_t last = 0;
+  if (millis() - last < 10000) return;
+  last = millis();
+  if (WiFi.status() != WL_CONNECTED) return;
+  WiFiClient client;
+  HTTPClient http;
+  http.setTimeout(800);
+  if (http.begin(client, M1_DATA_URL)) {
+    if (http.GET() == 200) {
+      StaticJsonDocument<256> doc;
+      if (!deserializeJson(doc, http.getString()) && doc.containsKey("level")) {
+        g_levelPct = doc["level"].as<float>();
+        g_levelAt = millis();
       }
     }
-    vTaskDelay(pdMS_TO_TICKS(10000));
+    http.end();
   }
 }
 
@@ -513,12 +517,13 @@ void setup() {
 
   pinMode(SH_HOME, INPUT_PULLUP);
   pinMode(EL_HOME, INPUT_PULLUP);
-  pinMode(PIN_ESTOP, INPUT_PULLUP);
-  pinMode(PIN_LID, INPUT_PULLUP);
-  pinMode(STATUS_LED, OUTPUT);
+  pinMode(PIN_SAFETY, INPUT); // external 10k pull-down; HIGH = safe
+  if (STATUS_LED >= 0) pinMode(STATUS_LED, OUTPUT);
   pinMode(PUMP_PIN, OUTPUT);
   setPump(false);
 
+  analogWriteFreq(20000);
+  analogWriteRange(255);
   pwmAttach(ARM_A_RPWM, 0);
   pwmAttach(ARM_A_LPWM, 1);
   pwmAttach(ARM_B_RPWM, 2);
@@ -552,14 +557,13 @@ void setup() {
 #endif
   server.begin();
 
-  xTaskCreatePinnedToCore(levelTask, "level", 4096, nullptr, 1, nullptr, 0);
-
   if (!doHoming()) enterFault("home");
   else phase = PH_PARKED;
 }
 
 void loop() {
   server.handleClient();
+  if (phase == PH_PARKED) pollLevel();
 
   static uint32_t lastTelemetry = 0;
 
@@ -612,7 +616,9 @@ void loop() {
       break;
   }
 
-  digitalWrite(STATUS_LED, phase == PH_FAULT ? (millis() / 250) % 2 : (phase == PH_RUNNING ? HIGH : LOW));
+  if (STATUS_LED >= 0) {
+    digitalWrite(STATUS_LED, phase == PH_FAULT ? (millis() / 250) % 2 : (phase == PH_RUNNING ? HIGH : LOW));
+  }
 
   if (millis() - lastTelemetry > 5000) {
     lastTelemetry = millis();

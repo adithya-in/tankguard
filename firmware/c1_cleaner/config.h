@@ -3,8 +3,8 @@
 // ---------------------------------------------------------------------------
 // TankGuard C1 — cleaning-arm controller configuration (OPEN LOOP)
 //
-// Hardware: ESP32 DevKit + two generic DC gear motors on H-bridges (PWM + DIR),
-// one brush motor, home switches and the safety chain.
+// Hardware: ESP8266 NodeMCU + two generic DC gear motors on dual-PWM drivers
+// (RPWM / LPWM), one brush motor, home switches and the safety chain.
 //
 // There is NO position feedback on this build. Motion is timed: each joint is
 // driven at a fixed duty whose speed you calibrate, and the angle is dead
@@ -15,16 +15,15 @@
 // ---------------------------------------------------------------------------
 
 // ---- arm motors: dual-PWM drivers (RPWM / LPWM per joint) -----------------
-// GPIO numbers as supplied. D5-D8 are NodeMCU names for the same pins on a
-// NodeMCU-labelled header; this build targets the ESP32.
+// ESP8266 NodeMCU. D5-D8 are the board labels; the numbers are the GPIOs.
 #define ARM_A_RPWM    14   // D5
 #define ARM_A_LPWM    12   // D6
 #define ARM_B_RPWM    13   // D7
-#define ARM_B_LPWM    15   // D8
+#define ARM_B_LPWM    15   // D8  (must be LOW at boot)
 
 // ---- home switches --------------------------------------------------------
-#define SH_HOME       39   // input-only: needs an external 10k pull-up to 3V3
-#define EL_HOME       18
+#define SH_HOME       4    // D2, NC switch to GND, internal pull-up
+#define EL_HOME       5    // D1, NC switch to GND, internal pull-up
 #define SH_DIR_INVERT 0
 #define EL_DIR_INVERT 0
 
@@ -32,22 +31,23 @@
 // The head is a ring brush: bristles on the perimeter only, the centre is the
 // pump intake. Scrubbing only loosens the sludge; the pump carries it away, so
 // the bristles run light.
-#define BRUSH_PWM     25   // moved off 13, which is now arm B RPWM
-#define BRUSH_IS      36
+#define BRUSH_PWM     16   // D0, no boot constraint
+#define BRUSH_IS      A0   // single ESP8266 ADC
 #define BRUSH_IS_ENABLED 0 // 1 once a current-sense resistor is fitted
 
 // Suction pump relay/MOSFET. The bristle field is sparse, so the head cannot
-// seal — there is no vacuum downforce to worry about. The pump is still
+// seal - there is no vacuum downforce to worry about. The pump is still
 // sequenced with the brush (on while scrubbing, off between passes) to save
 // power and to avoid stirring sludge during repositioning, not as a safety gate.
-#define PUMP_PIN          23
-#define PUMP_ACTIVE_HIGH  1
+// Active-LOW so the relay is off while D4 sits HIGH at boot.
+#define PUMP_PIN          2    // D4
+#define PUMP_ACTIVE_HIGH  0
 
 // ---- safety chain ---------------------------------------------------------
-// Both normally-closed to GND with a pull-up: a broken wire reads HIGH, which
-// is treated as unsafe (fail-safe).
-#define PIN_ESTOP     19   // LOW = loop intact, HIGH = pressed / broken
-#define PIN_LID       21   // LOW = lid closed, HIGH = open / broken
+// E-stop and lid in series from 3V3 to D3, with a 10k pull-down. Closed = HIGH
+// = safe; any open contact or a broken wire = LOW = unsafe (fail-safe).
+// D3 must be HIGH at boot, so the loop has to be closed to power up.
+#define PIN_SAFETY    0    // D3
 
 // ---- drivetrain (TJX28ZRM / ZX6091 — RS395 12 V + 21.5:1 planetary) --------
 // Datasheet (tyhemotors.com/tjx28zrm), 12 V, ratio 21.5, 2 stages, 72 % eff:
@@ -121,4 +121,4 @@
 
 // ---- telemetry ------------------------------------------------------------
 #define SERIAL_BAUD 115200
-#define STATUS_LED   2
+#define STATUS_LED   -1   // no spare pin; status is on the web page
