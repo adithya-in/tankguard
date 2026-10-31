@@ -4,6 +4,11 @@ The M1 module is the base unit: it senses the water and computes the TankScore. 
 built around an **ESP8266 NodeMCU** and an **ADS1115 16-bit ADC** (required because the
 ESP8266 has only one analog input). See [`PINMAP.md`](PINMAP.md) for the shared pin map.
 
+> **Two-arm builds:** `m1_tank/config.h` defaults to `USE_ARMS=1`, which uses
+> D5/D6/D7/D8 for two BTS7960 drivers and moves the sensors to D0/D3/D4. Use the
+> “Optional 2-arm BTS7960 PWM remap” section in [`PINMAP.md`](PINMAP.md) instead of
+> the D5/D6/D7 sensor wiring below. Set `USE_ARMS=0` for the original wiring.
+
 ---
 
 ## 1. Bill of materials (ESP8266 version)

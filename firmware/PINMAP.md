@@ -46,10 +46,12 @@ Full tables and home-side remap: [`NRF24_LONG_RANGE.md`](NRF24_LONG_RANGE.md).
 
 ### Optional 2-arm BTS7960 PWM remap
 
-Use this only when driving **two DC arms/linear actuators** through two BTS7960
-modules and you need PWM speed control on both. It frees **D5/D6/D7/D8** for PWM
-by moving the three digital sensors. This is **not** the default wiring, and it
-does **not** work with `USE_NRF24=1` (the nRF variant uses D5/D6/D7 for SPI).
+This is enabled by default in [`m1_tank/config.h`](m1_tank/config.h) as
+`USE_ARMS=1`. It drives **two DC arms/linear actuators** through two BTS7960
+modules with PWM speed control on both. It frees **D5/D6/D7/D8** for PWM by
+moving the three digital sensors. Set `USE_ARMS=0` to return to the original
+sensor wiring. It does **not** work with `USE_NRF24=1` (the nRF variant uses
+D5/D6/D7 for SPI and forces arms off).
 
 | BTS7960 signal | Arm A | Arm B | GPIO | Notes |
 |---|---|---|---|---|
