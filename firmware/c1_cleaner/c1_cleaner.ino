@@ -41,14 +41,20 @@ struct Joint {
   const char *name;
   uint8_t pwmPin, dirPin, homePin, pwmCh;
   bool invert;
-  float degPerBurst; // calibrated advance per full-duty pulse (includes coast)
-  float estDeg;      // dead-reckoned angle, 0 = home switch
+  float degFwd, degBack; // calibrated advance per burst, per direction
+  float estDeg;          // dead-reckoned angle, 0 = home switch
+  int duty;              // last commanded duty
+  int lastDir;           // last non-zero direction
+  uint32_t bursts;       // bursts fired since the last home
 };
 
-Joint sh = {"shoulder", SH_PWM, SH_DIR, SH_HOME, 0, SH_DIR_INVERT, SH_DEG_PER_BURST, 0};
-Joint el = {"elbow", EL_PWM, EL_DIR, EL_HOME, 1, EL_DIR_INVERT, EL_DEG_PER_BURST, 0};
+Joint sh = {"shoulder", SH_PWM, SH_DIR, SH_HOME, 0, SH_DIR_INVERT,
+            SH_DEG_PER_BURST_FWD, SH_DEG_PER_BURST_BACK, 0, 0, 0, 0};
+Joint el = {"elbow", EL_PWM, EL_DIR, EL_HOME, 1, EL_DIR_INVERT,
+            EL_DEG_PER_BURST_FWD, EL_DEG_PER_BURST_BACK, 0, 0, 0, 0};
 
 volatile bool stopRequested = false;
+uint32_t lastMoveMs = 0;
 
 // LEDC API differs across cores: 3.x attaches by pin, 2.x by channel.
 #if defined(ESP_ARDUINO_VERSION_MAJOR) && ESP_ARDUINO_VERSION_MAJOR >= 3
@@ -59,11 +65,22 @@ static inline void pwmAttach(uint8_t pin, uint8_t ch) { ledcSetup(ch, 20000, 8);
 static inline void pwmWrite(uint8_t pin, uint8_t ch, uint8_t duty) { (void)pin; ledcWrite(ch, duty); }
 #endif
 
+/** Drive one joint. A reversal coasts first, so the bridge never changes
+ *  direction while current is flowing. */
 void applyDuty(Joint &j, int duty) {
   duty = constrain(duty, -255, 255);
-  const bool forward = (duty >= 0) ^ j.invert;
-  digitalWrite(j.dirPin, forward ? HIGH : LOW);
+  const int dir = (duty > 0) - (duty < 0);
+  if (dir != 0 && j.lastDir != 0 && dir != j.lastDir) {
+    pwmWrite(j.pwmPin, j.pwmCh, 0);
+    delay(DEAD_TIME_MS);
+  }
+  if (dir != 0) {
+    const bool forward = (dir > 0) ^ j.invert;
+    digitalWrite(j.dirPin, forward ? HIGH : LOW);
+    j.lastDir = dir;
+  }
   pwmWrite(j.pwmPin, j.pwmCh, (uint8_t)abs(duty));
+  j.duty = duty;
 }
 
 /** delay that can be cut short by a stop request; false = aborted */
@@ -76,8 +93,24 @@ bool hold(uint32_t ms) {
   return true;
 }
 
-/** Burst move: full-duty pulses with a dwell between them (no gearbox).
- *  Each pulse advances degPerBurst; the count comes from the requested angle. */
+/** One burst: ramp up, hold, coast. The ramp keeps the inrush off the supply. */
+bool burst(Joint &j, int dir) {
+  const int target = dir * BURST_DUTY;
+  const int steps = 8;
+  for (int i = 1; i <= steps; i++) {
+    applyDuty(j, target * i / steps);
+    if (!hold(RAMP_MS / steps)) {
+      applyDuty(j, 0);
+      return false;
+    }
+  }
+  const bool ok = hold(BURST_MS - RAMP_MS);
+  applyDuty(j, 0);
+  return ok;
+}
+
+/** Burst move: pulses with a dwell between them (no gearbox).
+ *  Each pulse advances degFwd or degBack; the count comes from the angle. */
 bool moveBy(Joint &j, float deltaDeg) {
   if (isnan(j.estDeg)) return false; // angle unknown — must re-home first
   if (fabsf(deltaDeg) < MOVE_TOL_DEG) return true;
@@ -85,13 +118,13 @@ bool moveBy(Joint &j, float deltaDeg) {
   const float clamped = constrain(j.estDeg + deltaDeg, JOINT_MIN_DEG, JOINT_MAX_DEG);
   const float travel = clamped - j.estDeg;
   const int dir = travel > 0 ? 1 : -1;
-  const int bursts = (int)lroundf(fabsf(travel) / j.degPerBurst);
+  const float perBurst = dir > 0 ? j.degFwd : j.degBack;
+  const int bursts = (int)lroundf(fabsf(travel) / perBurst);
   if (bursts == 0) return true;
 
+  const uint32_t t0 = millis();
   for (int i = 0; i < bursts; i++) {
-    applyDuty(j, dir * BURST_DUTY);
-    const bool on = hold(BURST_MS);
-    applyDuty(j, 0); // coast; the brush dwells here
+    const bool on = burst(j, dir);
     const bool off = on && hold(PAUSE_MS);
     if (!on || !off) {
       // stopped mid-move: the angle is unknown, force a re-home before anything else
@@ -101,8 +134,13 @@ bool moveBy(Joint &j, float deltaDeg) {
     }
   }
 
-  delay(SETTLE_MS);
-  j.estDeg = j.estDeg + dir * bursts * j.degPerBurst;
+  if (!hold(SETTLE_MS)) {
+    j.estDeg = NAN;
+    return false;
+  }
+  j.estDeg = j.estDeg + dir * bursts * perBurst;
+  j.bursts += bursts;
+  lastMoveMs = millis() - t0;
   return true;
 }
 
@@ -168,25 +206,54 @@ void enterFault(const char *why) {
 // ---------------------------------------------------------------------------
 // homing
 // ---------------------------------------------------------------------------
-bool homeJoint(Joint &j) {
-  if (digitalRead(j.homePin) == LOW) { // already on the switch: back off
-    applyDuty(j, -HOME_DUTY);
-    delay(400);
-    applyDuty(j, 0);
-    delay(150);
-  }
+/** Run toward the switch until it reads LOW for HOME_DEBOUNCE_MS. */
+bool seekHome(Joint &j, uint8_t duty, uint32_t timeoutMs) {
   const uint32_t t0 = millis();
-  while (digitalRead(j.homePin) == HIGH) {
-    applyDuty(j, HOME_DUTY); // toward negative
-    if (millis() - t0 > HOME_TIMEOUT_MS) {
+  uint32_t lowSince = 0;
+  applyDuty(j, duty); // positive duty moves toward home
+  while (millis() - t0 < timeoutMs) {
+    if (stopRequested) {
       applyDuty(j, 0);
       return false;
+    }
+    if (digitalRead(j.homePin) == LOW) {
+      if (lowSince == 0) lowSince = millis();
+      if (millis() - lowSince >= HOME_DEBOUNCE_MS) {
+        applyDuty(j, 0);
+        return true;
+      }
+    } else {
+      lowSince = 0;
     }
     delay(2);
   }
   applyDuty(j, 0);
-  delay(200);
+  return false;
+}
+
+bool homeJoint(Joint &j) {
+  if (digitalRead(j.homePin) == LOW) { // already on the switch: back off
+    applyDuty(j, -HOME_DUTY);
+    hold(HOME_BACKOFF_MS);
+    applyDuty(j, 0);
+    hold(150);
+  }
+
+  // fast approach
+  if (!seekHome(j, HOME_DUTY, HOME_TIMEOUT_MS)) return false;
+
+  // back off at full duty, then re-seek slowly: the second contact is the
+  // repeatable zero, and a slow approach keeps the overshoot small
+  applyDuty(j, -HOME_DUTY);
+  hold(HOME_BACKOFF_MS);
+  applyDuty(j, 0);
+  hold(120);
+  if (!seekHome(j, HOME_SLOW_DUTY, HOME_TIMEOUT_MS / 2)) return false;
+
+  applyDuty(j, 0);
+  hold(150);
   j.estDeg = 0;
+  j.bursts = 0;
   return true;
 }
 
@@ -272,6 +339,12 @@ String statusJson() {
   s += faultReason ? ("\"" + String(faultReason) + "\"") : "null";
   s += ",\"cycleS\":" + String(cycleStartedAt ? (millis() - cycleStartedAt) / 1000 : 0);
   s += ",\"uptime\":" + String(millis() / 1000);
+  s += ",\"bursts\":" + String(sh.bursts + el.bursts);
+  s += ",\"lastMoveMs\":" + String(lastMoveMs);
+  s += ",\"home1\":" + String(digitalRead(SH_HOME) == LOW ? 1 : 0);
+  s += ",\"home2\":" + String(digitalRead(EL_HOME) == LOW ? 1 : 0);
+  s += ",\"duty1\":" + String(sh.duty);
+  s += ",\"duty2\":" + String(el.duty);
   s += "}";
   return s;
 }
@@ -314,6 +387,46 @@ void handleClean() {
 
   server.send(200, "application/json", statusJson());
 }
+
+#if ENABLE_JOG
+/** /jog?joint=sh|el&bursts=5&dir=1 — fire a known number of bursts so the
+ *  advance per burst can be measured with a protractor and put in config.h. */
+void handleJog() {
+  if (phase == PH_RUNNING || phase == PH_HOMING || phase == PH_PARKING) {
+    server.send(409, "application/json", "{\"ok\":false,\"reason\":\"busy\"}");
+    return;
+  }
+  if (!estopOk() || !lidClosed()) {
+    server.send(409, "application/json", "{\"ok\":false,\"reason\":\"interlock\"}");
+    return;
+  }
+
+  Joint &j = (server.arg("joint") == "el") ? el : sh;
+  const int dir = server.arg("dir").toInt() < 0 ? -1 : 1;
+  const int n = constrain(server.arg("bursts").toInt(), 1, JOG_MAX_BURSTS);
+
+  setBrush(0);
+  for (int i = 0; i < n; i++) {
+    if (!burst(j, dir) || !hold(PAUSE_MS)) {
+      j.estDeg = NAN;
+      server.send(500, "application/json", "{\"ok\":false,\"reason\":\"stopped\"}");
+      return;
+    }
+  }
+
+  const float perBurst = dir > 0 ? j.degFwd : j.degBack;
+  if (!isnan(j.estDeg)) j.estDeg += dir * n * perBurst;
+  j.bursts += n;
+
+  String s = "{\"ok\":true,\"joint\":\"" + String(j.name) + "\"";
+  s += ",\"bursts\":" + String(n);
+  s += ",\"dir\":" + String(dir);
+  s += ",\"angle\":" + (isnan(j.estDeg) ? String("null") : String(j.estDeg, 2));
+  s += ",\"expectedDeg\":" + String(dir * n * perBurst, 2);
+  s += "}";
+  server.send(200, "application/json", s);
+}
+#endif
 
 void handleRoot() {
   String h = "<!doctype html><meta name=viewport content='width=device-width'>";
@@ -389,6 +502,9 @@ void setup() {
 
   server.on("/", handleRoot);
   server.on("/clean", handleClean);
+#if ENABLE_JOG
+  server.on("/jog", handleJog);
+#endif
   server.begin();
 
   xTaskCreatePinnedToCore(levelTask, "level", 4096, nullptr, 1, nullptr, 0);

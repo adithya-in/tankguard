@@ -255,10 +255,17 @@ dashboard reflects interlocks; it never bypasses them.
   "estop": 0,
   "fault": null,             // "home" | "estop" | "lid" | "dry" | "stall"
   "cycleS": 42,              // elapsed this cycle, s
-  "uptime": 812
+  "uptime": 812,
+  "bursts": 74,              // bursts fired since the last home
+  "lastMoveMs": 3600,        // duration of the last completed move
+  "home1": 0,                // shoulder home switch, 1 = on the switch
+  "home2": 0,                // elbow home switch
+  "duty1": 0,                // last commanded duty, shoulder
+  "duty2": 0                 // last commanded duty, elbow
 }
 
 // GET /clean?mode=start|stop|park|home|reset
+// GET /jog?joint=sh|el&bursts=5&dir=1   calibration, max 20 bursts
 ```
 
 `start` returns `409` with a reason when the unit is not parked, the e-stop is
@@ -286,15 +293,18 @@ BOOT ──► HOMING ──► PARKED ──start──► RUNNING ──► PA
 ```
 
 Per arc: `elbow → t2`, `shoulder → t1a`, brush on, `shoulder → t1b`, brush off.
-Moves are timed (no feedback): a fixed full-duty burst, a fixed coast, and
-`bursts = angle / deg_per_burst`. Stop is honoured between bursts; a move cut
-short invalidates the angle estimate, so the next action is always a re-home.
+Moves are timed (no feedback): a ramped full-duty burst, a fixed coast, and
+`bursts = angle / deg_per_burst`, with a separate advance for each direction.
+Stop is honoured between bursts; a move cut short invalidates the angle estimate,
+so the next action is always a re-home.
 
 **Re-homing is the accuracy mechanism**, not an overhead: three homes per cycle
-bound the drift to a single pass. Any change to `SH_DEG_PER_BURST` /
-`EL_DEG_PER_BURST` changes the cycle time proportionally, so calibrate in water
-with the brush loaded. The planner's 44 s assumes 45 °/s; the expected 25–35 °/s
-gives the 55–80 s cycle in section 4.
+bound the drift to a single pass. Homing itself is two-stage (fast approach, back
+off, slow re-seek) with a debounced switch, so the zero repeats. Any change to
+`SH_DEG_PER_BURST_FWD` / `_BACK` or the `EL_` pair changes the cycle time
+proportionally, so calibrate in water with the brush loaded, using `/jog` and a
+protractor. The planner's 44 s assumes 45 °/s; the expected 25–35 °/s gives the
+55–80 s cycle in section 4.
 
 ---
 

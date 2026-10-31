@@ -162,14 +162,22 @@ with the brush for power and sludge behaviour, not as a safety gate.
 
 ### Calibration
 
+The advance per burst differs by joint **and by direction**, because the shoulder
+works with and against gravity. Four numbers, all in `config.h`:
+
 1. `BURST_DUTY` stays 255; `BURST_MS` / `PAUSE_MS` set the rhythm (250 / 200 ms).
-2. Measure the **advance per burst**: command a long move (e.g. 180 °), count the
-   bursts the firmware prints, and divide the angle the arm actually covered by
-   that count — the coast is included in the number.
-3. Put it in `SH_DEG_PER_BURST` / `EL_DEG_PER_BURST`. Do it **in water, brush
-   loaded** — that is the number the cycle will see.
-4. Re-check after the first few cycles; speed drifts with voltage and wear,
-   which is why the cycle re-homes.
+2. Home the arm, then jog one joint a known number of bursts:
+   `curl "http://<ip>/jog?joint=sh&bursts=5&dir=1"`, and again with `dir=-1`.
+3. Measure the angle the arm actually moved with a protractor and divide by the
+   burst count. That is the advance for that direction, coast included.
+4. Put it in `SH_DEG_PER_BURST_FWD` / `_BACK` (or the `EL_` pair). Do it **in
+   water, brush loaded** — that is the number the cycle will see.
+5. Re-check after the first few cycles; speed drifts with voltage and wear, which
+   is why the cycle re-homes.
+
+`RAMP_MS` (40 ms) softens the start of every burst, and `DEAD_TIME_MS` (20 ms)
+coasts the bridge before a reversal. Both exist to keep the inrush off the supply
+and the gearbox, not to change the calibration.
 
 ### Path
 
@@ -188,10 +196,11 @@ same file without a headless browser.
 
 | request | effect |
 |---|---|
-| `GET /clean` | status: `openLoop`, phase, ring/arc, estimated t1/t2, brush, pump, level, lid, e-stop, fault |
+| `GET /clean` | status: `openLoop`, phase, ring/arc, estimated t1/t2, brush, pump, level, lid, e-stop, fault, bursts, lastMoveMs, home1/2, duty1/2 |
 | `GET /clean?mode=start` | home, then run the cycle (409 with a reason if interlocked) |
 | `GET /clean?mode=stop` | stop after the current move, then park |
 | `GET /clean?mode=home` / `reset` | re-home; clears a latched fault |
+| `GET /jog?joint=sh\|el&bursts=N&dir=1\|-1` | calibration: fire N bursts (max 20), returns the expected angle; 409 if busy or interlocked |
 | `GET /` | tiny status page |
 
 Interlocks are enforced on the device: e-stop (NC), lid (NC), level ≥ 15 % (from

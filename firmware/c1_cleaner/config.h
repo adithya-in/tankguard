@@ -71,8 +71,15 @@
 #define BURST_DUTY       255
 #define BURST_MS         250
 #define PAUSE_MS         200
-#define SH_DEG_PER_BURST 10.0f
-#define EL_DEG_PER_BURST 10.0f
+#define RAMP_MS          40    // duty ramp at the start of every burst
+#define DEAD_TIME_MS     20    // pause before a direction reversal
+
+// A burst advances slightly differently with and against gravity, so each
+// direction carries its own calibration. Measure both with /jog and a protractor.
+#define SH_DEG_PER_BURST_FWD  10.0f
+#define SH_DEG_PER_BURST_BACK 10.0f
+#define EL_DEG_PER_BURST_FWD  10.0f
+#define EL_DEG_PER_BURST_BACK 10.0f
 // Belt/pulley or friction transmission would be a reduction too — out of scope
 // here: the build is direct drive with no gearbox.
 
@@ -82,8 +89,15 @@
 #define JOINT_MAX_DEG  185.0f
 #define MOVE_TOL_DEG    0.5f
 #define HOME_DUTY       90
+#define HOME_SLOW_DUTY  45
+#define HOME_DEBOUNCE_MS 5
+#define HOME_BACKOFF_MS 400UL
 #define HOME_TIMEOUT_MS 25000UL
 #define SETTLE_MS       180UL   // settle after the last burst of a move
+
+// ---- calibration jog ------------------------------------------------------
+#define ENABLE_JOG      1
+#define JOG_MAX_BURSTS  20
 
 // ---- brush ----------------------------------------------------------------
 #define BRUSH_DUTY       200
