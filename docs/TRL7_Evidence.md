@@ -100,11 +100,4 @@ is exactly what changed.
 - Photographs and video of the arm running in the 500 L tank, uploaded separately
   with the application.
 - Serial log from the controller covering the manual jog commands.
-- This note, signed by the PI and the industry partner.
-
----
-
-**Signed:** Dr. Vishnu Vasudev, Principal Investigator, Sree Buddha College of
-Engineering
-
-**Countersigned:** Nuke Labs, industry partner
+- This note.
