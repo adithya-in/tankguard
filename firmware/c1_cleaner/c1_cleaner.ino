@@ -189,6 +189,7 @@ Phase phase = PH_BOOT;
 const char *faultReason = nullptr;
 
 bool startRequested = false;
+bool autoMode = false;          // false = manual (jog), true = planned cycle
 uint8_t curRing = 0;
 uint8_t curArc = 0;
 uint8_t runRings = ARC_RINGS;   // demo can stop after ring 1 or 2
@@ -391,6 +392,9 @@ String statusJson() {
   s += ",\"duty1\":" + String(sh.duty);
   s += ",\"duty2\":" + String(el.duty);
   s += ",\"mode\":\"";
+  s += autoMode ? "auto" : "manual";
+  s += "\"";
+  s += ",\"mode2\":\"";
   s += (strlen(WIFI_SSID) == 0) ? "ap" : "sta";
   s += "\"";
   s += "}";
@@ -414,6 +418,7 @@ void handleClean() {
     const int rings = server.arg("rings").toInt();
     runRings = (rings >= 1 && rings <= ARC_RINGS) ? (uint8_t)rings : ARC_RINGS;
     arcsDone = 0;
+    autoMode = true;
     stopRequested = false;
     startRequested = true;
     phase = PH_BOOT; // loop() homes first, then runs
@@ -423,6 +428,7 @@ void handleClean() {
 
   if (mode == "stop" || mode == "park") {
     stopRequested = true;
+    autoMode = false;
     setBrush(0);
     server.send(200, "application/json", "{\"ok\":true,\"phase\":\"stopping\"}");
     return;
@@ -432,6 +438,7 @@ void handleClean() {
     if (phase == PH_RUNNING) { server.send(409, "application/json", "{\"ok\":false,\"reason\":\"busy\"}"); return; }
     faultReason = nullptr;
     startRequested = false;
+    autoMode = false;
     arcsDone = 0;
     phase = PH_BOOT;
     server.send(200, "application/json", "{\"ok\":true,\"phase\":\"homing\"}");
@@ -475,6 +482,8 @@ void handleJog() {
   const int dir = server.arg("dir").toInt() < 0 ? -1 : 1;
   const int n = constrain(server.arg("bursts").toInt(), 1, JOG_MAX_BURSTS);
 
+  autoMode = false;                 // jog is always manual
+  if (isnan(j.estDeg)) j.estDeg = 0; // manual reference: count from here
   setBrush(0);
   for (int i = 0; i < n; i++) {
     if (!burst(j, dir) || !hold(PAUSE_MS)) {
@@ -485,7 +494,7 @@ void handleJog() {
   }
 
   const float perBurst = dir > 0 ? j.degFwd : j.degBack;
-  if (!isnan(j.estDeg)) j.estDeg += dir * n * perBurst;
+  j.estDeg += dir * n * perBurst;    // no limit: manual travel is free
   j.bursts += n;
 
   String s = "{\"ok\":true,\"joint\":\"" + String(j.name) + "\"";
@@ -536,7 +545,7 @@ void setup() {
 
   pinMode(SH_HOME, INPUT_PULLUP);
   pinMode(EL_HOME, INPUT_PULLUP);
-  pinMode(PIN_SAFETY, INPUT); // external 10k pull-down; HIGH = safe
+  pinMode(PIN_SAFETY, INPUT_PULLUP); // external 10k pull-down still wins when fitted
   if (STATUS_LED >= 0) pinMode(STATUS_LED, OUTPUT);
   pinMode(PUMP_PIN, OUTPUT);
   setPump(false);
@@ -580,10 +589,10 @@ void setup() {
   if (!doHoming()) enterFault("home");
   else phase = PH_PARKED;
 #else
-  sh.estDeg = NAN;
-  el.estDeg = NAN;
+  sh.estDeg = 0;   // manual reference, not a datum
+  el.estDeg = 0;
   phase = PH_PARKED;
-  Serial.println("boot: idle, press Home to home");
+  Serial.println("boot: idle, manual; press Auto to run the plan");
 #endif
 }
 

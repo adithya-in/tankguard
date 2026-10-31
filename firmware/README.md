@@ -154,7 +154,7 @@ not a PWM plus DIR pair.
 | shoulder / elbow home | D2 / D1 (4 / 5) | NC switch to GND, internal pull-up |
 | brush PWM | D0 (16) | MOSFET or second bridge channel |
 | pump relay | D4 (2) | **active-LOW**; HIGH at boot = off |
-| safety loop | D3 (0) | e-stop + lid in series to 3V3, 10 kΩ pull-down; HIGH = safe |
+| safety loop | D3 (0) | e-stop + lid in series to 3V3, 10 kΩ pull-down; HIGH = safe. Internal pull-up makes an unwired bench read safe |
 | brush current | A0 | optional, single ADC |
 | serial | TX / RX | debug only |
 

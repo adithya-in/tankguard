@@ -48,6 +48,7 @@ label.inline{display:flex;align-items:center;gap:8px;font-size:13px}
 <header>
   <h1>TankGuard C1</h1>
   <span id="phase" class="badge">connecting</span>
+  <span id="mode" class="badge">manual</span>
   <span id="fault" class="badge bad" hidden>fault</span>
   <span id="net" class="k" style="margin-left:auto"></span>
 </header>
@@ -87,14 +88,14 @@ label.inline{display:flex;align-items:center;gap:8px;font-size:13px}
     <div class="btns">
       <button id="bCheck">Check</button>
       <button id="bHome">Home</button>
-      <button id="bStart" class="primary">Start</button>
+      <button id="bStart" class="primary">Auto</button>
       <button id="bStop" class="danger">Stop</button>
       <button id="bReset">Reset</button>
     </div>
   </section>
 
   <section class="panel">
-    <h2>Jog for calibration</h2>
+    <h2>Manual jog</h2>
     <div class="row">
       <label>Joint
         <select id="joint">
@@ -116,7 +117,7 @@ label.inline{display:flex;align-items:center;gap:8px;font-size:13px}
   </section>
 
   <section class="panel warn">
-    Standalone build: join the <b>TankGuard-C1</b> hotspot and open <b>192.168.4.1</b>. The angles are estimates and there is no stall detection, so keep the e-stop within reach.
+    <b>Manual</b>: Jog moves the joint freely, past 180 degrees if you keep going, and nothing else moves. <b>Auto</b> homes the arm and runs the planned rings. No stall detection on this build, so keep the e-stop within reach. Join <b>TankGuard-C1</b> and open <b>192.168.4.1</b>.
   </section>
   <div id="log"></div>
 </main>
@@ -142,6 +143,7 @@ function setBusy(running) {
 function render(j) {
   const running = j.phase === 'running' || j.phase === 'homing' || j.phase === 'parking';
   badge($('#phase'), j.phase, running ? 'run' : (j.phase === 'fault' ? 'bad' : 'ok'));
+  badge($('#mode'), j.mode || 'manual', j.mode === 'auto' ? 'run' : '');
   $('#fault').hidden = !j.fault;
   if (j.fault) $('#fault').textContent = j.fault;
   $('#ring').textContent = j.ring ? j.ring + ' / ' + j.arc : '\u2013';
@@ -156,7 +158,7 @@ function render(j) {
   dot('dotEstop', j.estop === 0);
   dot('dotHome1', j.home1 === 1);
   dot('dotHome2', j.home2 === 1);
-  $('#net').textContent = j.mode === 'ap' ? 'hotspot \u00b7 192.168.4.1' : '';
+  $('#net').textContent = j.mode2 === 'ap' ? 'hotspot \u00b7 192.168.4.1' : '';
   setBusy(running);
 }
 async function refresh() {
