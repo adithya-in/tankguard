@@ -9,6 +9,7 @@ label boxes, logo and divider, and rebuilds the content as headline plus cards.
 """
 import os
 import shutil
+import time
 
 from docx import Document
 from docx.enum.table import WD_TABLE_ALIGNMENT
@@ -73,10 +74,10 @@ EXEC = [
 
     "The monitoring prototype is built. The M1 firmware, the dashboard and the path "
     "planner run, and INR 23,587 of parts have already been invested. The grant funds "
-    "the step from that prototype to a certified product: the arm hardware, twenty "
+    "the step from that prototype to a certified product: the arm hardware, twenty-five "
     "pilot units, certification, a patent and twelve field installations.",
 
-    "The project delivers a production revision of M1 and H1, twenty pilot units of "
+    "The project delivers a production revision of M1 and H1, twenty-five pilot units of "
     "the C1 cleaning arm, twelve field installations, certification, a filed patent, "
     "and three paying pilot customers. The target is TRL 8, with the unit cost and "
     "the service model proven before the first production run.",
@@ -147,7 +148,7 @@ OBJECTIVES = [
     "fixed rest pose at both ends of the cycle.",
     "Objective 4: prove it in the field and take it to market. The monitor enters at "
     "TRL 6 and the arm at TRL 4; twelve months later the system is at TRL 8, with "
-    "twenty pilot units, twelve installations, certification, a filed patent and three "
+    "twenty-five pilot units, twelve installations, certification, a filed patent and three "
     "paying customers.",
 ]
 
@@ -157,7 +158,7 @@ DELIVERABLES = [
     "moulded at volume.",
     "D2. H1 home unit, production revision: the display board, isolated relay and "
     "contactor interface, and a manual override that passes electrical safety review.",
-    "D3. C1 cleaning arm, pilot build: twenty units with the two-link arm, ring brush, "
+    "D3. C1 cleaning arm, pilot build: twenty-five units with the two-link arm, ring brush, "
     "suction head and the planner-generated path, at a confirmed unit cost.",
     "D4. Commercial pack: twelve installations, certification and patent filed, three "
     "paying pilot customers, a channel agreement, and the TRL 8 evidence set.",
@@ -168,7 +169,7 @@ MILESTONES = [
      "Arm and enclosure frozen. Moulds ordered. Five pilot sets assembled. "
      "Certification scope agreed with the test laboratory."),
     ("2", "Pilot build and lab qualification", "T0 + 6 months",
-     "Twenty pilot sets built and calibrated against reference instruments. IP68 and "
+     "Twenty-five pilot sets built and calibrated against reference instruments. IP68 and "
      "EMC pre-compliance passed. Unit cost confirmed at INR 15,600 or below."),
     ("3", "Field deployment", "T0 + 9 months",
      "Twelve installations in three cities with sixty days of continuous operation. "
@@ -180,42 +181,43 @@ MILESTONES = [
 
 BUDGET_ROWS = [
     ("Manpower", "12,00,000"),
-    ("Equipment (exclusive of GST)", "6,00,000"),
-    ("Consumables", "3,60,000"),
+    ("Equipment (exclusive of GST)", "8,40,000"),
+    ("Consumables", "4,40,000"),
     ("Travel", "2,00,000"),
     ("Miscellaneous", "4,40,000"),
-    ("Contingency (max 5%)", "1,40,000"),
-    ("Sub total", "29,40,000"),
-    ("Overhead (max 20%)", "5,88,000"),
-    ("Faculty fee (max 20%)", "7,05,600"),
-    ("Total (7+8+9)", "42,33,600"),
+    ("Contingency (max 5%)", "1,56,000"),
+    ("Sub total", "32,76,000"),
+    ("Overhead (max 20%)", "6,55,200"),
+    ("Faculty fee (max 20%)", "3,00,000"),
+    ("Total (7+8+9)", "42,31,200"),
     ("GST (18%)", "0"),
-    ("Grand total", "42,33,600"),
+    ("Grand total", "42,31,200"),
 ]
 
 BUDGET_NOTE = [
     "Manpower covers two full-time engineers for twelve months, one mechanical and one "
     "firmware, at INR 50,000 per month each. Equipment covers enclosure tooling (INR "
-    "4.0 lakh) and a tank test rig with reference instruments (INR 2.0 lakh). "
-    "Consumables cover twenty pilot sets at INR 15,600 each, plus PCB fabrication and "
-    "spares.",
+    "4.0 lakh), a tank test rig (INR 2.0 lakh) and reference instruments for the R&D "
+    "bench (INR 2.4 lakh). Consumables cover twenty-five pilot sets at INR 15,600 "
+    "each, plus PCB fabrication and spares.",
     "Miscellaneous covers certification (INR 2.0 lakh), patent drafting and filing "
     "(INR 1.4 lakh), and market work with channel partners (INR 1.0 lakh). "
-    "Contingency is capped at 5 percent of direct cost, overhead at 20 percent of the "
-    "sub total, and the faculty fee at 20 percent of the total.",
+    "Contingency is capped at 5 percent of direct cost and overhead at 20 percent of "
+    "the sub total. The faculty fee is set at INR 3.0 lakh, below the 20 percent cap, "
+    "and the difference is carried in equipment and consumables for R&D.",
     "Prototype parts to date total INR 23,587 and have already been invested by the "
     "team. They are not part of this request. The request funds the product, not the "
     "prototype.",
 ]
 
 TRANCHE_ROWS = [
-    ("Project start (T0)", "15,33,168",
+    ("Project start (T0)", "15,69,160",
      "Design freeze, tooling and the first pilot sets"),
-    ("T0 + 6 months", "16,84,368",
+    ("T0 + 6 months", "16,39,560",
      "Pilot build, certification testing and field deployment"),
-    ("T0 + 12 months", "10,16,064",
+    ("T0 + 12 months", "10,22,480",
      "Validation close-out, IP filing and commercial launch"),
-    ("Total", "42,33,600", ""),
+    ("Total", "42,31,200", ""),
 ]
 
 SUPPORT = [
@@ -326,6 +328,18 @@ def heading(doc, text, level):
     p.paragraph_format.space_after = Pt(6)
     p.paragraph_format.keep_with_next = True
     return p
+
+
+def copy_template(src, dst, tries=12):
+    """Copy over a template, retrying while Office still holds the destination."""
+    for attempt in range(tries):
+        try:
+            shutil.copyfile(src, dst)
+            return
+        except PermissionError:
+            if attempt == tries - 1:
+                raise
+            time.sleep(1.5)
 
 
 def rebuild_docx():
@@ -541,7 +555,7 @@ def style_block(ws, r1, c1, r2, c2, header=True):
 
 def rebuild_xlsx():
     path = os.path.join(OUT, "TankGuard_Budget_Milestone.xlsx")
-    shutil.copyfile(XLSX_SRC, path)
+    copy_template(XLSX_SRC, path)
     wb = load_workbook(path)
 
     # ---------------- sheet 1: summary ------------------------------------
@@ -578,12 +592,12 @@ def rebuild_xlsx():
 
     # budget block
     budget = [
-        ("1", "Manpower", 1200000), ("2", "Equipment (exclusive of GST)", 600000),
-        ("3", "Consumables", 360000), ("4", "Travel", 200000),
-        ("5", "Miscellaneous expenses", 440000), ("6", "Contingency (max 5%)", 140000),
-        ("7", "Sub total", 2940000), ("8", "Overhead (max 20%)", 588000),
-        ("9", "Faculty fee (max 20%)", 705600), ("10", "Total (7+8+9)", 4233600),
-        ("11", "GST (18% of 10)", 0), ("12", "Grand total (10+11)", 4233600),
+        ("1", "Manpower", 1200000), ("2", "Equipment (exclusive of GST)", 840000),
+        ("3", "Consumables", 440000), ("4", "Travel", 200000),
+        ("5", "Miscellaneous expenses", 440000), ("6", "Contingency (max 5%)", 156000),
+        ("7", "Sub total", 3276000), ("8", "Overhead (max 20%)", 655200),
+        ("9", "Faculty fee (max 20%)", 300000), ("10", "Total (7+8+9)", 4231200),
+        ("11", "GST (18% of 10)", 0), ("12", "Grand total (10+11)", 4231200),
     ]
     for i, (no, name, amt) in enumerate(budget):
         r = 4 + i
@@ -597,7 +611,7 @@ def rebuild_xlsx():
     # milestones block
     miles = [
         ("1", "Milestone 1: Design freeze and tooling", "T0 + 3 months", "Moulds ordered, 5 pilot sets built"),
-        ("2", "Milestone 2: Pilot build and lab qualification", "T0 + 6 months", "20 sets, IP68 and EMC passed"),
+        ("2", "Milestone 2: Pilot build and lab qualification", "T0 + 6 months", "25 sets, IP68 and EMC passed"),
         ("3", "Milestone 3: Field deployment", "T0 + 9 months", "12 sites, 60 days of operation"),
         ("4", "Milestone 4: Commercial readiness", "T0 + 12 months", "3 paying pilots, TRL 8 pack"),
         ("", "Total", "", ""),
@@ -612,10 +626,10 @@ def rebuild_xlsx():
 
     # tranche block
     tranche = [
-        ("Project start (T0)", 1533168, "Design freeze, tooling, first pilot sets"),
-        ("T0 + 6 months", 1684368, "Pilot build, certification, field deployment"),
-        ("T0 + 12 months", 1016064, "Validation, IP filing, commercial launch"),
-        ("Total", 4233600, ""),
+        ("Project start (T0)", 1569160, "Design freeze, tooling, first pilot sets"),
+        ("T0 + 6 months", 1639560, "Pilot build, certification, field deployment"),
+        ("T0 + 12 months", 1022480, "Validation, IP filing, commercial launch"),
+        ("Total", 4231200, ""),
     ]
     for i, (when, amt, what) in enumerate(tranche):
         r = 4 + i
@@ -673,7 +687,7 @@ def rebuild_xlsx():
     b.row_dimensions[2].height = 24
 
     b.merge_cells("B3:G3")
-    b["B3"] = "Grant total: INR 42,33,600"
+    b["B3"] = "Grant total: INR 42,31,200"
     b["B3"].font = Font(name="Calibri", size=11, bold=True, color=STEEL)
     b["B3"].alignment = Alignment(horizontal="right", vertical="center")
 
@@ -684,17 +698,17 @@ def rebuild_xlsx():
 
     heads2 = [
         ("1", "Manpower", 360000, 480000, 360000),
-        ("2", "Equipment (exclusive of GST)", 360000, 240000, 0),
-        ("3", "Consumables", 144000, 144000, 72000),
+        ("2", "Equipment (exclusive of GST)", 480000, 300000, 60000),
+        ("3", "Consumables", 176000, 176000, 88000),
         ("4", "Travel", 50000, 90000, 60000),
         ("5", "Miscellaneous expenses", 100000, 160000, 180000),
-        ("6", "Contingency (max 5%)", 50700, 55700, 33600),
-        ("7", "Sub total", 1064700, 1169700, 705600),
-        ("8", "Overhead (max 20%)", 212940, 233940, 141120),
-        ("9", "Faculty fee (max 20%)", 255528, 280728, 169344),
-        ("10", "Total (7+8+9)", 1533168, 1684368, 1016064),
+        ("6", "Contingency (max 5%)", 58300, 60300, 37400),
+        ("7", "Sub total", 1224300, 1266300, 785400),
+        ("8", "Overhead (max 20%)", 244860, 253260, 157080),
+        ("9", "Faculty fee (max 20%)", 100000, 120000, 80000),
+        ("10", "Total (7+8+9)", 1569160, 1639560, 1022480),
         ("11", "GST (18% of 10)", 0, 0, 0),
-        ("12", "Grand total (10+11)", 1533168, 1684368, 1016064),
+        ("12", "Grand total (10+11)", 1569160, 1639560, 1022480),
     ]
     for i, (no, name, t1, t2, t3) in enumerate(heads2):
         r = 5 + i
@@ -1176,9 +1190,9 @@ SLIDE_TEXT = {
         ]),
     ], "A tank clean sells for INR 1,500 to 4,000, so the arm is sold to whoever already charges for it."),
 
-    12: ("INR 42.34 lakh turns the prototype into a product.", [
+    12: ("INR 42.31 lakh turns the prototype into a product.", [
         ("Requested", [
-            "INR 42,33,600 over twelve months.",
+            "INR 42,31,200 over twelve months.",
             "That is 85 percent of the programme ceiling.",
         ]),
         ("Already invested", [
@@ -1186,7 +1200,7 @@ SLIDE_TEXT = {
             "The monitor, dashboard and planner already run.",
         ]),
         ("Released in tranches", [
-            "15.33 lakh at T0, 16.84 lakh at month 6, 10.16 lakh at month 12.",
+            "15.69 lakh at T0, 16.40 lakh at month 6, 10.22 lakh at month 12.",
             "80 percent of each tranche is spent before the next is claimed.",
         ]),
         ("Partner", [
@@ -1200,7 +1214,7 @@ SLIDE_TEXT = {
 
 def build_pptx():
     path = os.path.join(OUT, "TankGuard_Presentation.pptx")
-    shutil.copyfile(PPTX_SRC, path)
+    copy_template(PPTX_SRC, path)
     prs = Presentation(path)
     slides = list(prs.slides)
 
@@ -1272,7 +1286,7 @@ def build_pptx():
                       [("1", "Design freeze and tooling", "T0 + 3 months",
                         "Moulds ordered, five pilot sets built, certification scope agreed"),
                        ("2", "Pilot build and lab qualification", "T0 + 6 months",
-                        "20 sets, IP68 and EMC passed, unit cost confirmed"),
+                        "25 sets, IP68 and EMC passed, unit cost confirmed"),
                        ("3", "Field deployment", "T0 + 9 months",
                         "12 sites in 3 cities, 60 days of operation"),
                        ("4", "Commercial readiness", "T0 + 12 months",
@@ -1283,7 +1297,7 @@ def build_pptx():
                  h=0.78, size=12.5)
 
         elif idx == 11:
-            headline(slide, "The request is INR 42.34 lakh for twelve months.")
+            headline(slide, "The request is INR 42.31 lakh for twelve months.")
             lead = tbox(slide, 0.72, 2.02, 11.9, 0.4)
             write(lead.text_frame, [{"text": "Six cost heads, then the programme's "
                                              "contingency, overhead and faculty fee.",
@@ -1291,19 +1305,20 @@ def build_pptx():
             add_table(slide, 0.72, 2.45, [3.3, 2.3],
                       ["Cost head", "Amount (INR)"],
                       [("Manpower", "12,00,000"),
-                       ("Equipment", "6,00,000"),
-                       ("Consumables", "3,60,000"),
+                       ("Equipment", "8,40,000"),
+                       ("Consumables", "4,40,000"),
                        ("Travel", "2,00,000"),
                        ("Miscellaneous", "4,40,000"),
-                       ("Contingency, overhead, fee", "14,33,600"),
-                       ("Total", "42,33,600")],
+                       ("Contingency, overhead, fee", "11,11,200"),
+                       ("Total", "42,31,200")],
                       row_h=0.44, align=[False, True], bold_rows=(7,))
             card(slide, 6.55, 2.45, 6.0, 3.4, "What the grant buys", [
                 "Two engineers for twelve months, one mechanical and one firmware.",
-                "Twenty pilot sets, enclosure tooling and a tank test rig.",
+                "Twenty-five pilot sets, enclosure tooling and a test rig.",
+                "Reference instruments for the R&D bench.",
                 "Certification, a patent filing and twelve field installations.",
                 "Market work with two channel partners.",
-            ], body_size=13.5)
+            ], body_size=13)
             band(slide, 6.15, "Prototype spend to date is INR 23,587, already invested. "
                               "This request funds the product, not the prototype.",
                  h=0.78, size=12.5)
@@ -1317,7 +1332,7 @@ def build_pptx():
                 "service channel.",
             ], body_size=12.5)
             card(slide, 6.83, 2.32, 5.78, 2.6, "What the grant delivers", [
-                "Twenty pilot units and twelve installations in three cities.",
+                "Twenty-five pilot units and twelve installations in three cities.",
                 "Certification and a patent filed, with the unit cost proven.",
                 "Three paying pilot customers and a signed channel agreement.",
             ], body_size=12.5)
