@@ -195,19 +195,18 @@ BUDGET_ROWS = [
 ]
 
 BUDGET_NOTE = [
-    "Manpower covers two full-time engineers for twelve months, one mechanical and one "
-    "firmware, at INR 50,000 per month each. Equipment covers enclosure tooling (INR "
-    "4.0 lakh), a tank test rig (INR 2.0 lakh) and reference instruments for the R&D "
-    "bench (INR 2.4 lakh). Consumables cover twenty-five pilot sets at INR 15,600 "
-    "each, plus PCB fabrication and spares.",
+    "Manpower covers two full-time engineers at Nuke Labs for twelve months, one "
+    "mechanical and one firmware, at INR 50,000 per month each. Equipment covers "
+    "enclosure tooling (INR 4.0 lakh), a tank test rig (INR 2.0 lakh) and reference "
+    "instruments for validation (INR 2.4 lakh). Consumables cover twenty-five pilot "
+    "sets at INR 15,600 each, plus PCB fabrication and spares.",
     "Miscellaneous covers certification (INR 2.0 lakh), patent drafting and filing "
-    "(INR 1.4 lakh), and market work with channel partners (INR 1.0 lakh). "
-    "Contingency is capped at 5 percent of direct cost and overhead at 20 percent of "
-    "the sub total. The faculty fee is set at INR 3.0 lakh, below the 20 percent cap, "
-    "and the difference is carried in equipment and consumables for R&D.",
-    "Prototype parts to date total INR 23,587 and have already been invested by the "
-    "team. They are not part of this request. The request funds the product, not the "
-    "prototype.",
+    "(INR 1.4 lakh), and market work with channel partners (INR 1.0 lakh). Travel "
+    "covers the field installations and review meetings (INR 2.0 lakh). Contingency is "
+    "5 percent of direct cost and overhead 20 percent of the sub total; the faculty fee "
+    "is INR 3.0 lakh, below the 20 percent cap.",
+    "Prototype parts to date total INR 23,587, already invested and not part of this "
+    "request.",
 ]
 
 TRANCHE_ROWS = [
@@ -1313,9 +1312,9 @@ def build_pptx():
                        ("Total", "42,31,200")],
                       row_h=0.44, align=[False, True], bold_rows=(7,))
             card(slide, 6.55, 2.45, 6.0, 3.4, "What the grant buys", [
-                "Two engineers for twelve months, one mechanical and one firmware.",
+                "Two Nuke Labs engineers for twelve months.",
                 "Twenty-five pilot sets, enclosure tooling and a test rig.",
-                "Reference instruments for the R&D bench.",
+                "Reference instruments for the validation bench.",
                 "Certification, a patent filing and twelve field installations.",
                 "Market work with two channel partners.",
             ], body_size=13)
