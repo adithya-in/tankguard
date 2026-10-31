@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TankGuard C1 - TRL 7 evidence note</title>
+<style>
+@page { size: A4; margin: 20mm 18mm 18mm 18mm; }
+body { font: 10.5pt/1.45 "Segoe UI", Calibri, Arial, sans-serif; color: #1b1f24; margin: 0; }
+h1 { font-size: 19pt; color: #1f3864; margin: 0 0 4pt; }
+h2 { font-size: 12.5pt; color: #2e74b5; margin: 16pt 0 6pt; border-bottom: 1px solid #d6dee9; padding-bottom: 3pt; }
+p { margin: 0 0 7pt; }
+.meta { font-size: 9.5pt; color: #4a5563; margin-bottom: 14pt; }
+.meta b { color: #1b1f24; }
+table { width: 100%; border-collapse: collapse; margin: 6pt 0 10pt; font-size: 9.5pt; }
+th { background: #1f4e79; color: #fff; text-align: left; padding: 5pt 6pt; font-weight: 600; }
+td { border: 1px solid #c9d3e0; padding: 5pt 6pt; vertical-align: top; }
+tr:nth-child(even) td { background: #f4f7fb; }
+.claim { background: #eef4fb; border-left: 4px solid #2e74b5; padding: 9pt 11pt; margin: 8pt 0 10pt; }
+ul { margin: 0 0 8pt 16pt; padding: 0; }
+li { margin-bottom: 3pt; }
+.small { font-size: 9pt; color: #5a6675; }
+.sign { margin-top: 18pt; display: flex; gap: 30pt; }
+.sign div { flex: 1; border-top: 1px solid #1b1f24; padding-top: 4pt; font-size: 9pt; }
+</style>
+</head>
+<body>
+
+<h1>TankGuard C1 — TRL 7 evidence note</h1>
+<div class="meta">
+  <b>Document:</b> TG-TRL-2026-001 &nbsp;·&nbsp;
+  <b>Date:</b> 31 October 2026 &nbsp;·&nbsp;
+  <b>Prepared for:</b> TIH IoT Technology Development Program 2026 (TDP 11)<br>
+  <b>Prepared by:</b> Dr. Vishnu Vasudev (PI), with Nuke Labs
+</div>
+
+<h2>1. Claim</h2>
+<div class="claim">
+The C1 cleaning arm has reached <b>TRL 7</b> on the drive, structure and manual
+control axis. On 31 October 2026 the arm was assembled, lowered into a real
+500 L water tank, powered from its own supply, and driven in both directions on
+both joints by the operator through the controller's own web page.
+</div>
+<p>The claim is deliberately narrow. It covers the arm as a machine in its real
+operating environment. It does not claim the autonomous cleaning cycle, the
+brush and pump under sludge, or coverage, which the project delivers.</p>
+
+<h2>2. The scale used</h2>
+<p class="small">Definitions as given in the TDP application form.</p>
+<table>
+  <tr><th style="width:14%">Level</th><th style="width:46%">Definition</th><th>Where TankGuard stands</th></tr>
+  <tr><td>TRL 6</td><td>The technology works in near-real or simulated conditions</td><td>The arm was previously exercised on the bench, out of the tank</td></tr>
+  <tr><td><b>TRL 7</b></td><td><b>The technology works in a real place</b></td><td><b>The arm ran in a 500 L tank, in water, under its own power</b></td></tr>
+  <tr><td>TRL 8</td><td>The product is finished and ready</td><td>Target of this project</td></tr>
+  <tr><td>TRL 9</td><td>People use it every day for real work</td><td>After first sales</td></tr>
+</table>
+
+<h2>3. What was demonstrated</h2>
+<p><b>Test article.</b> The C1 arm: two rigid 20 cm links, one joint at the
+shoulder and one at the elbow, a ring brush head at the tip, driven by two 12 V
+planetary gearmotors through dual-PWM drivers. Controller: ESP8266 NodeMCU
+running <code>firmware/c1_cleaner</code>, powered from its own 12 V supply, with
+the tank unit not connected.</p>
+<p><b>Environment.</b> A 500 L water storage tank, filled, with the arm mounted
+at the lid opening and the links immersed. This is the environment the product
+is sold for, not a bench mock-up.</p>
+<p><b>Procedure.</b></p>
+<ul>
+  <li>Power the controller and join its hotspot.</li>
+  <li>Open the controller page at 192.168.4.1.</li>
+  <li>In manual mode, jog the shoulder forward and back in bursts, then the elbow
+      forward and back, watching the links in the tank.</li>
+  <li>Confirm direction, response and freedom from binding.</li>
+</ul>
+<p><b>Result.</b> Both joints moved in both directions, in the tank, under load.
+The arm responded to each jog command, reversed on command, and did not bind or
+stall. Manual control worked end to end: browser, controller, drivers, motors,
+mechanism, in water.</p>
+
+<h2>4. What this proves, and what it does not</h2>
+<p><b>Proved.</b></p>
+<ul>
+  <li>The arm's structure and joints survive and operate in a real tank.</li>
+  <li>The drivetrain has enough torque to move the links in water.</li>
+  <li>The controller, drivers and wiring work in the real installation.</li>
+  <li>Direction and speed control respond as commanded, in both directions.</li>
+</ul>
+<p><b>Not yet proved, and not claimed.</b></p>
+<ul>
+  <li>The autonomous arc cycle in the tank (the planner has run in simulation and
+      on the bench).</li>
+  <li>Brush and pump behaviour against settled sludge.</li>
+  <li>Floor coverage measured in the tank.</li>
+  <li>Repeatability across a full three-ring cycle.</li>
+  <li>Certification and field reliability.</li>
+</ul>
+<p>These are the deliverables of the funded project, and they are what separate
+TRL 7 from TRL 8.</p>
+
+<h2>5. Why this is TRL 7 and not TRL 6</h2>
+<p>TRL 6 is a demonstration in a near-real or simulated environment: a bench rig,
+a dry test stand, a model tank. That is what the arm had before this test.</p>
+<p>TRL 7 is a demonstration in the real place. The arm was not on a bench; it was
+in a 500 L tank, in water, doing the job it is designed to do, with the hardware
+that will be installed. The distinction is the environment, and the environment
+is exactly what changed.</p>
+
+<h2>6. Path from TRL 7 to TRL 8</h2>
+<table>
+  <tr><th style="width:26%">Milestone</th><th>What closes the gap</th></tr>
+  <tr><td>M1, T0 + 3 months</td><td>Line installed, design frozen, certification scope agreed</td></tr>
+  <tr><td>M2, T0 + 6 months</td><td>Twenty-five pilot sets built in-house; IP68 and EMC passed; unit cost confirmed</td></tr>
+  <tr><td>M3, T0 + 9 months</td><td>Twelve installations in three cities; sixty days of operation</td></tr>
+  <tr><td>M4, T0 + 12 months</td><td>Certification filed, three paying pilots, channel agreement, TRL 8 evidence pack</td></tr>
+</table>
+
+<h2>7. Evidence held</h2>
+<ul>
+  <li>Photographs and video of the arm running in the 500 L tank (attached to the submission).</li>
+  <li>Serial log from the controller covering the manual jog commands.</li>
+  <li>This note, signed by the PI and the industry partner.</li>
+</ul>
+
+<div class="sign">
+  <div><b>Dr. Vishnu Vasudev</b><br>Principal Investigator<br>Sree Buddha College of Engineering</div>
+  <div><b>Nuke Labs</b><br>Industry partner</div>
+</div>
+
+</body>
+</html>

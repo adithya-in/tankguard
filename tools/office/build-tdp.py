@@ -81,8 +81,9 @@ EXEC = [
 
     "The project delivers a production revision of M1 and H1, twenty-five pilot units of "
     "the C1 cleaning arm, twelve field installations, certification, "
-    "and three paying pilot customers. The target is TRL 8, with the unit cost and "
-    "the service model proven before the first production run.",
+    "and three paying pilot customers. The arm has already reached TRL 7: both joints "
+    "ran in a real 500 L tank. The project takes the integrated system to TRL 8, with "
+    "the unit cost and the service model proven before the first production run.",
 ]
 
 COMMERCIAL = [
@@ -162,10 +163,10 @@ OBJECTIVES = [
     "concentric rings at 8.0, 23.7 and 39.4 cm with a 16 cm ring brush and a central "
     "suction intake, covering 90 percent of the floor per cycle, and parks in a "
     "fixed rest pose at both ends of the cycle.",
-    "Objective 4: prove it in the field and take it to market. The monitor enters at "
-    "TRL 6 and the arm at TRL 4; twelve months later the system is at TRL 8, with "
-    "twenty-five pilot units, twelve installations, certification and three "
-    "paying customers.",
+    "Objective 4: prove it in the field and take it to market. The arm has reached TRL 7 "
+    "in a real 500 L tank; the monitor is at TRL 6. Twelve months later the integrated "
+    "system is at TRL 8, with twenty-five pilot units, twelve installations, "
+    "certification and three paying customers.",
 ]
 
 DELIVERABLES = [
@@ -231,16 +232,15 @@ BUDGET_ROWS = [
 ]
 
 BUDGET_NOTE = [
-    "Equipment is the pilot line, itemised in the appendix: a used 100 T moulder, "
-    "three moulds, a stencil printer, a two-head pick-and-place, a six-zone reflow, "
-    "test fixtures and the bench. Manpower covers two engineers at Nuke Labs for "
-    "twelve months. Consumables cover twenty-five pilot sets and PCB fabrication.",
+    "Equipment is the pilot line, itemised in the appendix: moulder, moulds, stencil "
+    "printer, pick-and-place, reflow, fixtures and bench. Manpower covers two engineers "
+    "at Nuke Labs for twelve months. Consumables cover twenty-five pilot sets and PCB "
+    "fabrication.",
     "Travel covers twelve field installations. Miscellaneous covers market work and "
     "small items; certification is carried by Nuke Labs. "
-    "Contingency is 5 percent of direct cost and no overhead is claimed. The faculty "
-    "fee is INR 2.0 lakh. GST at 18 percent is shown on the total.",
-    "Prototype parts to date total INR 23,587, already invested and not part of this "
-    "request.",
+    "Contingency is 5 percent of direct cost, no overhead is claimed, and GST at 18 "
+    "percent is shown on the total. Prototype parts to date total INR 23,587, already "
+    "invested and not part of this request.",
 ]
 
 TRANCHE_ROWS = [
@@ -262,6 +262,7 @@ SUPPORT = [
     "limits, including the 2 cm wall ring the arm cannot reach.",
     "Coverage planner (tools/swept_area.html) and the generated path used by the "
     "controller (firmware/c1_cleaner/path.h).",
+    "TRL 7 evidence note (TG-TRL-2026-001), October 2026, covering the 500 L tank test.",
     "Patentability disclosure (prior-art record, no filing claimed) and the minimum "
     "bill of materials.",
     "Prototype spend to date: INR 23,587 in parts, with the monitor running at TRL 6.",
@@ -508,13 +509,12 @@ def rebuild_docx():
     table(doc, ["Item", "Amount (INR)"], BUDGET_ROWS,
           widths=[Pt(300), Pt(154)], right_cols=(1,))
     for t in BUDGET_NOTE:
-        para(doc, t, 10)
+        para(doc, t, 9.5, space_after=4)
 
     cap = para(doc, "Tranche disbursement schedule", 12.5, True, MID_BLUE,
                space_after=6)
     cap.paragraph_format.space_before = Pt(14)
     cap.paragraph_format.keep_with_next = True
-    cap.paragraph_format.page_break_before = True
     table(doc, ["Timeline", "Amount (INR, incl. GST)", "Milestone covered"],
           TRANCHE_ROWS, widths=[Pt(120), Pt(120), Pt(214)], right_cols=(1,))
 
@@ -1248,7 +1248,7 @@ SLIDE_TEXT = {
         ]),
     ], "The dashboard is served by the tank unit itself, so it keeps working when the internet does not."),
 
-    7: ("The monitoring prototype is built and runs at TRL 6.", [
+    7: ("The monitor runs at TRL 6. The arm has run in a real tank at TRL 7.", [
         ("M1 firmware", [
             "Compiles for the ESP8266.",
             "The React dashboard is stored in flash and served by the device.",
@@ -1258,15 +1258,15 @@ SLIDE_TEXT = {
             "Score panel, trend charts, session log and device table.",
         ]),
         ("C1 controller", [
-            "Compiles for the ESP32.",
+            "Compiles for the ESP8266.",
             "Burst control, pump relay, interlocks and a JSON API.",
         ]),
         ("Path planner", [
             "Solves the reachable workspace and exports the plan.",
             "Generates the header the controller compiles against.",
         ]),
-    ], "INR 23,587 of prototype parts, already invested. The grant funds the arm "
-       "hardware, the home unit build and certification."),
+    ], "INR 23,587 invested. Both joints ran in a 500 L tank in October 2026; the grant "
+       "builds the line and the pilot units."),
 
     8: ("The value is in joining the four parts.", [
         ("One local system", [
@@ -1313,7 +1313,7 @@ SLIDE_TEXT = {
         ]),
         ("Already invested", [
             "INR 23,587 of prototype parts.",
-            "The monitor, dashboard and planner already run.",
+            "The arm has run in a 500 L tank; the monitor and planner run.",
         ]),
         ("Released in tranches", [
             "25.66 lakh at T0, 16.24 lakh at month 6, 5.13 lakh at month 12.",
@@ -1438,7 +1438,7 @@ def build_pptx():
                  h=0.78, size=12.5)
 
         elif idx == 13:
-            headline(slide, "A working monitor today. A certified system in twelve months.")
+            headline(slide, "A working arm in a real tank. A certified system in twelve months.")
             card(slide, 0.72, 2.32, 5.78, 2.6, "The team", [
                 "Principal Investigator: Dr. Vishnu Vasudev, Sree Buddha College of "
                 "Engineering, Department of Electronics and Communication Engineering.",
