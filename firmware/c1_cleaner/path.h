@@ -24,7 +24,7 @@ struct CleanArc {
 #define PARK_T1 0
 #define PARK_T2 1800
 
-static const CleanArc ARCS[ARC_COUNT] PROGMEM = {
+static const CleanArc ARCS[ARC_COUNT] = {
   { 1, 80, 235, 1015, 1569 },
   { 2, 237, 743, 1263, 1073 },
   { 3, 394, 1621, 1701, 199 },

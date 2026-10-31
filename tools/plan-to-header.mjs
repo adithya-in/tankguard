@@ -46,7 +46,7 @@ struct CleanArc {
 #define PARK_T1 ${Math.round(park.t1 * 10)}
 #define PARK_T2 ${Math.round(park.t2 * 10)}
 
-static const CleanArc ARCS[ARC_COUNT] PROGMEM = {
+static const CleanArc ARCS[ARC_COUNT] = {
 ${rows.join(",\n")}
 };
 `;
