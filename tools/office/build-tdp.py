@@ -37,7 +37,10 @@ PPTX_SRC = os.path.join(DL, "Presentation Template.pptx")
 DATE = "31 October 2026"
 TITLE = "TankGuard: self-powered monitoring, pump control and sludge cleaning for water tanks"
 PI = "Dr. Vishnu Vasudev"
-AFFIL = "Nuke Labs (industry partner)"
+INST = "Sree Buddha College of Engineering"
+DEPT = "Department of Electronics and Communication Engineering"
+AFFIL = INST + ", " + DEPT
+PARTNER = "Nuke Labs (industry partner)"
 THEME = "TIH IoT Technology Development Program 2026"
 BLUE = RGBColor(0x1F, 0x4E, 0x79)
 MID_BLUE = RGBColor(0x2E, 0x74, 0xB5)
@@ -68,20 +71,49 @@ EXEC = [
     "design record states it. The dashboard reports the data source and the coverage "
     "limit, so the owner knows what was measured and what was cleaned.",
 
-    "The project delivers a working prototype of M1 and H1, the C1 cleaning arm with "
-    "its planner and controller, the dashboard served by the tank unit, and field "
-    "validation at TRL 6 or above with an industry partner.",
+    "The monitoring prototype is built. The M1 firmware, the dashboard and the path "
+    "planner run, and INR 23,587 of parts have already been invested. The grant funds "
+    "the step from that prototype to a certified product: the arm hardware, twenty "
+    "pilot units, certification, a patent and twelve field installations.",
+
+    "The project delivers a production revision of M1 and H1, twenty pilot units of "
+    "the C1 cleaning arm, twelve field installations, certification, a filed patent, "
+    "and three paying pilot customers. The target is TRL 8, with the unit cost and "
+    "the service model proven before the first production run.",
+]
+
+COMMERCIAL = [
+    "The buyer is the contractor or facility manager who already pays for cleaning. "
+    "A household buys a clean, not a device, so the arm is sold to the contractor who "
+    "visits the tank, and the monitor is sold to the institution that wants a reading "
+    "between cleans.",
+
+    "Price targets: INR 39,999 for the complete system (M1, H1 and C1) against INR "
+    "15,600 of parts, a gross margin near 61 percent. The monitor and home unit alone "
+    "sell at INR 16,999 for sites that do not need the arm.",
+
+    "Market base: 79 million urban households in the 2011 Census, of which about 60 "
+    "percent are assumed to store water in a tank (47 million), plus 1.5 million "
+    "schools and 70,000 hospitals. A tank clean sells for INR 1,500 to 4,000 in urban "
+    "India, once or twice a year.",
+
+    "Route to revenue: three paying pilot sites in the grant year, converted to "
+    "reference accounts; two channel partners in the following year, one in cleaning "
+    "services and one in plumbing distribution; a target of 250 units in the first "
+    "full year of sale.",
+
+    "The grant pays for the tooling, certification and pilot units that a first "
+    "customer will not fund. Nuke Labs carries the channel, the service network and "
+    "the field access.",
 ]
 
 HISTORY = [
     "TankGuard started as a water-quality monitor. Five probes fed an edge-computed "
-    "score, and the device served its own dashboard over Wi-Fi. The first build "
-    "showed that an ESP8266 can carry the whole stack without a cloud service.",
+    "score, and the ESP8266 served its own dashboard over Wi-Fi, with no cloud service.",
     "Field trials exposed the real failure mode. Measurement alone does not clean a "
-    "tank. The sludge layer keeps feeding turbidity and biofilm, and the household "
-    "still has to drain and scrub the tank by hand. The product therefore moved from "
-    "monitoring to care: a home unit that runs the pump safely, and an arm that "
-    "removes the sludge without emptying the tank.",
+    "tank: the sludge layer keeps feeding turbidity and biofilm, and the household "
+    "still drains and scrubs by hand. The product moved from monitoring to care, with "
+    "a home unit for the pump and an arm for the sludge.",
     "The current design keeps the five probes, the score weights and the local-only "
     "architecture. It replaces the abandoned drain-and-flush mechanism with the "
     "cleaning arm described here.",
@@ -89,23 +121,22 @@ HISTORY = [
 
 PROBLEM = [
     "Storage tanks degrade silently. Residual chlorine disappears within 24 to 48 "
-    "hours. Suspended solids settle into a sludge layer. Biofilm forms on internal "
-    "surfaces, and algae grow in warm water. By the time the problem is visible, the "
-    "water is already unsafe.",
+    "hours, suspended solids settle into a sludge layer, biofilm forms on internal "
+    "surfaces, and algae grow in warm water. By the time it is visible, the water is "
+    "already unsafe.",
     "Current options either monitor without acting or clean by draining the whole "
     "tank. Monitoring tells the owner there is a problem and leaves the work to "
     "them. A full drain wastes the stored water and needs manual labour.",
-    "The gap is largest where it matters most. Schools, hospitals and apartment "
-    "buildings store large volumes, clean to a fixed calendar, and cannot tell "
-    "whether the last clean helped.",
+    "The gap is largest where it matters most: schools, hospitals and apartment "
+    "blocks store large volumes, clean to a fixed calendar, and cannot tell whether "
+    "the last clean helped.",
 ]
 
 OBJECTIVES = [
     "Objective 1: measure and score water quality at the edge. Five probes "
     "(turbidity, TDS, pH, temperature, level) are digitised through an ADS1115 and "
-    "fused into a weighted score (turbidity 40 percent, TDS 25, pH 25, temperature "
-    "10). Acceptance: the score repeats within 2 points across ten consecutive "
-    "samples in still water.",
+    "fused into a weighted score (40/25/25/10). Acceptance: the score repeats within "
+    "2 points over ten consecutive samples in still water.",
     "Objective 2: make the result readable without a phone. H1 shows the score, "
     "level, the four readings, pump state and link health on a 1.8 inch display. It "
     "controls the pump in automatic mode (on below the low-level setpoint, off above "
@@ -114,66 +145,77 @@ OBJECTIVES = [
     "concentric rings at 8.0, 23.7 and 39.4 cm with a 16 cm ring brush and a central "
     "suction intake, covering 90 percent of the floor per cycle, and parks in a "
     "fixed rest pose at both ends of the cycle.",
-    "Objective 4: prove it in the field. Twelve months to TRL 6 or above, with three "
-    "installations, 90 days of continuous operation, and a published measurement of "
-    "score accuracy, cleaning coverage and water saved against a full drain.",
+    "Objective 4: prove it in the field and take it to market. The monitor enters at "
+    "TRL 6 and the arm at TRL 4; twelve months later the system is at TRL 8, with "
+    "twenty pilot units, twelve installations, certification, a filed patent and three "
+    "paying customers.",
 ]
 
 DELIVERABLES = [
-    "D1. M1 monitor: an ESP8266 unit on the tank lid with five calibrated probes, an "
-    "edge score, and the web dashboard served from flash.",
-    "D2. H1 home unit: an ESP8266 with a 1.8 inch display, automatic pump control "
-    "through an isolated relay and contactor, and a manual override.",
-    "D3. C1 cleaning arm: an ESP32 controller, a two-link arm, a ring brush head "
-    "with suction, a path planner and an executor, with the coverage analysis that "
-    "states its limits.",
-    "D4. Field evidence: three installations, 90 days of data, and a TRL 6 evidence "
-    "pack covering score accuracy and cleaning coverage.",
+    "D1. M1 monitor, production revision: the ESP8266 board with five calibrated "
+    "probes, an edge score, the dashboard in flash, and an enclosure that can be "
+    "moulded at volume.",
+    "D2. H1 home unit, production revision: the display board, isolated relay and "
+    "contactor interface, and a manual override that passes electrical safety review.",
+    "D3. C1 cleaning arm, pilot build: twenty units with the two-link arm, ring brush, "
+    "suction head and the planner-generated path, at a confirmed unit cost.",
+    "D4. Commercial pack: twelve installations, certification and patent filed, three "
+    "paying pilot customers, a channel agreement, and the TRL 8 evidence set.",
 ]
 
 MILESTONES = [
-    ("1", "Requirements and monitor prototype", "T0 + 2 months",
-     "M1 assembled and calibrated. Score validated against reference instruments. "
-     "Dashboard served from flash."),
-    ("2", "Home unit and dashboard", "T0 + 4 months",
-     "H1 installed with pump control. Dashboard, session log and device table "
-     "complete."),
-    ("3", "Cleaning arm", "T0 + 8 months",
-     "C1 built. Three-ring cycle executed. Coverage and repeatability measured."),
-    ("4", "Field validation", "T0 + 12 months",
-     "Three installations, 90 days of data, TRL 6 evidence pack."),
+    ("1", "Design freeze and tooling", "T0 + 3 months",
+     "Arm and enclosure frozen. Moulds ordered. Five pilot sets assembled. "
+     "Certification scope agreed with the test laboratory."),
+    ("2", "Pilot build and lab qualification", "T0 + 6 months",
+     "Twenty pilot sets built and calibrated against reference instruments. IP68 and "
+     "EMC pre-compliance passed. Unit cost confirmed at INR 15,600 or below."),
+    ("3", "Field deployment", "T0 + 9 months",
+     "Twelve installations in three cities with sixty days of continuous operation. "
+     "Installation manual and service workflow complete."),
+    ("4", "Commercial readiness", "T0 + 12 months",
+     "Certification filed, patent filed, three paying pilot customers, channel "
+     "agreement signed, TRL 8 evidence pack."),
 ]
 
 BUDGET_ROWS = [
-    ("Manpower", "0"),
-    ("Equipment (exclusive of GST)", "15,600"),
-    ("Consumables", "0"),
-    ("Travel", "0"),
-    ("Miscellaneous", "0"),
-    ("Contingency (max 5%)", "780"),
-    ("Sub total", "16,380"),
-    ("Overhead (max 20%)", "3,276"),
-    ("Faculty fee (max 20%)", "3,931"),
-    ("Total (7+8+9)", "23,587"),
+    ("Manpower", "12,00,000"),
+    ("Equipment (exclusive of GST)", "6,00,000"),
+    ("Consumables", "3,60,000"),
+    ("Travel", "2,00,000"),
+    ("Miscellaneous", "4,40,000"),
+    ("Contingency (max 5%)", "1,40,000"),
+    ("Sub total", "29,40,000"),
+    ("Overhead (max 20%)", "5,88,000"),
+    ("Faculty fee (max 20%)", "7,05,600"),
+    ("Total (7+8+9)", "42,33,600"),
     ("GST (18%)", "0"),
-    ("Grand total", "23,587"),
+    ("Grand total", "42,33,600"),
 ]
 
 BUDGET_NOTE = [
-    "Equipment split, indicative: M1 monitor INR 6,500; H1 home unit INR 1,800; C1 "
-    "cleaning arm INR 7,300. The C1 figure covers two 12 V planetary gearmotors, an "
-    "ESP32, two H-bridges, a submersible pump, the brush head and the enclosure.",
-    "Contingency is capped at 5 percent of project value, overhead at 20 percent of "
-    "the sub total, and the faculty fee at 20 percent of the total.",
-    "Manpower, consumables, travel and miscellaneous heads will be agreed at the "
-    "grant kickoff. Equipment figures are vendor quotes pending confirmation.",
+    "Manpower covers two full-time engineers for twelve months, one mechanical and one "
+    "firmware, at INR 50,000 per month each. Equipment covers enclosure tooling (INR "
+    "4.0 lakh) and a tank test rig with reference instruments (INR 2.0 lakh). "
+    "Consumables cover twenty pilot sets at INR 15,600 each, plus PCB fabrication and "
+    "spares.",
+    "Miscellaneous covers certification (INR 2.0 lakh), patent drafting and filing "
+    "(INR 1.4 lakh), and market work with channel partners (INR 1.0 lakh). "
+    "Contingency is capped at 5 percent of direct cost, overhead at 20 percent of the "
+    "sub total, and the faculty fee at 20 percent of the total.",
+    "Prototype parts to date total INR 23,587 and have already been invested by the "
+    "team. They are not part of this request. The request funds the product, not the "
+    "prototype.",
 ]
 
 TRANCHE_ROWS = [
-    ("Project start (T0)", "8,235", "M1 monitor build and dashboard"),
-    ("T0 + 6 months", "9,415", "H1 home unit and C1 cleaning arm"),
-    ("T0 + 12 months", "5,937", "Field validation and evidence pack"),
-    ("Total", "23,587", ""),
+    ("Project start (T0)", "15,33,168",
+     "Design freeze, tooling and the first pilot sets"),
+    ("T0 + 6 months", "16,84,368",
+     "Pilot build, certification testing and field deployment"),
+    ("T0 + 12 months", "10,16,064",
+     "Validation close-out, IP filing and commercial launch"),
+    ("Total", "42,33,600", ""),
 ]
 
 SUPPORT = [
@@ -186,6 +228,7 @@ SUPPORT = [
     "Coverage planner (tools/swept_area.html) and the generated path used by the "
     "controller (firmware/c1_cleaner/path.h).",
     "Patentability disclosure and the minimum bill of materials.",
+    "Prototype spend to date: INR 23,587 in parts, with the monitor running at TRL 6.",
 ]
 
 CATEGORY = (
@@ -303,7 +346,8 @@ def rebuild_docx():
     para(doc, TITLE, 16, True, BLUE, WD_ALIGN_PARAGRAPH.CENTER, 16)
     para(doc, "Submitted by", 11, False, None, WD_ALIGN_PARAGRAPH.CENTER, 2)
     para(doc, PI, 14, True, BLUE, WD_ALIGN_PARAGRAPH.CENTER, 2)
-    para(doc, AFFIL, 11, False, None, WD_ALIGN_PARAGRAPH.CENTER, 10)
+    para(doc, INST, 11, False, None, WD_ALIGN_PARAGRAPH.CENTER, 2)
+    para(doc, "Industry partner: Nuke Labs", 11, False, None, WD_ALIGN_PARAGRAPH.CENTER, 10)
     para(doc, "Theme: " + THEME, 10.5, False, None, WD_ALIGN_PARAGRAPH.CENTER, 2)
     para(doc, "Date of submission: " + DATE, 10.5, False, None, WD_ALIGN_PARAGRAPH.CENTER, 2)
     doc.add_paragraph().add_run().add_break(WD_BREAK.PAGE)
@@ -321,6 +365,7 @@ def rebuild_docx():
         ("     3.5  Project plan with major milestones", "5"),
         ("     3.6  Resources and budget", "5"),
         ("     3.7  Category of new technology/product", "6"),
+        ("     3.8  Commercialisation plan", "6"),
         ("4  Appendix", "6"),
         ("     4.1  Supporting documentation", "6"),
     ):
@@ -343,8 +388,7 @@ def rebuild_docx():
             ("Designation", "Principal Investigator"),
             ("Affiliation", AFFIL),
             ("Co-investigator", "None"),
-            ("Collaborator", "Nuke Labs (build, field access, commercialisation)"),
-            ("Theme", THEME),
+            ("Collaborator", "Nuke Labs (build, field access, commercialisation)"),            ("Theme", THEME),
             ("Date of submission", DATE),
         ],
         widths=[Pt(150), Pt(300)],
@@ -376,7 +420,7 @@ def rebuild_docx():
 
     h = heading(doc, "3.5  Project plan with major milestones", 2)
     h.paragraph_format.page_break_before = True
-    para(doc, "Twelve months from T0, with a demonstration at every gate.")
+    para(doc, "Twelve months from T0, with a deliverable at every gate.")
     table(doc, ["#", "Milestone", "Period", "Delivered at the gate"],
           MILESTONES, widths=[Pt(24), Pt(150), Pt(70), Pt(210)])
 
@@ -396,6 +440,10 @@ def rebuild_docx():
 
     heading(doc, "3.7  Category of new technology/product", 2)
     para(doc, CATEGORY)
+
+    heading(doc, "3.8  Commercialisation plan", 2)
+    for t in COMMERCIAL:
+        para(doc, t)
 
     # ---- 4 appendix -------------------------------------------------------
     heading(doc, "4  Appendix", 1)
@@ -530,28 +578,28 @@ def rebuild_xlsx():
 
     # budget block
     budget = [
-        ("1", "Manpower", 0), ("2", "Equipment (exclusive of GST)", 15600),
-        ("3", "Consumables", 0), ("4", "Travel", 0),
-        ("5", "Miscellaneous expenses", 0), ("6", "Contingency (max 5%)", 780),
-        ("7", "Sub total", 16380), ("8", "Overhead (max 20%)", 3276),
-        ("9", "Faculty fee (max 20%)", 3931), ("10", "Total (7+8+9)", 23587),
-        ("11", "GST (18% of 10)", 0), ("12", "Grand total (10+11)", 23587),
+        ("1", "Manpower", 1200000), ("2", "Equipment (exclusive of GST)", 600000),
+        ("3", "Consumables", 360000), ("4", "Travel", 200000),
+        ("5", "Miscellaneous expenses", 440000), ("6", "Contingency (max 5%)", 140000),
+        ("7", "Sub total", 2940000), ("8", "Overhead (max 20%)", 588000),
+        ("9", "Faculty fee (max 20%)", 705600), ("10", "Total (7+8+9)", 4233600),
+        ("11", "GST (18% of 10)", 0), ("12", "Grand total (10+11)", 4233600),
     ]
     for i, (no, name, amt) in enumerate(budget):
         r = 4 + i
         ms[f"A{r}"] = int(no)
         ms[f"B{r}"] = name
         ms[f"C{r}"] = amt
-        ms[f"C{r}"].number_format = "#,##0"
+        ms[f"C{r}"].number_format = "#,##,##0"
         ms[f"C{r}"].alignment = Alignment(horizontal="right", vertical="center")
         ms[f"A{r}"].alignment = Alignment(horizontal="center", vertical="center")
 
     # milestones block
     miles = [
-        ("1", "Milestone 1: Monitor prototype", "T0 + 2 months", "M1 calibrated, score validated"),
-        ("2", "Milestone 2: Home unit and dashboard", "T0 + 4 months", "H1 pump control, dashboard live"),
-        ("3", "Milestone 3: Cleaning arm", "T0 + 8 months", "C1 built, coverage measured"),
-        ("4", "Milestone 4: Field validation", "T0 + 12 months", "3 sites, 90 days, TRL 6 pack"),
+        ("1", "Milestone 1: Design freeze and tooling", "T0 + 3 months", "Moulds ordered, 5 pilot sets built"),
+        ("2", "Milestone 2: Pilot build and lab qualification", "T0 + 6 months", "20 sets, IP68 and EMC passed"),
+        ("3", "Milestone 3: Field deployment", "T0 + 9 months", "12 sites, 60 days of operation"),
+        ("4", "Milestone 4: Commercial readiness", "T0 + 12 months", "3 paying pilots, TRL 8 pack"),
         ("", "Total", "", ""),
     ]
     for i, (no, name, when, remark) in enumerate(miles):
@@ -564,16 +612,16 @@ def rebuild_xlsx():
 
     # tranche block
     tranche = [
-        ("Project start (T0)", 8235, "M1 monitor build and dashboard"),
-        ("T0 + 6 months", 9415, "H1 home unit and C1 cleaning arm"),
-        ("T0 + 12 months", 5937, "Field validation and evidence pack"),
-        ("Total", 23587, ""),
+        ("Project start (T0)", 1533168, "Design freeze, tooling, first pilot sets"),
+        ("T0 + 6 months", 1684368, "Pilot build, certification, field deployment"),
+        ("T0 + 12 months", 1016064, "Validation, IP filing, commercial launch"),
+        ("Total", 4233600, ""),
     ]
     for i, (when, amt, what) in enumerate(tranche):
         r = 4 + i
         ms[f"J{r}"] = when
         ms[f"K{r}"] = amt
-        ms[f"K{r}"].number_format = "#,##0"
+        ms[f"K{r}"].number_format = "#,##,##0"
         ms[f"K{r}"].alignment = Alignment(horizontal="right", vertical="center")
         ms[f"L{r}"] = what
 
@@ -614,57 +662,70 @@ def rebuild_xlsx():
     wipe(b, 40, 10)
 
     b.column_dimensions["B"].width = 6
-    b.column_dimensions["C"].width = 44
-    b.column_dimensions["D"].width = 24
+    b.column_dimensions["C"].width = 40
+    for col in ("D", "E", "F", "G"):
+        b.column_dimensions[col].width = 17
 
-    b.merge_cells("B2:D2")
+    b.merge_cells("B2:G2")
     b["B2"] = "Milestone Expenditure Sheet"
     b["B2"].font = Font(name="Calibri", size=13, bold=True, color=NAVY)
     b["B2"].alignment = Alignment(vertical="center")
     b.row_dimensions[2].height = 24
 
-    b.merge_cells("B3:D3")
-    b["B3"] = "Grant total: INR 23,587"
+    b.merge_cells("B3:G3")
+    b["B3"] = "Grant total: INR 42,33,600"
     b["B3"].font = Font(name="Calibri", size=11, bold=True, color=STEEL)
     b["B3"].alignment = Alignment(horizontal="right", vertical="center")
 
     for coord, text in (("B4", "Sr. No."), ("C4", "Expenditure heads"),
-                        ("D4", "Total funding (INR)")):
+                        ("D4", "Tranche 1 (T0)"), ("E4", "Tranche 2 (T0 + 6)"),
+                        ("F4", "Tranche 3 (T0 + 12)"), ("G4", "Total (INR)")):
         b[coord] = text
 
     heads2 = [
-        ("1", "Manpower", 0), ("2", "Equipment (exclusive of GST)", 15600),
-        ("3", "Consumables", 0), ("4", "Travel", 0),
-        ("5", "Miscellaneous expenses", 0), ("6", "Contingency (max 5%)", 780),
-        ("7", "Sub total", 16380), ("8", "Overhead (max 20%)", 3276),
-        ("9", "Faculty fee (max 20%)", 3931), ("10", "Total (7+8+9)", 23587),
-        ("11", "GST (18% of 10)", 0), ("12", "Grand total (10+11)", 23587),
+        ("1", "Manpower", 360000, 480000, 360000),
+        ("2", "Equipment (exclusive of GST)", 360000, 240000, 0),
+        ("3", "Consumables", 144000, 144000, 72000),
+        ("4", "Travel", 50000, 90000, 60000),
+        ("5", "Miscellaneous expenses", 100000, 160000, 180000),
+        ("6", "Contingency (max 5%)", 50700, 55700, 33600),
+        ("7", "Sub total", 1064700, 1169700, 705600),
+        ("8", "Overhead (max 20%)", 212940, 233940, 141120),
+        ("9", "Faculty fee (max 20%)", 255528, 280728, 169344),
+        ("10", "Total (7+8+9)", 1533168, 1684368, 1016064),
+        ("11", "GST (18% of 10)", 0, 0, 0),
+        ("12", "Grand total (10+11)", 1533168, 1684368, 1016064),
     ]
-    for i, (no, name, amt) in enumerate(heads2):
+    for i, (no, name, t1, t2, t3) in enumerate(heads2):
         r = 5 + i
         b[f"B{r}"] = int(no)
         b[f"C{r}"] = name
-        b[f"D{r}"] = amt
-        b[f"D{r}"].number_format = "#,##0"
+        for col, val in (("D", t1), ("E", t2), ("F", t3)):
+            b[f"{col}{r}"] = val
+            b[f"{col}{r}"].number_format = "#,##,##0"
+        b[f"G{r}"] = t1 + t2 + t3
+        b[f"G{r}"].number_format = "#,##,##0"
 
-    style_block(b, 4, 2, 16, 4)
+    style_block(b, 4, 2, 16, 7)
     for r in range(5, 17):
         b.row_dimensions[r].height = 22
         b[f"B{r}"].alignment = Alignment(horizontal="center", vertical="center")
-        b[f"D{r}"].alignment = Alignment(horizontal="right", vertical="center")
+        for col in ("D", "E", "F", "G"):
+            b[f"{col}{r}"].alignment = Alignment(horizontal="right", vertical="center")
     for r in (11, 14, 16):
-        for c in range(2, 5):
+        for c in range(2, 8):
             b.cell(row=r, column=c).font = Font(name="Calibri", size=10, bold=True)
 
-    b.merge_cells("B18:D18")
+    b.merge_cells("B18:G18")
     b["B18"] = ("80 percent of each tranche is spent before the next is claimed. "
-                "Tranche amounts are set out on the Milestones sheet.")
+                "Prototype parts to date (INR 23,587) were invested before T0 and are "
+                "not part of this request.")
     b["B18"].font = Font(name="Calibri", size=9, italic=True, color="404040")
     b["B18"].alignment = Alignment(vertical="center", wrap_text=True)
     b.row_dimensions[18].height = 30
 
-    b.print_area = "B2:D18"
-    b.page_setup.orientation = "portrait"
+    b.print_area = "B2:G18"
+    b.page_setup.orientation = "landscape"
     b.page_setup.paperSize = 9
     b.page_setup.fitToWidth = 1
     b.page_setup.fitToHeight = 1
@@ -869,9 +930,11 @@ def build_title(slide):
          "align": PP_ALIGN.CENTER, "space_after": 14},
         {"text": "Self-powered monitoring, pump control and sludge cleaning for water tanks",
          "size": 19, "color": GREY, "align": PP_ALIGN.CENTER, "space_after": 20},
-        {"text": "Dr. Vishnu Vasudev  |  Nuke Labs (industry partner)",
+        {"text": "Dr. Vishnu Vasudev, Sree Buddha College of Engineering",
          "size": 15, "bold": True, "color": BLUE_P, "align": PP_ALIGN.CENTER,
-         "space_after": 6},
+         "space_after": 4},
+        {"text": "Industry partner: Nuke Labs", "size": 14, "color": GREY,
+         "align": PP_ALIGN.CENTER, "space_after": 12},
         {"text": THEME, "size": 13, "color": GREY, "align": PP_ALIGN.CENTER,
          "space_after": 4},
         {"text": "Submission: " + DATE, "size": 13, "color": GREY,
@@ -1055,7 +1118,7 @@ SLIDE_TEXT = {
         ]),
     ], "The dashboard is served by the tank unit itself, so it keeps working when the internet does not."),
 
-    7: ("The monitor, the dashboard and the planner already run.", [
+    7: ("The monitoring prototype is built and runs at TRL 6.", [
         ("M1 firmware", [
             "Compiles for the ESP8266.",
             "The React dashboard is stored in flash and served by the device.",
@@ -1072,7 +1135,8 @@ SLIDE_TEXT = {
             "Solves the reachable workspace and exports the plan.",
             "Generates the header the controller compiles against.",
         ]),
-    ], "What remains is the arm hardware, the home unit build and twelve months of field validation."),
+    ], "INR 23,587 of prototype parts, already invested. The grant funds the arm "
+       "hardware, the home unit build and certification."),
 
     8: ("The value is in joining the four parts.", [
         ("One local system", [
@@ -1093,43 +1157,44 @@ SLIDE_TEXT = {
         ]),
     ], "The closest alternatives cover one part each: a monitor, a cleaning service or a pump controller."),
 
-    10: ("The buyer is the owner who pays for cleaning today.", [
+    10: ("The buyer is the contractor who already charges for the clean.", [
+        ("Who buys", [
+            "Cleaning contractors and facility managers first.",
+            "Households reach the product through them.",
+        ]),
+        ("Price target", [
+            "INR 39,999 for M1, H1 and C1.",
+            "Against INR 15,600 of parts, a 61 percent margin.",
+        ]),
+        ("Market base", [
+            "About 47 million urban tanks.",
+            "Plus 1.5 million schools and 70,000 hospitals.",
+        ]),
         ("Water saved", [
             "A cycle uses the water already in the tank.",
             "A full drain discards the whole stored volume.",
         ]),
-        ("Pump protection", [
-            "Level-based control stops the pump running dry.",
-            "The manual override releases safely after ten minutes.",
-        ]),
-        ("Early warning", [
-            "A falling score shows degradation before smell or taste.",
-            "The clean is planned instead of forced.",
-        ]),
-        ("Who buys", [
-            "Homes, apartment buildings, schools, hospitals and small industry.",
-            "Sold through the cleaning contractors who already visit these sites.",
-        ]),
-    ], "Each cycle reports turbidity reduction, sediment reduction, score change and estimated mass removed."),
+    ], "A tank clean sells for INR 1,500 to 4,000, so the arm is sold to whoever already charges for it."),
 
-    12: ("Funding status, and what the grant pays for.", [
+    12: ("INR 42.34 lakh turns the prototype into a product.", [
         ("Requested", [
-            "INR 23,587 over twelve months.",
-            "Equipment is INR 15,600 of that total.",
+            "INR 42,33,600 over twelve months.",
+            "That is 85 percent of the programme ceiling.",
+        ]),
+        ("Already invested", [
+            "INR 23,587 of prototype parts.",
+            "The monitor, dashboard and planner already run.",
         ]),
         ("Released in tranches", [
-            "8,235 at T0, 9,415 at T0 + 6 months, 5,937 at T0 + 12 months.",
+            "15.33 lakh at T0, 16.84 lakh at month 6, 10.16 lakh at month 12.",
             "80 percent of each tranche is spent before the next is claimed.",
         ]),
-        ("Industry partner", [
-            "Nuke Labs provides build facilities, field access and validation.",
-            "The partner also carries the commercialisation path.",
+        ("Partner", [
+            "Nuke Labs provides build facilities, field access and the service channel.",
+            "The partner carries the commercialisation path.",
         ]),
-        ("Status", [
-            "No funding secured yet.",
-            "This proposal is the first formal request.",
-        ]),
-    ], "The grant covers the monitor, the home unit, the cleaning arm and the field evidence pack."),
+    ], "The grant pays for tooling, certification, pilot units and two engineers, "
+       "which a first customer will not fund."),
 }
 
 
@@ -1197,58 +1262,65 @@ def build_pptx():
                               "a 0.3 cm overlap.", h=0.78, size=12.5)
 
         elif idx == 9:
-            headline(slide, "Four gates in twelve months, each one a demonstration.")
+            headline(slide, "Four gates in twelve months, each one a commercial step.")
             lead = tbox(slide, 0.72, 2.02, 11.9, 0.4)
-            write(lead.text_frame, [{"text": "Every gate produces something that can be "
-                                             "shown and measured.", "size": 13.5,
-                                     "color": GREY}])
+            write(lead.text_frame, [{"text": "The prototype is the starting point. Each gate "
+                                             "moves it closer to a sellable unit.",
+                                     "size": 13.5, "color": GREY}])
             add_table(slide, 0.72, 2.58, [0.8, 4.1, 2.1, 4.9],
                       ["No.", "Milestone", "Period", "Delivered at the gate"],
-                      [("1", "Requirements and monitor prototype", "T0 + 2 months",
-                        "M1 calibrated, score validated, dashboard served from flash"),
-                       ("2", "Home unit and dashboard", "T0 + 4 months",
-                        "H1 pump control, session log and device table complete"),
-                       ("3", "Cleaning arm", "T0 + 8 months",
-                        "C1 built, three-ring cycle run, coverage measured"),
-                       ("4", "Field validation", "T0 + 12 months",
-                        "Three sites, 90 days of data, TRL 6 evidence pack")],
+                      [("1", "Design freeze and tooling", "T0 + 3 months",
+                        "Moulds ordered, five pilot sets built, certification scope agreed"),
+                       ("2", "Pilot build and lab qualification", "T0 + 6 months",
+                        "20 sets, IP68 and EMC passed, unit cost confirmed"),
+                       ("3", "Field deployment", "T0 + 9 months",
+                        "12 sites in 3 cities, 60 days of operation"),
+                       ("4", "Commercial readiness", "T0 + 12 months",
+                        "Certification and patent filed, 3 paying pilots, TRL 8")],
                       row_h=0.68, align=[True, False, False, False])
-            band(slide, 6.05, "The field phase closes with a published measurement of score "
-                              "accuracy, cleaning coverage and water saved against a full "
-                              "drain.", h=0.78, size=12.5)
+            band(slide, 6.05, "The last gate is a sale: three paying customers and a signed "
+                              "channel agreement, with the unit cost proven.",
+                 h=0.78, size=12.5)
 
         elif idx == 11:
-            headline(slide, "Indicative equipment cost is INR 15,600.")
+            headline(slide, "The request is INR 42.34 lakh for twelve months.")
             lead = tbox(slide, 0.72, 2.02, 11.9, 0.4)
-            write(lead.text_frame, [{"text": "The grand total of INR 23,587 adds "
-                                             "contingency, overhead and the faculty fee.",
+            write(lead.text_frame, [{"text": "Six cost heads, then the programme's "
+                                             "contingency, overhead and faculty fee.",
                                      "size": 13.5, "color": GREY}])
-            add_table(slide, 1.55, 2.62, [2.7, 4.1, 1.7, 1.6],
-                      ["Item", "Specification", "Amount (INR)", "Phase"],
-                      [("M1 monitor", "ESP8266, 5 probes, solar", "6,500", "T0"),
-                       ("H1 home unit", "ESP8266, 1.8 inch display, relay", "1,800", "T0 + 4"),
-                       ("C1 cleaning arm", "ESP32, 2 gearmotors, pump", "7,300", "T0 + 8"),
-                       ("Equipment total", "", "15,600", ""),
-                       ("Grand total", "with contingency, overhead and fee", "23,587", "")],
-                      row_h=0.56, align=[False, False, True, False],
-                      bold_rows=(4, 5))
-            band(slide, 5.95, "Figures are vendor quotes pending confirmation. Manpower, "
-                              "travel and consumables are agreed at the grant kickoff.",
+            add_table(slide, 0.72, 2.45, [3.3, 2.3],
+                      ["Cost head", "Amount (INR)"],
+                      [("Manpower", "12,00,000"),
+                       ("Equipment", "6,00,000"),
+                       ("Consumables", "3,60,000"),
+                       ("Travel", "2,00,000"),
+                       ("Miscellaneous", "4,40,000"),
+                       ("Contingency, overhead, fee", "14,33,600"),
+                       ("Total", "42,33,600")],
+                      row_h=0.44, align=[False, True], bold_rows=(7,))
+            card(slide, 6.55, 2.45, 6.0, 3.4, "What the grant buys", [
+                "Two engineers for twelve months, one mechanical and one firmware.",
+                "Twenty pilot sets, enclosure tooling and a tank test rig.",
+                "Certification, a patent filing and twelve field installations.",
+                "Market work with two channel partners.",
+            ], body_size=13.5)
+            band(slide, 6.15, "Prototype spend to date is INR 23,587, already invested. "
+                              "This request funds the product, not the prototype.",
                  h=0.78, size=12.5)
 
         elif idx == 13:
-            headline(slide, "One team, twelve months, a working system at TRL 6.")
+            headline(slide, "A working monitor today. A certified system in twelve months.")
             card(slide, 0.72, 2.32, 5.78, 2.6, "The team", [
-                "Principal Investigator: Dr. Vishnu Vasudev, Department of Electronics "
-                "and Communication Engineering.",
-                "Industry partner: Nuke Labs, for hardware build, field installations "
-                "and commercialisation.",
-            ], body_size=13)
+                "Principal Investigator: Dr. Vishnu Vasudev, Sree Buddha College of "
+                "Engineering, Department of Electronics and Communication Engineering.",
+                "Industry partner: Nuke Labs, for hardware build, field access and the "
+                "service channel.",
+            ], body_size=12.5)
             card(slide, 6.83, 2.32, 5.78, 2.6, "What the grant delivers", [
-                "M1 and H1 running in the field, with the dashboard served by the tank unit.",
-                "The C1 arm and its planner, with the coverage limit stated.",
-                "Three installations and 90 days of evidence at TRL 6.",
-            ], body_size=13)
+                "Twenty pilot units and twelve installations in three cities.",
+                "Certification and a patent filed, with the unit cost proven.",
+                "Three paying pilot customers and a signed channel agreement.",
+            ], body_size=12.5)
             band(slide, 5.35, "TankGuard gives a tank owner a reading, a clean, and a "
                               "record of what changed.", h=0.9, size=16)
 
