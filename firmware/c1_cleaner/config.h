@@ -94,8 +94,12 @@
 #define HOME_SLOW_DUTY  45
 #define HOME_DEBOUNCE_MS 5
 #define HOME_BACKOFF_MS 400UL
-#define HOME_TIMEOUT_MS 25000UL
+#define HOME_TIMEOUT_MS 8000UL
 #define SETTLE_MS       180UL   // settle after the last burst of a move
+
+// 0 = do not move at power-up. The arm stays where it is until Home or Start
+// is pressed, so a missing or miswired switch cannot run the arm on the bench.
+#define HOME_ON_BOOT    0
 
 // 1 = demo without home switches: skip homing and take the current pose as zero.
 // Only for a bench demo with the arm placed by hand at the park pose. The joint

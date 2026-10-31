@@ -576,8 +576,15 @@ void setup() {
 #endif
   server.begin();
 
+#if HOME_ON_BOOT
   if (!doHoming()) enterFault("home");
   else phase = PH_PARKED;
+#else
+  sh.estDeg = NAN;
+  el.estDeg = NAN;
+  phase = PH_PARKED;
+  Serial.println("boot: idle, press Home to home");
+#endif
 }
 
 void loop() {
