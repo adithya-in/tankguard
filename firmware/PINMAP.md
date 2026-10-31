@@ -44,6 +44,78 @@ Hardware SPI uses **D5/D7/D6**, so these signals move:
 
 Full tables and home-side remap: [`NRF24_LONG_RANGE.md`](NRF24_LONG_RANGE.md).
 
+### Optional 2-arm BTS7960 PWM remap
+
+Use this only when driving **two DC arms/linear actuators** through two BTS7960
+modules and you need PWM speed control on both. It frees **D5/D6/D7/D8** for PWM
+by moving the three digital sensors. This is **not** the default wiring, and it
+does **not** work with `USE_NRF24=1` (the nRF variant uses D5/D6/D7 for SPI).
+
+| BTS7960 signal | Arm A | Arm B | GPIO | Notes |
+|---|---|---|---|---|
+| **RPWM** | **D5** | **D7** | 14 / 13 | PWM |
+| **LPWM** | **D6** | **D8** | 12 / 15 | PWM; D8 needs 10 kΩ pull-down |
+| R_EN | 3V3 via 10 kΩ | 3V3 via 10 kΩ | — | E-stop can pull low |
+| L_EN | 3V3 via 10 kΩ | 3V3 via 10 kΩ | — | E-stop can pull low |
+| VCC | 5 V | 5 V | — | logic supply **input** |
+| GND | GND | GND | — | common ground |
+| B+ | 12/24 V+ | 12/24 V+ | — | fused |
+| B− | GND | GND | — | |
+| M+ / M− | Arm A motor | Arm B motor | — | |
+
+Sensor remap:
+
+| Sensor | Default pin | Arm remap |
+|---|---|---|
+| DS18B20 DQ | D6 (12) | **D4 (2)** + 4.7 kΩ pull-up |
+| JSN-SR04T TRIG | D7 (13) | **D3 (0)** + 10 kΩ pull-up |
+| JSN-SR04T ECHO | D5 (14) | **D0 (16)** via 1 kΩ/1 kΩ divider |
+| ADS1115 I²C | D1/D2 | unchanged |
+
+Boot-strap requirements:
+
+- **D3/GPIO0** must be HIGH at boot — TRIG pull-up holds it high.
+- **D4/GPIO2** must be HIGH at boot — DS18B20 pull-up holds it high.
+- **D8/GPIO15** must be LOW at boot — add 10 kΩ pull-down.
+- **D0/GPIO16** is digital-only (no PWM); remove the D0→RST deep-sleep jumper.
+- Add **10 kΩ pull-downs on all four BTS7960 PWM inputs** to prevent arm twitch at boot.
+
+Firmware defines:
+
+```cpp
+#define DS18B20_PIN   2   // D4
+#define PIN_TRIG      0   // D3
+#define PIN_ECHO     16   // D0
+
+#define ARM_A_RPWM   14   // D5
+#define ARM_A_LPWM   12   // D6
+#define ARM_B_RPWM   13   // D7
+#define ARM_B_LPWM   15   // D8
+```
+
+Drive logic:
+
+```cpp
+analogWriteFreq(20000);   // 20 kHz
+analogWriteRange(1023);
+
+// forward A
+analogWrite(ARM_A_RPWM, 700);
+analogWrite(ARM_A_LPWM, 0);
+
+// reverse A
+analogWrite(ARM_A_RPWM, 0);
+analogWrite(ARM_A_LPWM, 700);
+
+// stop
+analogWrite(ARM_A_RPWM, 0);
+analogWrite(ARM_A_LPWM, 0);
+```
+
+Add 20–50 ms dead time before reversing direction. The current M1 firmware does
+not implement arm control yet; this is the wiring/config target for the next
+firmware revision.
+
 ---
 
 ## ADS1115 channel map (I²C address 0x48, ADDR → GND)
