@@ -97,6 +97,11 @@
 #define HOME_TIMEOUT_MS 25000UL
 #define SETTLE_MS       180UL   // settle after the last burst of a move
 
+// 1 = demo without home switches: skip homing and take the current pose as zero.
+// Only for a bench demo with the arm placed by hand at the park pose. The joint
+// limits are then relative to that pose, so a wrong start can drive into a wall.
+#define HOME_BYPASS     0
+
 // ---- calibration jog ------------------------------------------------------
 #define ENABLE_JOG      1
 #define JOG_MAX_BURSTS  20

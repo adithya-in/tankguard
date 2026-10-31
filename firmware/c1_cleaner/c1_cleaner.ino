@@ -250,6 +250,8 @@ bool seekHome(Joint &j, uint8_t duty, uint32_t timeoutMs) {
     delay(2);
   }
   applyDuty(j, 0);
+  Serial.printf("%s: no switch after %lu ms (pin reads %d)\n", j.name, (unsigned long)timeoutMs,
+                digitalRead(j.homePin));
   return false;
 }
 
@@ -281,10 +283,27 @@ bool homeJoint(Joint &j) {
 
 bool doHoming() {
   setBrush(0);
-  Serial.println("homing…");
-  if (!homeJoint(sh)) return false;
-  if (!homeJoint(el)) return false;
+#if HOME_BYPASS
+  Serial.println("home bypass: current pose is zero");
+  sh.estDeg = 0;
+  el.estDeg = 0;
+  sh.bursts = 0;
+  el.bursts = 0;
   return true;
+#else
+  Serial.printf("homing: sh pin=%d el pin=%d\n", digitalRead(SH_HOME), digitalRead(EL_HOME));
+  if (!homeJoint(sh)) {
+    Serial.println("home failed: shoulder");
+    return false;
+  }
+  Serial.println("shoulder home ok");
+  if (!homeJoint(el)) {
+    Serial.println("home failed: elbow");
+    return false;
+  }
+  Serial.println("elbow home ok");
+  return true;
+#endif
 }
 
 // ---------------------------------------------------------------------------
