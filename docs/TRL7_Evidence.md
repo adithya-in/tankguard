@@ -97,8 +97,8 @@ is exactly what changed.
 
 ## 7. Evidence held
 
-- Photographs and video of the arm running in the 500 L tank (to be attached to
-  the submission).
+- Photographs and video of the arm running in the 500 L tank, uploaded separately
+  with the application.
 - Serial log from the controller covering the manual jog commands.
 - This note, signed by the PI and the industry partner.
 
