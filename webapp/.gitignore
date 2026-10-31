@@ -1,0 +1,12 @@
+node_modules
+dist
+dist-ssr
+device
+device-littlefs.bin
+*.local
+.env
+.env.*
+.vite
+.review
+.vercel
+

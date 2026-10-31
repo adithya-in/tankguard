@@ -100,23 +100,136 @@ Tank-side JSON expected by `fetchTank()`:
 {"score":82,"level":64,"ph":7.2,"turb":12,"tds":310,"temp":27.5}
 ```
 
+## Cleaner firmware (C1 — ESP32, open loop)
+
+[`c1_cleaner/`](c1_cleaner/) drives the 2R cleaning arm: two fixed 20 cm links,
+one brush at the tip, both joints on generic DC gear motors. It is a **separate
+unit with its own power**, not part of M1 or H1.
+
+### Why ESP32
+
+2 PWM + 2 DIR, two home switches, brush PWM, e-stop, lid and the level link —
+more I/O than a NodeMCU exposes. It is the one ESP32 in an otherwise all-ESP8266
+repo.
+
+### No position feedback (what it costs)
+
+There are no encoders on this build, so the firmware cannot servo to an angle.
+It drives each joint open-loop — a **calibrated duty for a computed time** — and
+dead-reckons the angle from the burst count. Three things make that workable:
+
+- both joints **re-home at every ring** (three per cycle), so drift never spans
+  more than one pass;
+- the planner's **arcs** are the unit of motion — the elbow holds one angle while
+  the shoulder sweeps it, so each move is a single timed segment;
+- the status JSON says `"openLoop": true` and its angles are estimates, not
+  measurements.
+
+What it costs is accuracy: a few degrees per ring, not the planner's 0.3 cm
+overlap. The 16 cm brush tolerates that; a wider overlap (or a compliant brush
+skirt) is the mitigation, not a bigger number in the planner. An optional 12 PPR
+encoder on the motor shaft would give 0.35 °/count at the joint if fitted later.
+
+### Wiring (ESP32 DevKit)
+
+| signal | pin | notes |
+|---|---|---|
+| shoulder PWM / DIR | 25 / 26 | H-bridge, 20 kHz LEDC |
+| elbow PWM / DIR | 27 / 14 | H-bridge |
+| shoulder / elbow home | 39 / 18 | NC switch to GND, trips at θ = 0 |
+| brush PWM | 13 | MOSFET or second bridge channel |
+| pump relay | 23 | suction pump; on only while scrubbing |
+| brush current | 36 | optional, ADC |
+| e-stop | 19 | NC loop, HIGH = unsafe (fail-safe) |
+| lid switch | 21 | NC to GND, HIGH = open |
+
+### Drivetrain (TJX28ZRM — RS395 12 V + 21.5:1, 11.3 N·cm rated)
+
+Datasheet: 348.8 rpm no-load, **279 rpm rated**, **11.3 N·cm rated / ~34 N·cm
+stall**, 0.62 A rated / 4.5 A stall, ≤2 ° backlash.
+
+**Why not continuous PWM.** 279 rpm at the joint is 1,674 °/s, so 45 °/s would be
+a ~2.7 % duty — below the point where a loaded DC motor turns at all. The
+controller therefore runs **full-duty bursts**: 250 ms on, 200 ms coast
+(`BURST_MS` / `PAUSE_MS`), ~10 ° of joint travel per burst, tuned per joint (see
+Calibration).
+
+**Torque is comfortable.** The head is a sparse ring of bristles on the perimeter
+only, with an open centre for the pump intake — water flows through, so there is
+no seal and no vacuum downforce. Joint load is ≈ 8–16 N·cm against 11.3 rated /
+~34 stall. Expect **25–35 °/s** and a **55–80 s cycle**. The pump is sequenced
+with the brush for power and sludge behaviour, not as a safety gate.
+
+### Calibration
+
+1. `BURST_DUTY` stays 255; `BURST_MS` / `PAUSE_MS` set the rhythm (250 / 200 ms).
+2. Measure the **advance per burst**: command a long move (e.g. 180 °), count the
+   bursts the firmware prints, and divide the angle the arm actually covered by
+   that count — the coast is included in the number.
+3. Put it in `SH_DEG_PER_BURST` / `EL_DEG_PER_BURST`. Do it **in water, brush
+   loaded** — that is the number the cycle will see.
+4. Re-check after the first few cycles; speed drifts with voltage and wear,
+   which is why the cycle re-homes.
+
+### Path
+
+Six arcs — two elbow branches on each of three rings (8.0 / 23.7 / 39.4 cm) —
+generated from `tools/swept_area.html`:
+
+```
+node tools/export-plan.mjs 9225 file:///.../tools/swept_area.html firmware/c1_cleaner/plan.json
+node tools/plan-to-header.mjs firmware/c1_cleaner/plan.json firmware/c1_cleaner/path.h
+```
+
+`path.h` holds the result. The tool's "Export path (JSON)" button produces the
+same file without a headless browser.
+
+### API
+
+| request | effect |
+|---|---|
+| `GET /clean` | status: `openLoop`, phase, ring/arc, estimated t1/t2, brush, pump, level, lid, e-stop, fault |
+| `GET /clean?mode=start` | home, then run the cycle (409 with a reason if interlocked) |
+| `GET /clean?mode=stop` | stop after the current move, then park |
+| `GET /clean?mode=home` / `reset` | re-home; clears a latched fault |
+| `GET /` | tiny status page |
+
+Interlocks are enforced on the device: e-stop (NC), lid (NC), level ≥ 15 % (from
+M1), and optional brush-stall cut-out. Any fault cuts motor power, stops the
+brush and latches until `reset`.
 ## Tank-side firmware
 
 The tank-side firmware lives in [`m1_tank/`](m1_tank/) (Arduino sketch, ESP8266).
 
 1. Edit [`m1_tank/config.h`](m1_tank/config.h): Wi-Fi, `TANK_DEPTH_CM`, pH calibration.
-2. Libraries: `Adafruit ADS1X15`, `OneWire`, `DallasTemperature`, `ArduinoJson`.
-3. Compile + flash:
+2. Libraries: `Adafruit ADS1X15`, `OneWire`, `DallasTemperature` (LittleFS and mDNS ship with the core).
+3. Compile + flash (**4M1M layout** — the web dashboard lives in the 1 MB FS area):
    ```
-   arduino-cli compile --fqbn esp8266:esp8266:nodemcuv2 firmware/m1_tank
-   arduino-cli upload -p /dev/cu.usbserial-XXXX --fqbn esp8266:esp8266:nodemcuv2 firmware/m1_tank
+   arduino-cli compile --fqbn "esp8266:esp8266:nodemcuv2:eesz=4M1M,xtal=80" firmware/m1_tank
+   arduino-cli upload -p /dev/cu.usbserial-XXXX --fqbn "esp8266:esp8266:nodemcuv2:eesz=4M1M,xtal=80" firmware/m1_tank
    ```
 4. With Wi-Fi set it serves:
    - `GET /data` → `{"score","level","ph","turb","tds","temp"}`
-   - `GET /` → small status page
-5. With `WIFI_SSID` empty it starts AP **TankGuard-Tank** (open) and serves the same pages.
+   - `GET /` → **the web dashboard from LittleFS** (see below), or a small
+     inline status page when no bundle is flashed
+   - mDNS: `http://tankguard.local`
+5. With `WIFI_SSID` empty it starts AP **TankGuard-Tank** (open) and serves the same pages at `192.168.4.1`.
 
 Point the home module at `http://<tank-ip>/data`.
+
+### Flashing the web dashboard
+
+The webapp (see [`../webapp/`](../webapp/)) is served by this sketch from
+LittleFS, pre-gzipped (~150 KB). Build and flash the filesystem image:
+
+```
+cd ../webapp
+npm run build && node tools/build-device-bundle.mjs
+esptool.py --port /dev/cu.usbserial-XXXX write_flash 0x300000 device-littlefs.bin
+```
+
+Desk-test the whole serving scheme with no hardware:
+`node tools/device-server.mjs` → http://127.0.0.1:4311/
 
 ### Optional nRF24L01+ direct link
 

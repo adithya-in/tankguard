@@ -3,3 +3,9 @@
 __pycache__/
 *.log
 .env
+
+# local renders and animation previews
+.review/
+
+# Office lock files (open documents)
+~\$*

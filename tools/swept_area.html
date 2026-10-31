@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TankGuard — 2R arm workspace</title>
+<style>
+  :root {
+    --bg: #f2f1ed; --panel: #fff; --ink: #14171b; --ink-2: #5d636d; --ink-3: #8a9099;
+    --ink-4: #b0b5bd; --line: #e4e2dc; --line-strong: #d1cec5;
+    --accent: #2647f0; --bad: #d93a2b; --good: #0e9f6e;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 13px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing: antialiased; }
+  header { display: flex; align-items: center; gap: 12px; padding: 14px 22px;
+    background: rgba(255,255,255,.9); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 5; }
+  .wordmark { font-weight: 700; letter-spacing: .2em; font-size: 12.5px; }
+  .sep { width: 1px; height: 16px; background: var(--line-strong); }
+  .sub { color: var(--ink-3); font-size: 12px; }
+  main { display: grid; grid-template-columns: minmax(0, 1fr) 356px; gap: 16px;
+    padding: 18px 22px 28px; max-width: 1200px; margin: 0 auto; }
+  .stage { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px;
+    display: flex; flex-direction: column; gap: 8px; }
+  canvas { width: 100%; height: auto; display: block; border-radius: 6px; }
+  .legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; color: var(--ink-2); padding: 0 6px 4px; }
+  .key { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 14px; height: 8px; border-radius: 2px; }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px;
+    display: flex; flex-direction: column; gap: 14px; height: fit-content; }
+  .group { display: grid; gap: 10px; }
+  .group-title { font-size: 9.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  label.ctl { display: grid; gap: 4px; }
+  .ctl-head { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; }
+  .ctl-head output { font-variant-numeric: tabular-nums; font-weight: 600; background: #faf9f6;
+    border: 1px solid var(--line); border-radius: 999px; padding: 0 7px; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .actions { display: flex; gap: 8px; }
+  .btn { flex: 1; height: 34px; border-radius: 8px; border: 1px solid var(--line-strong); background: #fff;
+    font: inherit; font-weight: 600; font-size: 12.5px; cursor: pointer; }
+  .btn.primary { background: var(--ink); border-color: var(--ink); color: #fff; }
+  .btn:disabled { opacity: .5; cursor: default; }
+  .report { display: grid; gap: 7px; font-size: 12px; }
+  .row { display: flex; justify-content: space-between; gap: 10px; }
+  .row span:last-child { font-variant-numeric: tabular-nums; font-weight: 600; }
+  .bad { color: var(--bad); } .good { color: var(--good); }
+  .bar { height: 8px; border-radius: 4px; background: #faf9f6; border: 1px solid var(--line); overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--accent); width: 0; transition: width .2s; }
+  .solutions { display: grid; gap: 7px; font-size: 11.5px; color: var(--ink-2); }
+  .solutions b { color: var(--ink); }
+  .hint { font-size: 11px; color: var(--ink-4); }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+  @media (max-width: 940px) { main { grid-template-columns: 1fr; padding: 12px; } header { padding: 12px 14px; } }
+</style>
+</head>
+<body>
+<header>
+  <span class="wordmark">TANKGUARD</span>
+  <span class="sep"></span>
+  <span class="sub">2R cleaning arm — workspace explorer (two 20 cm arms, independent joints)</span>
+</header>
+
+<main>
+  <section class="stage">
+    <canvas id="c" width="720" height="720" aria-label="Top view of the tank, arm workspace and dead areas"></canvas>
+    <div class="legend">
+      <span class="key"><i class="swatch" style="background:#2647f0;opacity:.30"></i> reachable (can be scrubbed)</span>
+      <span class="key"><i class="swatch" style="background:#d93a2b;opacity:.22"></i> dead area</span>
+      <span class="key"><i class="swatch" style="background:#14171b"></i> arm links</span>
+      <span class="key"><i class="swatch" style="background:#8a9099"></i> brush discs</span>
+    </div>
+  </section>
+
+  <aside class="panel">
+    <div class="group">
+      <span class="group-title">Joint limits (hose / wire twist)</span>
+      <label class="ctl">
+        <span class="ctl-head">Shoulder ±<output id="o-l1">180°</output></span>
+        <input id="i-l1" type="range" min="20" max="180" step="5" value="180">
+      </label>
+      <label class="ctl">
+        <span class="ctl-head">Elbow ±<output id="o-l2">180°</output></span>
+        <input id="i-l2" type="range" min="20" max="180" step="5" value="180">
+      </label>
+      <label class="ctl">
+        <span class="ctl-head">Brush radius <output id="o-brush">8.0 cm</output></span>
+        <input id="i-brush" type="range" min="2" max="8" step="0.5" value="8">
+      </label>
+      <span class="hint">One brush, at the tip (the elbow is a joint, not a scrubber).</span>
+    </div>
+
+    <div class="group">
+      <span class="group-title">Planner</span>
+      <label class="ctl">
+        <span class="ctl-head">Band overlap <output id="o-margin">0.3 cm</output></span>
+        <input id="i-margin" type="range" min="0" max="3" step="0.1" value="0.3">
+      </label>
+      <label class="ctl">
+        <span class="ctl-head">Joint speed <output id="o-jointspeed">45°/s</output></span>
+        <input id="i-jointspeed" type="range" min="10" max="120" step="5" value="45">
+      </label>
+    </div>
+
+    <div class="group">
+      <span class="group-title">Hand control</span>
+      <label class="ctl">
+        <span class="ctl-head">Shoulder θ1 <output id="o-t1">0°</output></span>
+        <input id="i-t1" type="range" min="-180" max="180" step="1" value="0">
+      </label>
+      <label class="ctl">
+        <span class="ctl-head">Elbow θ2 <output id="o-t2">0°</output></span>
+        <input id="i-t2" type="range" min="-180" max="180" step="1" value="0">
+      </label>
+      <label class="ctl">
+        <span class="ctl-head">Trace duration <output id="o-speed">8 s</output></span>
+        <input id="i-speed" type="range" min="2" max="40" step="1" value="8">
+      </label>
+      <div class="actions">
+        <button class="btn primary" id="run">Trace a path</button>
+        <button class="btn" id="reset">Reset</button>
+      </div>
+      <div class="actions">
+        <button class="btn" id="export">Export path (JSON)</button>
+      </div>
+      <span class="hint">Drag either joint to move the arm. “Trace a path” walks the reachable area the way a cleaning cycle would — the duration slider sets how slowly it runs (you can change it mid-trace).</span>
+    </div>
+
+    <div class="group">
+      <span class="group-title">Coverage</span>
+      <div class="row"><span>reachable floor</span><span id="o-cov">—</span></div>
+      <div class="bar"><i id="bar"></i></div>
+      <div class="report">
+        <div class="row"><span>traced this run</span><span id="o-traced">0.0 %</span></div>
+        <div class="row"><span>dead — joint limits</span><span id="o-dead-joint">—</span></div>
+        <div class="row"><span>dead — wall ring</span><span id="o-dead-ring">—</span></div>
+        <div class="row"><span>tip reach</span><span id="o-reach">—</span></div>
+        <div class="row"><span>plan rings</span><span id="o-rings">—</span></div>
+        <div class="row"><span>joint travel</span><span id="o-travel">—</span></div>
+        <div class="row"><span>reposition moves</span><span id="o-moves">—</span></div>
+        <div class="row"><span>reposition travel</span><span id="o-movetravel">—</span></div>
+        <div class="row"><span>cycle time</span><span id="o-time">—</span></div>
+        <div class="row"><span>duplicate area</span><span id="o-dup">—</span></div>
+      </div>
+    </div>
+
+    <div class="group">
+      <span class="group-title">What would close it</span>
+      <div class="solutions" id="solutions"></div>
+    </div>
+  </aside>
+</main>
+
+<script>
+"use strict";
+
+/* ---------- geometry ---------- */
+const TANK_R = 50, L1 = 20, L2 = 20, LIM = 55, RES = 0.25;
+const N = Math.round((2 * LIM) / RES) + 1;
+const cellR = (i, j) => Math.hypot(-LIM + i * RES, -LIM + j * RES);
+
+const canvas = document.getElementById("c");
+const ctx = canvas.getContext("2d");
+const W = canvas.width, H = canvas.height;
+const scale = W / (2 * LIM);
+const px = (cm) => (cm + LIM) * scale;
+const deg = (r) => (r * 180) / Math.PI;
+const rad = (d) => (d * Math.PI) / 180;
+
+const state = { l1: 180, l2: 180, brush: 8, t1: 0, t2: 0, traced: 0, running: false, traceDur: 12, margin: 0.3, jointSpeed: 45, planPath: [] };
+
+const inTank = new Uint8Array(N * N);
+const tipOk = new Uint8Array(N * N);
+const covered = new Uint8Array(N * N);
+const traced = new Uint8Array(N * N);
+let dist = new Float32Array(N * N);
+
+for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) inTank[j * N + i] = cellR(i, j) <= TANK_R ? 1 : 0;
+
+/* ---------- inverse kinematics (2R, absolute angles) ----------
+   P = L1*u(t1) + L2*u(t1 + t2),  t2 = elbow angle relative to link 1 */
+function ik(x, y) {
+  const d2 = x * x + y * y;
+  const d = Math.sqrt(d2);
+  // tolerance: the outer ring sits exactly at full extension, and float noise
+  // must not make half its samples "unreachable"
+  if (d > L1 + L2 + 1e-6 || d < 1e-9) return [];
+  const c2raw = (d2 - L1 * L1 - L2 * L2) / (2 * L1 * L2);
+  if (c2raw < -1 - 1e-6 || c2raw > 1 + 1e-6) return [];
+  const c2 = Math.max(-1, Math.min(1, c2raw));
+  const t2a = Math.acos(Math.max(-1, Math.min(1, c2)));
+  const out = [];
+  for (const t2 of [t2a, -t2a]) {
+    const t1 = Math.atan2(y, x) - Math.atan2(L2 * Math.sin(t2), L1 + L2 * Math.cos(t2));
+    out.push({ t1: deg(t1), t2: deg(t2) });
+  }
+  return out;
+}
+
+/* ---------- workspace ---------- */
+function buildWorkspace() {
+  const b = state.brush;
+  tipOk.fill(0);
+
+  // tip reachability: any IK solution inside both joint limits
+  for (let j = 0; j < N; j++) {
+    const y = -LIM + j * RES;
+    for (let i = 0; i < N; i++) {
+      const x = -LIM + i * RES;
+      if (x * x + y * y > (L1 + L2 + b) ** 2) continue;
+      const sols = ik(x, y);
+      for (const s of sols) {
+        if (Math.abs(s.t1) <= state.l1 + 1e-6 && Math.abs(s.t2) <= state.l2 + 1e-6) {
+          tipOk[j * N + i] = 1;
+          break;
+        }
+      }
+    }
+  }
+
+
+  // dilate the tip set by the brush radius (chamfer distance transform)
+  dist = new Float32Array(N * N);
+  const INF = 1e9;
+  for (let k = 0; k < dist.length; k++) dist[k] = tipOk[k] ? 0 : INF;
+  for (let j = 0; j < N; j++) {
+    for (let i = 0; i < N; i++) {
+      let d = dist[j * N + i];
+      if (i > 0) d = Math.min(d, dist[j * N + i - 1] + 1);
+      if (j > 0) {
+        d = Math.min(d, dist[(j - 1) * N + i] + 1);
+        if (i > 0) d = Math.min(d, dist[(j - 1) * N + i - 1] + 1.4142);
+        if (i < N - 1) d = Math.min(d, dist[(j - 1) * N + i + 1] + 1.4142);
+      }
+      dist[j * N + i] = d;
+    }
+  }
+  for (let j = N - 1; j >= 0; j--) {
+    for (let i = N - 1; i >= 0; i--) {
+      let d = dist[j * N + i];
+      if (i < N - 1) d = Math.min(d, dist[j * N + i + 1] + 1);
+      if (j < N - 1) {
+        d = Math.min(d, dist[(j + 1) * N + i] + 1);
+        if (i < N - 1) d = Math.min(d, dist[(j + 1) * N + i + 1] + 1.4142);
+        if (i > 0) d = Math.min(d, dist[(j + 1) * N + i - 1] + 1.4142);
+      }
+      dist[j * N + i] = d;
+    }
+  }
+
+  const bCells = b / RES;
+  for (let k = 0; k < covered.length; k++) {
+    covered[k] = dist[k] * RES <= b ? 1 : 0;
+  }
+}
+
+function stampDisc(arr, cx, cy, b) {
+  const i0 = Math.max(0, Math.floor((cx - b + LIM) / RES));
+  const i1 = Math.min(N - 1, Math.ceil((cx + b + LIM) / RES));
+  const j0 = Math.max(0, Math.floor((cy - b + LIM) / RES));
+  const j1 = Math.min(N - 1, Math.ceil((cy + b + LIM) / RES));
+  for (let j = j0; j <= j1; j++) {
+    const y = -LIM + j * RES;
+    for (let i = i0; i <= i1; i++) {
+      const x = -LIM + i * RES;
+      if ((x - cx) ** 2 + (y - cy) ** 2 <= b * b) arr[j * N + i] = 1;
+    }
+  }
+}
+
+/* ---------- rendering ---------- */
+const layer = document.createElement("canvas");
+layer.width = N; layer.height = N;
+const lctx = layer.getContext("2d");
+const img = lctx.createImageData(N, N);
+
+function paintLayers() {
+  const d = img.data;
+  for (let k = 0; k < covered.length; k++) {
+    const o = k * 4;
+    const isTraced = traced[k] && inTank[k];
+    const isCovered = covered[k] && inTank[k];
+    if (isTraced) { d[o] = 38; d[o + 1] = 71; d[o + 2] = 240; d[o + 3] = 120; }
+    else if (isCovered) { d[o] = 38; d[o + 1] = 71; d[o + 2] = 240; d[o + 3] = 58; }
+    else if (inTank[k]) { d[o] = 217; d[o + 1] = 58; d[o + 2] = 43; d[o + 3] = 46; }
+    else { d[o + 3] = 0; }
+  }
+  lctx.putImageData(img, 0, 0);
+}
+
+function tipPosition() {
+  const a1 = rad(state.t1), a2 = rad(state.t1 + state.t2);
+  return { x: L1 * Math.cos(a1) + L2 * Math.cos(a2), y: L1 * Math.sin(a1) + L2 * Math.sin(a2), ex: L1 * Math.cos(a1), ey: L1 * Math.sin(a1) };
+}
+
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = "#f2f1ed";
+  ctx.beginPath(); ctx.arc(px(0), px(0), TANK_R * scale, 0, 2 * Math.PI); ctx.fill();
+
+  paintLayers();
+  ctx.save();
+  ctx.beginPath(); ctx.arc(px(0), px(0), TANK_R * scale, 0, 2 * Math.PI); ctx.clip();
+  ctx.drawImage(layer, 0, 0, W, H);
+  ctx.restore();
+
+  ctx.setLineDash([3, 5]); ctx.strokeStyle = "rgba(138,144,153,.5)"; ctx.lineWidth = 1;
+  for (const r of [L1, L1 + L2]) { ctx.beginPath(); ctx.arc(px(0), px(0), r * scale, 0, 2 * Math.PI); ctx.stroke(); }
+  ctx.setLineDash([]);
+
+  ctx.strokeStyle = "#14171b"; ctx.lineWidth = 1.6;
+  ctx.beginPath(); ctx.arc(px(0), px(0), TANK_R * scale, 0, 2 * Math.PI); ctx.stroke();
+
+  if (state.planPath.length > 1) {
+    ctx.save();
+    ctx.beginPath(); ctx.arc(px(0), px(0), TANK_R * scale, 0, 2 * Math.PI); ctx.clip();
+    for (let i = 1; i < state.planPath.length; i++) {
+      const a = state.planPath[i - 1], b = state.planPath[i];
+      ctx.beginPath(); ctx.moveTo(px(a.x), px(a.y)); ctx.lineTo(px(b.x), px(b.y));
+      if (b.move) { ctx.strokeStyle = "rgba(201,122,8,.85)"; ctx.setLineDash([4, 3]); ctx.lineWidth = 1.6; }
+      else { ctx.strokeStyle = "rgba(20,23,27,.22)"; ctx.setLineDash([]); ctx.lineWidth = 1; }
+      ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // ghost of the rest pose, so the park position is part of the picture
+  const hp = parkPose();
+  const ha1 = rad(hp.t1), ha2 = rad(hp.t1 + hp.t2);
+  ctx.save();
+  ctx.setLineDash([2, 4]);
+  ctx.strokeStyle = "rgba(138,144,153,.8)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.moveTo(px(0), px(0));
+  ctx.lineTo(px(L1 * Math.cos(ha1)), px(L1 * Math.sin(ha1)));
+  ctx.lineTo(px(L1 * Math.cos(ha1) + L2 * Math.cos(ha2)), px(L1 * Math.sin(ha1) + L2 * Math.sin(ha2)));
+  ctx.stroke();
+  ctx.restore();
+
+  const p = tipPosition();
+  ctx.lineCap = "round"; ctx.strokeStyle = "#14171b";
+  ctx.lineWidth = 4.5;
+  ctx.beginPath(); ctx.moveTo(px(0), px(0)); ctx.lineTo(px(p.ex), px(p.ey)); ctx.stroke();
+  ctx.lineWidth = 3;
+  ctx.beginPath(); ctx.moveTo(px(p.ex), px(p.ey)); ctx.lineTo(px(p.x), px(p.y)); ctx.stroke();
+
+  ctx.fillStyle = "#fff"; ctx.strokeStyle = "#14171b"; ctx.lineWidth = 1.4;
+  ctx.beginPath(); ctx.arc(px(p.ex), px(p.ey), 3 * scale, 0, 2 * Math.PI); ctx.fill(); ctx.stroke();
+
+  ctx.setLineDash([3, 3]); ctx.strokeStyle = "#8a9099"; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.arc(px(p.x), px(p.y), state.brush * scale, 0, 2 * Math.PI); ctx.stroke();
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = "#14171b";
+  ctx.beginPath(); ctx.arc(px(0), px(0), 2.6 * scale, 0, 2 * Math.PI); ctx.fill();
+}
+
+/* ---------- stats ---------- */
+function stats() {
+  let tank = 0, cov = 0, joint = 0, ring = 0, tr = 0;
+  const edge = L1 + L2 + state.brush;
+  for (let k = 0; k < inTank.length; k++) {
+    if (!inTank[k]) continue;
+    tank++;
+    if (covered[k]) cov++;
+    else {
+      const i = k % N, j = (k / N) | 0;
+      if (cellR(i, j) > edge) ring++; else joint++;
+    }
+    if (traced[k]) tr++;
+  }
+  return {
+    tank,
+    covPct: (100 * cov) / tank,
+    jointPct: (100 * joint) / tank,
+    ringPct: (100 * ring) / tank,
+    tracedPct: (100 * tr) / tank,
+    edge,
+  };
+}
+
+function updatePanel() {
+  const s = stats();
+  const b = state.brush;
+  document.getElementById("o-cov").textContent = s.covPct.toFixed(1) + " %";
+  document.getElementById("bar").style.width = s.covPct.toFixed(1) + "%";
+  document.getElementById("o-traced").textContent = s.tracedPct.toFixed(1) + " %";
+  const dj = document.getElementById("o-dead-joint");
+  dj.textContent = s.jointPct > 0.05 ? s.jointPct.toFixed(1) + " %" : "none";
+  dj.className = s.jointPct > 0.05 ? "bad" : "good";
+  const dr = document.getElementById("o-dead-ring");
+  dr.textContent = s.ringPct > 0.05 ? s.ringPct.toFixed(1) + " %" : "none";
+  dr.className = s.ringPct > 0.05 ? "bad" : "good";
+  document.getElementById("o-reach").textContent = s.edge.toFixed(1) + " cm";
+
+  const tips = [];
+  if (s.jointPct > 1.0) {
+    tips.push(`<div><b>${s.jointPct.toFixed(1)} % is out of reach</b> because of joint limits. The outer edge needs the shoulder pointing at every angle, so <b>±180°</b> on the shoulder is the floor for full angular coverage — the elbow can only fold the arm inward, never past the wall.</div>`);
+  }
+  if (s.ringPct > 0.05) {
+    tips.push(`<div><b>${(TANK_R - s.edge).toFixed(1)} cm ring</b> at the wall is beyond the tip: reach is ${s.edge.toFixed(1)} cm (20 + 20 + ${b}). Closing it needs a brush edge at 50 cm — a 25 cm second arm, or a brush radius of ${(TANK_R - L1 - L2).toFixed(1)} cm.</div>`);
+  }
+  if (s.jointPct <= 1.0 && s.ringPct <= 0.05) {
+    tips.push(`<div><b>No dead area.</b> Every point of the floor is reachable with these limits.</div>`);
+  }
+  tips.push(`<div class="hint">Shoulder ±${state.l1}° · elbow ±${state.l2}° · twist each way equals those limits.</div>`);
+  document.getElementById("solutions").innerHTML = tips.join("");
+}
+
+/* ---------- controls ---------- */
+function syncLimits() {
+  const t1 = document.getElementById("i-t1");
+  const t2 = document.getElementById("i-t2");
+  t1.min = String(-state.l1); t1.max = String(state.l1);
+  t2.min = String(-state.l2); t2.max = String(state.l2);
+  state.t1 = Math.max(-state.l1, Math.min(state.l1, state.t1));
+  state.t2 = Math.max(-state.l2, Math.min(state.l2, state.t2));
+  t1.value = String(state.t1); t2.value = String(state.t2);
+  document.getElementById("o-t1").textContent = state.t1.toFixed(0) + "°";
+  document.getElementById("o-t2").textContent = state.t2.toFixed(0) + "°";
+}
+
+function rebuild() {
+  buildWorkspace();
+  traced.fill(0);
+  state.traced = 0;
+  state.planPath = [];
+  draw();
+  updatePanel();
+}
+
+function bind(id, key, fmt) {
+  const el = document.getElementById(id);
+  el.addEventListener("input", () => {
+    state[key] = Number(el.value);
+    document.getElementById("o-" + id.slice(2)).textContent = fmt(state[key]);
+    syncLimits();
+    rebuild();
+  });
+}
+bind("i-l1", "l1", (v) => v + "°");
+bind("i-l2", "l2", (v) => v + "°");
+bind("i-brush", "brush", (v) => v.toFixed(1) + " cm");
+
+
+const t1El = document.getElementById("i-t1");
+const t2El = document.getElementById("i-t2");
+t1El.addEventListener("input", () => {
+  state.t1 = Number(t1El.value);
+  document.getElementById("o-t1").textContent = state.t1.toFixed(0) + "°";
+  draw();
+});
+t2El.addEventListener("input", () => {
+  state.t2 = Number(t2El.value);
+  document.getElementById("o-t2").textContent = state.t2.toFixed(0) + "°";
+  draw();
+});
+
+const speedEl = document.getElementById("i-speed");
+speedEl.addEventListener("input", () => {
+  state.traceDur = Number(speedEl.value);
+  document.getElementById("o-speed").textContent = state.traceDur + " s";
+});
+
+document.getElementById("reset").addEventListener("click", () => {
+  traced.fill(0);
+  state.planPath = [];
+  draw();
+  updatePanel();
+});
+
+/* ---------- coverage planner ----------------------------------------------
+   The brush is a disc of radius b, so a full circular pass at radius r scrubs
+   the annulus [r-b, r+b] exactly. Tiling the reachable disc with concentric
+   passes spaced 2b therefore covers everything with zero duplication — that is
+   the minimum number of passes, and any tighter spacing re-cleans floor.
+   The planner:
+     1. lays the rings out (spacing 2b - overlap margin),
+     2. solves IK per ring and splits it into arcs wherever a joint limit or an
+        elbow branch flip forces a reconfiguration,
+     3. orders the arcs greedily from the current pose (both directions allowed)
+        to minimise joint travel,
+     4. reports coverage, joint travel, cycle time and duplicate area.
+-------------------------------------------------------------------------- */
+
+function planRings(b, margin) {
+  const step = Math.max(0.5, 2 * b - margin); // band width minus the requested overlap
+  const rings = [];
+  for (let r = b; r <= L1 + L2 + 1e-6; r += step) rings.push(r);
+  // If the ladder falls short of full extension by less than half a step, stop
+  // there: adding one more ring would stack a huge overlap on the wall band.
+  const last = rings[rings.length - 1];
+  const shortfall = L1 + L2 - last;
+  if (shortfall > 1e-6 && shortfall >= step * 0.5) rings.push(L1 + L2);
+  return rings;
+}
+
+function ringArcs(r) {
+  const chosen = [];
+  let prev = null;
+  let prevSign = 0;
+  for (let a = -180; a <= 180; a += 2) {
+    const x = r * Math.cos(rad(a)), y = r * Math.sin(rad(a));
+    const sols = ik(x, y).filter((s) => Math.abs(s.t1) <= state.l1 && Math.abs(s.t2) <= state.l2);
+    if (!sols.length) { chosen.push(null); prev = null; prevSign = 0; continue; }
+
+    // hysteresis: stay on the current elbow branch while it is feasible, so the
+    // arm flips once per ring instead of chattering at the branch boundary
+    let pick = null;
+    if (prevSign !== 0) pick = sols.find((s) => Math.sign(s.t2) === prevSign) ?? null;
+    if (!pick) {
+      pick = sols
+        .slice()
+        .sort((s1, s2) =>
+          prev
+            ? Math.abs(s1.t1 - prev.t1) + Math.abs(s1.t2 - prev.t2) - (Math.abs(s2.t1 - prev.t1) + Math.abs(s2.t2 - prev.t2))
+            : Math.abs(s1.t2) - Math.abs(s2.t2),
+        )[0];
+    }
+    prevSign = Math.sign(pick.t2) || prevSign;
+    chosen.push({ a, r, t1: pick.t1, t2: pick.t2 });
+    prev = pick;
+  }
+  const arcs = [];
+  let cur = [];
+  for (const c of chosen) {
+    if (!c) { if (cur.length > 1) arcs.push(cur); cur = []; continue; }
+    if (cur.length) {
+      const p = cur[cur.length - 1];
+      if (Math.abs(c.t1 - p.t1) + Math.abs(c.t2 - p.t2) > 30) { if (cur.length > 1) arcs.push(cur); cur = []; }
+    }
+    cur.push(c);
+  }
+  if (cur.length > 1) arcs.push(cur);
+  return arcs;
+}
+
+/* Exact arc ordering (Held-Karp over arcs and their two directions).
+   With ≤ 10 arcs this is instant and removes the greedy planner's wasted
+   repositioning. */
+function orderArcs(arcs, startPose) {
+  const n = arcs.length;
+  if (!n) return [];
+  const d = (a, b) => Math.abs(a.t1 - b.t1) + Math.abs(a.t2 - b.t2);
+
+  // greedy fallback keeps the page responsive if a pathological configuration
+  // produces many arcs (2^n DP is only cheap for small n)
+  if (n > 11) {
+    const out = [];
+    const left = arcs.slice();
+    let pose = startPose;
+    while (left.length) {
+      let bi = 0, brev = false, bd = Infinity;
+      for (let i = 0; i < left.length; i++) {
+        const a = left[i];
+        const d0 = d(pose, a[0]);
+        const d1 = d(pose, a[a.length - 1]);
+        if (d0 < bd) { bd = d0; bi = i; brev = false; }
+        if (d1 < bd) { bd = d1; bi = i; brev = true; }
+      }
+      let arc = left.splice(bi, 1)[0];
+      if (brev) arc = arc.slice().reverse();
+      out.push(arc);
+      pose = arc[arc.length - 1];
+    }
+    return out;
+  }
+
+  const size = 1 << n;
+  const INF = Infinity;
+  const dp = Array.from({ length: size }, () => Array.from({ length: n }, () => [INF, INF]));
+  const from = Array.from({ length: size }, () => Array.from({ length: n }, () => [null, null]));
+
+  for (let i = 0; i < n; i++) {
+    for (let o = 0; o < 2; o++) {
+      const s = o ? arcs[i][arcs[i].length - 1] : arcs[i][0];
+      dp[1 << i][i][o] = d(startPose, s);
+    }
+  }
+  for (let mask = 1; mask < size; mask++) {
+    for (let i = 0; i < n; i++) {
+      if (!(mask & (1 << i))) continue;
+      for (let o = 0; o < 2; o++) {
+        const cur = dp[mask][i][o];
+        if (!isFinite(cur)) continue;
+        const end = o ? arcs[i][0] : arcs[i][arcs[i].length - 1];
+        for (let j = 0; j < n; j++) {
+          if (mask & (1 << j)) continue;
+          for (let o2 = 0; o2 < 2; o2++) {
+            const s2 = o2 ? arcs[j][arcs[j].length - 1] : arcs[j][0];
+            const nm = mask | (1 << j);
+            const c = cur + d(end, s2);
+            if (c < dp[nm][j][o2]) { dp[nm][j][o2] = c; from[nm][j][o2] = [mask, i, o]; }
+          }
+        }
+      }
+    }
+  }
+
+  const full = size - 1;
+  let best = INF, bi = 0, bo = 0;
+  for (let i = 0; i < n; i++) {
+    for (let o = 0; o < 2; o++) {
+      if (!isFinite(dp[full][i][o])) continue;
+      const end = o ? arcs[i][0] : arcs[i][arcs[i].length - 1];
+      // the cycle must return to the rest pose, so price that leg in
+      const total = dp[full][i][o] + d(end, startPose);
+      if (total < best) { best = total; bi = i; bo = o; }
+    }
+  }
+
+  const seq = [];
+  let mask = full, i = bi, o = bo;
+  while (true) {
+    seq.push({ i, o });
+    const p = from[mask][i][o];
+    if (!p) break;
+    [mask, i, o] = p;
+  }
+  seq.reverse();
+  return seq.map(({ i, o }) => (o ? arcs[i].slice().reverse() : arcs[i]));
+}
+
+/* Rest pose: both links folded back on themselves, tip at the centre. That is
+   the most compact form the arm can take (occupies one 20 cm radius line), the
+   least loaded on both joints, and it never parks against the wall. */
+function parkPose() {
+  return { t1: 0, t2: Math.min(180, state.l2) };
+}
+
+function buildPlan() {
+  const rings = planRings(state.brush, state.margin);
+  const perRing = rings.map((r) => ringArcs(r));
+  const arcs = perRing.flat();
+
+  const park = parkPose();
+  const ordered = orderArcs(arcs, park);
+
+  // ---- full path: arcs plus interpolated reconfiguration moves ----------
+  const path = [];
+  let cleanTravel = 0;
+  let moveTravel = 0;
+  let moves = 0;
+  let prevPose = { t1: park.t1, t2: park.t2 };
+
+  const interp = (from, to) => {
+    const d1 = to.t1 - from.t1;
+    const d2 = to.t2 - from.t2;
+    const dist = Math.abs(d1) + Math.abs(d2);
+    const n = Math.max(1, Math.ceil(dist / 2)); // ≤2° per step
+    const out = [];
+    for (let i = 1; i <= n; i++) out.push({ t1: from.t1 + (d1 * i) / n, t2: from.t2 + (d2 * i) / n, move: true });
+    return out;
+  };
+
+  for (const arc of ordered) {
+    const first = arc[0];
+    const gap = Math.abs(first.t1 - prevPose.t1) + Math.abs(first.t2 - prevPose.t2);
+    if (gap > 0.5) {
+      const seg = interp(prevPose, first);
+      moveTravel += gap;
+      moves++;
+      path.push(...seg);
+    }
+    for (const p of arc) {
+      if (path.length) {
+        const last = path[path.length - 1];
+        cleanTravel += Math.abs(p.t1 - last.t1) + Math.abs(p.t2 - last.t2);
+      }
+      path.push({ t1: p.t1, t2: p.t2, move: false });
+    }
+    prevPose = arc[arc.length - 1];
+  }
+
+  // return to the rest pose so every cycle starts and ends parked
+  const backGap = Math.abs(park.t1 - prevPose.t1) + Math.abs(park.t2 - prevPose.t2);
+  if (backGap > 0.5) {
+    path.push(...interp(prevPose, park));
+    moveTravel += backGap;
+    moves++;
+  }
+
+  const travel = cleanTravel + moveTravel;
+
+  // duplicate area: overlap margin between rings
+  const floor = Math.PI * TANK_R ** 2;
+  let dup = 0;
+  if (state.margin > 0 && rings.length > 1) {
+    for (let k = 1; k < rings.length; k++) dup += 2 * Math.PI * (rings[k] - state.brush) * state.margin;
+  }
+
+  return { rings, perRing: perRing.map((a) => a.length), arcs: ordered, path, travel, cleanTravel, moveTravel, moves, dupPct: (100 * dup) / floor };
+}
+
+/* expose the last plan for probing / debugging */
+function publishPlan(plan) {
+  window.__plan = {
+    rings: plan.rings.map((r) => +r.toFixed(2)),
+    perRing: plan.perRing,
+    arcs: plan.arcs.length,
+    points: plan.path.length,
+    moves: plan.moves,
+    travel: +plan.travel.toFixed(1),
+    moveTravel: +plan.moveTravel.toFixed(1),
+    dupPct: +plan.dupPct.toFixed(2),
+  };
+}
+
+let raf = 0;
+document.getElementById("run").addEventListener("click", () => {
+  if (state.running) return;
+  const plan = buildPlan();
+  const poses = plan.path;
+  if (!poses.length) return;
+  publishPlan(plan);
+
+  // every cycle starts from rest
+  const home = parkPose();
+  state.t1 = home.t1;
+  state.t2 = home.t2;
+  t1El.value = String(state.t1);
+  t2El.value = String(state.t2);
+  document.getElementById("o-t1").textContent = state.t1.toFixed(0) + "°";
+  document.getElementById("o-t2").textContent = state.t2.toFixed(0) + "°";
+
+  state.running = true;
+  const btn = document.getElementById("run");
+  btn.disabled = true; btn.textContent = "Tracing…";
+
+  // draw the whole plan first, so the reconfiguration moves are visible
+  state.planPath = poses.map((p) => {
+    const a1 = rad(p.t1), a2 = rad(p.t1 + p.t2);
+    return { x: L1 * Math.cos(a1) + L2 * Math.cos(a2), y: L1 * Math.sin(a1) + L2 * Math.sin(a2), move: !!p.move };
+  });
+
+  document.getElementById("o-rings").textContent = plan.rings.map((r) => r.toFixed(1)).join(" / ") + " cm";
+  document.getElementById("o-travel").textContent = plan.travel.toFixed(0) + "°";
+  document.getElementById("o-time").textContent = (plan.travel / state.jointSpeed).toFixed(0) + " s";
+  document.getElementById("o-moves").textContent = String(plan.moves);
+  document.getElementById("o-movetravel").textContent = plan.moveTravel.toFixed(0) + "°";
+  const dupEl = document.getElementById("o-dup");
+  dupEl.textContent = plan.dupPct > 0.05 ? plan.dupPct.toFixed(1) + " %" : "none";
+  dupEl.className = plan.dupPct > 0.05 ? "bad" : "good";
+
+  let idx = 0;
+  let progress = 0;
+  let lastNow = performance.now();
+  let last = poses[0];
+
+  const step = (now) => {
+    const dt = Math.max(0, now - lastNow);
+    lastNow = now;
+    progress = Math.min(1, progress + dt / (state.traceDur * 1000));
+    const want = Math.min(poses.length, Math.max(1, Math.ceil(progress * poses.length)));
+
+    for (; idx < want; idx++) {
+      const s = poses[idx];
+      last = s;
+      const a1 = rad(s.t1), a2 = rad(s.t1 + s.t2);
+      stampDisc(traced, L1 * Math.cos(a1) + L2 * Math.cos(a2), L1 * Math.sin(a1) + L2 * Math.sin(a2), state.brush);
+    }
+    if (progress < 1) {
+      state.t1 = last.t1; state.t2 = last.t2;
+      t1El.value = String(state.t1); t2El.value = String(state.t2);
+      document.getElementById("o-t1").textContent = state.t1.toFixed(0) + "°";
+      document.getElementById("o-t2").textContent = state.t2.toFixed(0) + "°";
+      draw(); updatePanel();
+      raf = requestAnimationFrame(step);
+    } else {
+      state.running = false;
+      btn.disabled = false; btn.textContent = "Trace a path";
+      draw(); updatePanel();
+    }
+  };
+  cancelAnimationFrame(raf);
+  raf = requestAnimationFrame(step);
+});
+
+/* ---------- export the planned path for the firmware ---------- */
+window.__exportPlan = () => {
+  const plan = buildPlan();
+  return JSON.stringify({
+    generated: new Date().toISOString(),
+    config: { brushCm: state.brush, overlapCm: state.margin, l1LimitDeg: state.l1, l2LimitDeg: state.l2 },
+    rings: plan.rings.map((r) => +r.toFixed(2)),
+    park: parkPose(),
+    metrics: {
+      points: plan.path.length,
+      travelDeg: +plan.travel.toFixed(1),
+      moveTravelDeg: +plan.moveTravel.toFixed(1),
+      moves: plan.moves,
+      dupPct: +plan.dupPct.toFixed(2),
+    },
+    // [theta1, theta2, move] in degrees
+    poses: plan.path.map((p) => [+p.t1.toFixed(2), +p.t2.toFixed(2), p.move ? 1 : 0]),
+    // arcs: the executable unit for an open-loop controller — the elbow angle is
+    // constant across an arc, so the shoulder just has to sweep it
+    arcs: plan.arcs.map((a, i) => ({
+      ring: plan.rings.indexOf(a[0].r) + 1,
+      r: +a[0].r.toFixed(2),
+      a0: +a[0].a.toFixed(1),
+      a1: +a[a.length - 1].a.toFixed(1),
+      t1a: +a[0].t1.toFixed(1),
+      t1b: +a[a.length - 1].t1.toFixed(1),
+      t2: +a[0].t2.toFixed(1),
+      order: i,
+    })),
+  });
+};
+
+document.getElementById("export").addEventListener("click", () => {
+  const json = window.__exportPlan();
+  const blob = new Blob([json], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "tankguard-clean-plan.json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+/* planner controls */
+const marginEl = document.getElementById("i-margin");
+marginEl.addEventListener("input", () => {
+  state.margin = Number(marginEl.value);
+  document.getElementById("o-margin").textContent = state.margin.toFixed(1) + " cm";
+  draw(); updatePanel();
+});
+const jsEl = document.getElementById("i-jointspeed");
+jsEl.addEventListener("input", () => {
+  state.jointSpeed = Number(jsEl.value);
+  document.getElementById("o-jointspeed").textContent = state.jointSpeed + "°/s";
+});
+
+/* ---------- boot ---------- */
+syncLimits();
+rebuild();
+</script>
+</body>
+</html>

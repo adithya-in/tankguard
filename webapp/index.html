@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#F2F1ED" />
+    <meta name="description" content="TankGuard — local water-tank quality dashboard. TankScore, parameter readings and trends from the tank-side monitor, straight over Wi-Fi." />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-title" content="TankGuard" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232647F0'/%3E%3Cpath d='M9 22V12.5L16 8l7 4.5V22' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'/%3E%3Cpath d='M13 22v-6h6v6' fill='none' stroke='%23fff' stroke-width='2.2' stroke-linecap='round'/%3E%3C/svg%3E" />
+    <title>TankGuard — Tank quality</title>
+  </head>
+  <body>
+    <!--
+      DIRECTION CONTRACT — TankGuard webapp · world: "Signal Room" (browser twin
+      of the H1 home display, same state bands, same honesty rules).
+      THESIS: one appliance, one page — the TankScore answers "is the water
+      safe?" first, five parameter readings back it up, every reading carries a
+      live trace, and nothing on screen claims more than the device measures.
+      OWN-WORLD: paper #F2F1ED, panel #FFFFFF, ink #14171B, hairline #E4E2DC;
+      cobalt #2647F0 as the only accent; Saira for numerals and display,
+      system sans for running text; state colours match the H1 TFT firmware
+      (good ≥70 #0E9F6E · watch ≥40 #C97A08 · attention <40 #D93A2B); channel
+      hues are data, never decoration.
+      HONESTY: data comes from the tank unit's GET /data endpoint or is a
+      labelled DEMO feed; the browser keeps its own session log (1 sample/min,
+      24 h cap) because the device stores no history; pump state is NOT shown —
+      the pump is controlled by the H1 home unit, which has no server.
+      FIRST VIEWPORT: wordmark bar with source chip · TankScore panel
+      (numeral, state word, 18-segment dial-bar echoing H1, component strip)
+      · five reading cards (the signature unit) · detail chart with session
+      log · footer with the data-source verdict.
+    -->
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

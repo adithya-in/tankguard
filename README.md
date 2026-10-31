@@ -30,14 +30,26 @@ A self-powered, in-tank sensor unit (turbidity, TDS, pH, temperature, level) tha
 ## Build Guides
 | File | Description |
 |------|-------------|
+| [`webapp/`](webapp/) | **Web dashboard** (React + Vite) — TankScore, five parameter readings, session-log trends; talks to the tank unit's `/data` endpoint or runs a labelled demo |
 | [`firmware/README.md`](firmware/README.md) | Firmware overview, power tree, safety, bring-up order (ESP8266) |
 | [`firmware/PINMAP.md`](firmware/PINMAP.md) | Master ESP8266 pin map + ADS1115 channel map |
 | [`firmware/HARDWARE_M1_Monitor.md`](firmware/HARDWARE_M1_Monitor.md) | M1 monitor build — BOM, wiring, dividers, assembly, tests |
 | [`firmware/HARDWARE_H1_Home.md`](firmware/HARDWARE_H1_Home.md) | H1 home-side build — receives tank data, drives pump via isolated relay + contactor (mains-safe) |
 
+## Web dashboard
+
+The browser twin of the H1 display lives in [`webapp/`](webapp/): TankScore with
+the same state bands as the TFT, the five parameters as live readings with
+traces, and an honest data-source chip (device · demo · link state). It probes
+the tank unit automatically (same-origin, `?api=<ip>`, or the AP gateway
+`192.168.4.1`) and keeps a browser-side session log because the device stores
+no history. See [`webapp/README.md`](webapp/README.md).
+
+
 ## Documents
 | File | Description |
 |------|-------------|
+| [`docs/CLEANER.md`](docs/CLEANER.md) | **Tank-cleaning arm** — mechanism, conflict with the "no actuator in the tank" rule, control requirements, proposed contract (design stage) |
 | `TankGuard_Specification.pdf` | **Technical specification** — title, abstract, components, features, uniqueness, cost, HW/SW specs, drawings |
 | `TankGuard_Patentability_Disclosure.pdf` | Patent disclosure draft — prior art, claims, novelty |
 | `TankGuard_3Page_Proposal.pdf` | 3-page project proposal with BOM and timeline |

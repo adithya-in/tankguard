@@ -96,25 +96,25 @@
 <!-- 2. ABSTRACT -->
 <h2>2. Abstract</h2>
 <p>Water storage tanks in homes, schools, hospitals and apartment buildings degrade silently: disinfectant residual dissipates within 24–48 hours, suspended particles settle into a sludge layer at the tank floor, biofilm forms on internal surfaces, and algae proliferate in warm conditions. By the time degradation is detected by smell, taste or sight, the water is already unsafe. Existing solutions either monitor without acting, or clean by draining and scrubbing the entire tank — wasting water and labour.</p>
-<p>TankGuard is a single, self-powered IoT unit that is mounted on the tank lid and continuously measures five water-quality parameters — <strong>turbidity, TDS, pH, temperature and water level</strong> — through submerged probes. An on-device ESP32 microcontroller performs all computation at the network edge: it fuses the readings into a weighted composite <strong>TankScore</strong>, analyses 14-day trends, and classifies the contamination event (gradual biofilm growth, source-water contamination, or sludge resuspension). When the score indicates that the water needs attention, the system raises a local alert and can switch the pump through a separate home unit using an opto-isolated relay and a motor-rated contactor — the ESP8266 never touches mains. A crash or lost link forces the pump OFF. All logic runs locally with no cloud, subscription or internet requirement; a Wi-Fi access point and embedded web server present an interactive dashboard to any phone or browser on the local network. The tank unit is powered by a small solar panel and battery, with duty-cycled sensing for multi-week autonomy.</p>
+<p>TankGuard is a three-unit system. The tank unit M1 is self-powered, mounted on the lid, and continuously measures five water-quality parameters — <strong>turbidity, TDS, pH, temperature and water level</strong> — through submerged probes. An on-device ESP8266 performs all computation at the network edge: it fuses the readings into a weighted composite <strong>TankScore</strong>, analyses 14-day trends, and classifies the contamination event (gradual biofilm growth, source-water contamination, or sludge resuspension). When the score indicates that the water needs attention, the system raises a local alert and can switch the pump through a separate home unit using an opto-isolated relay and a motor-rated contactor — the ESP8266 never touches mains. A crash or lost link forces the pump OFF. All logic runs locally with no cloud, subscription or internet requirement; a Wi-Fi access point and embedded web server present an interactive dashboard to any phone or browser on the local network. The tank unit is powered by a small solar panel and battery, with duty-cycled sensing for multi-week autonomy.</p>
 
 <!-- 3. COMPONENTS -->
 <h2>3. Components Used</h2>
 <p>TankGuard is built entirely from commercially available off-the-shelf (COTS) components. The table below lists the components of a working embodiment, with a representative part and its function.</p>
 <table>
 <tr><th style="width:20%;">Component</th><th style="width:24%;">Representative Part</th><th style="width:13%;">Interface</th><th>Function</th></tr>
-<tr><td><strong>Microcontroller (edge processor)</strong></td><td>ESP32-WROOM-32 DevKit</td><td>Wi-Fi, GPIO, I²C, 1-Wire, ADC</td><td>Runs all firmware — sampling, TankScore computation, trend regression, event classification, embedded HTTP server, mDNS, flash logging and deep-sleep power management</td></tr>
-<tr><td><strong>ADC</strong></td><td>ADS1115, 16-bit, 4-channel</td><td>I²C @ 0x48</td><td>High-resolution digitisation of the pH electrode and analog sensors; ESP32's internal ADC is too coarse for millivolt-level pH</td></tr>
+<tr><td><strong>Microcontroller (edge processor)</strong></td><td>ESP8266 (ESP-12F module, 4 MB flash)</td><td>Wi-Fi, GPIO, I²C, 1-Wire, ADC</td><td>Runs all firmware — sampling, TankScore computation, trend regression, event classification, embedded HTTP server, mDNS, flash logging and deep-sleep power management</td></tr>
+<tr><td><strong>ADC</strong></td><td>ADS1115, 16-bit, 4-channel</td><td>I²C @ 0x48</td><td>High-resolution digitisation of the pH electrode and analog sensors; the ESP8266's single internal ADC is too coarse for millivolt-level pH</td></tr>
 <tr><td><strong>Turbidity sensor</strong></td><td>DFRobot SEN0189 (or generic clone)</td><td>Analog</td><td>90° infrared nephelometry — primary indicator of suspended solids, biofilm fragments and sludge resuspension (40% of TankScore)</td></tr>
 <tr><td><strong>TDS sensor</strong></td><td>Gravity SEN0244 / XKC-Y25-NPN</td><td>Analog + NTC</td><td>Two-electrode conductivity with temperature compensation — dissolved-solids leaching from settled debris (25% of TankScore)</td></tr>
-<tr><td><strong>pH sensor</strong></td><td>Gravity SEN0161-V2 / glass electrode + front end</td><td>Analog via ADS1115</td><td>Potentiometric pH — indicates algal activity, anaerobic decay and corrosion (20% of TankScore)</td></tr>
-<tr><td><strong>Temperature probe</strong></td><td>DS18B20 waterproof (stainless)</td><td>1-Wire</td><td>Temperature compensation plus independent biological-activity indicator (5% of TankScore)</td></tr>
-<tr><td><strong>Water-level sensor</strong></td><td>JSN-SR04T waterproof ultrasonic</td><td>Trigger / Echo GPIO</td><td>Water volume and refill detection; enables discrimination of source contamination from sludge resuspension (10% of TankScore)</td></tr>
+<tr><td><strong>pH sensor</strong></td><td>Gravity SEN0161-V2 / glass electrode + front end</td><td>Analog via ADS1115</td><td>Potentiometric pH — indicates algal activity, anaerobic decay and corrosion (25% of TankScore)</td></tr>
+<tr><td><strong>Temperature probe</strong></td><td>DS18B20 waterproof (stainless)</td><td>1-Wire</td><td>Temperature compensation plus independent biological-activity indicator (10% of TankScore)</td></tr>
+<tr><td><strong>Water-level sensor</strong></td><td>JSN-SR04T waterproof ultrasonic</td><td>Trigger / Echo GPIO</td><td>Water volume and refill detection; drives pump control and separates source contamination from sludge resuspension. Level is not part of TankScore.</td></tr>
 <tr><td><strong>Home pump-control unit</strong></td><td>ESP8266 + 1.8″ ST7735 TFT + opto-relay + AC-3 contactor</td><td>Wi-Fi / nRF24L01+; relay contact → contactor coil</td><td>Separate indoor unit that displays tank status and switches the pump safely; the ESP8266 never touches mains</td></tr>
 <tr><td><strong>Power system</strong></td><td>10 W solar panel, 4×18650 Li-ion, CN3791 MPPT, LM2596 buck + AMS1117</td><td>—</td><td>Self-sustaining off-grid power with 2–3 weeks of zero-sun autonomy; regulated 12 V / 5 V / 3.3 V rails</td></tr>
 <tr><td><strong>Enclosure</strong></td><td>IP66 ABS/polycarbonate box + IP68 cable glands + heat shield</td><td>—</td><td>Weatherproof, heat-protected housing mounted on the tank lid</td></tr>
 <tr><td><strong>Calibration set</strong></td><td>pH 4.0 / 7.0 buffer sachets + distilled water + KCl storage solution</td><td>—</td><td>Two-point pH calibration and probe conditioning</td></tr>
-<tr><td><strong>Firmware</strong></td><td>ESP-IDF / Arduino framework + LittleFS</td><td>Wi-Fi AP/STA</td><td>All edge logic and the local dashboard (software-implemented portion)</td></tr>
+<tr><td><strong>Firmware</strong></td><td>Arduino core for ESP8266 and ESP32 + LittleFS</td><td>Wi-Fi AP/STA</td><td>All edge logic and the local dashboard (software-implemented portion)</td></tr>
 </table>
 
 <!-- 4. FEATURES -->
@@ -148,7 +148,7 @@
 <tr><td><strong>2. Sludge-resuspension detection</strong></td><td>Correlating turbidity spikes against level changes distinguishes resuspension from source contamination — a specific diagnosis absent from prior art.</td></tr>
 <tr><td><strong>3. Edge-only IoT architecture</strong></td><td>All sensing, scoring, decision and alerting execute on-device; the dashboard is self-hosted over the local network. No cloud, subscription or account — a deliberate architectural contrast to all surveyed IoT monitors.</td></tr>
 <tr><td><strong>4. Duty-cycled solar autonomy</strong></td><td>Deep-sleep MCU with switched sensor power rails achieves multi-week off-grid operation while maintaining continuous logical monitoring.</td></tr>
-<tr><td><strong>5. Single integrated sensing unit</strong></td><td>Sensing, edge computing, power and user interface combined in one tank-lid-mounted device; no tank penetration or plumbing connection is required.</td></tr>
+<tr><td><strong>5. Local three-unit architecture</strong></td><td>Sensing, edge computing, pump control and cleaning share one local network with no cloud service. The tank unit needs no tank penetration, and the pump unit stays isolated from mains.</td></tr>
 </table>
 
 <!-- 6. COST -->
@@ -156,17 +156,19 @@
 <p>Two build tiers are available. All figures are parts-only and exclude GST, freight and installation.</p>
 <table>
 <tr><th>Tier</th><th>Description</th><th class="num">Parts Cost</th><th class="num">Installed (approx.)</th></tr>
-<tr><td><strong>Full / proposal build</strong></td><td>Grade-A Gravity sensors, IP66 enclosure, home pump-control unit, full integration</td><td class="num"><strong>₹16,580</strong></td><td class="num">~₹17,500</td></tr>
+<tr><td><strong>Full / proposal build</strong></td><td>Grade-A Gravity sensors, IP66 enclosure, home pump-control unit, cleaning arm, full integration</td><td class="num"><strong>₹15,600</strong></td><td class="num">~₹16,500</td></tr>
 <tr><td><strong>Minimum prototype</strong></td><td>Generic/clone sensors, salvaged 18650 cells, basic enclosure</td><td class="num"><strong>~₹6,500</strong></td><td class="num">~₹7,200</td></tr>
 </table>
 
 <h3>6.1 Full Build Breakdown</h3>
 <table>
-<tr class="catrow"><td colspan="2">Module M1 — Core Monitor</td><td class="num">₹15,500</td></tr>
-<tr><td style="width:46%;">ESP32, ADS1115, sensors, solar/battery/power, enclosure, calibration, engineering</td><td>Five-parameter monitor with solar power, edge dashboard and TankScore logic</td><td class="num">—</td></tr>
-<tr class="catrow"><td colspan="2">Module M2 — Home Pump Control</td><td class="num">₹1,080</td></tr>
+<tr class="catrow"><td colspan="2">Module M1 — Tank Monitor</td><td class="num">₹6,500</td></tr>
+<tr><td style="width:46%;">ESP8266, ADS1115, five probes, solar/battery/power, enclosure, calibration</td><td>Five-parameter monitor with solar power, edge dashboard and TankScore logic</td><td class="num">—</td></tr>
+<tr class="catrow"><td colspan="2">Module H1 — Home Unit</td><td class="num">₹1,800</td></tr>
 <tr><td>ESP8266, 1.8″ TFT, opto-relay, AC-3 contactor, enclosure, MCB</td><td>Indoor pump controller with local display, override button and fail-safe OFF</td><td class="num">—</td></tr>
-<tr class="totalrow"><td colspan="2">Total Parts Cost</td><td class="num">₹16,580</td></tr>
+<tr class="catrow"><td colspan="2">Module C1 — Cleaning Arm</td><td class="num">₹7,300</td></tr>
+<tr><td>ESP32, two 12 V planetary gearmotors, two H-bridges, submersible pump, brush head, enclosure</td><td>Two-link arm with ring brush and suction, driven by the three-ring path plan</td><td class="num">—</td></tr>
+<tr class="totalrow"><td colspan="2">Total Parts Cost</td><td class="num">₹15,600</td></tr>
 </table>
 
 <div class="note">
@@ -179,7 +181,7 @@
 <h3>7.1 Hardware Specifications</h3>
 <table>
 <tr><th style="width:26%;">Parameter</th><th>Specification</th></tr>
-<tr><td>Microcontroller</td><td>ESP32-WROOM-32 — dual-core Xtensa LX6 @ 240 MHz, 520 KB SRAM, 4 MB flash; Wi-Fi 802.11 b/g/n, Bluetooth LE</td></tr>
+<tr><td>Microcontroller</td><td>ESP8266EX — 80 MHz Tensilica L106, 80 KB DRAM, 4 MB flash; Wi-Fi 802.11 b/g/n only</td></tr>
 <tr><td>ADC</td><td>ADS1115 — 16-bit, 4-channel, I²C; programmable gain; internal reference</td></tr>
 <tr><td>Turbidity</td><td>0–3000 NTU range (practical 0–100 NTU), IR 90° nephelometry, IP68 probe</td></tr>
 <tr><td>TDS</td><td>0–1000 ppm (extendable), 3–5.5 V excitation, ±10% FS, temperature-compensated</td></tr>
@@ -199,16 +201,17 @@
 <h3>7.2 Software Specifications</h3>
 <table>
 <tr><th style="width:26%;">Parameter</th><th>Specification</th></tr>
-<tr><td>Firmware framework</td><td>ESP-IDF (or Arduino-ESP32); modular C/C++</td></tr>
+<tr><td>Firmware framework</td><td>Arduino core for ESP8266 (M1, H1) and ESP32 (C1); modular C/C++</td></tr>
 <tr><td>Measurement cycle</td><td>Wake every 3 hours (configurable); median-filtered multi-sample acquisition</td></tr>
-<tr><td>TankScore</td><td>0–100 weighted composite: turbidity 40%, TDS 25%, pH 20%, level 10%, temperature 5%</td></tr>
+<tr><td>TankScore</td><td>0–100 weighted composite: turbidity 40%, TDS 25%, pH 25%, temperature 10%. Water level is monitored as an operating limit for pump control and is not scored.</td></tr>
 <tr><td>Trend analysis</td><td>Linear regression over 14-day window (112 samples); slope/acceleration penalties</td></tr>
 <tr><td>Event classification</td><td>3 classes — gradual degradation, source-water contamination, sludge resuspension</td></tr>
-<tr><td>State machine</td><td>GOOD (80–100) → WATCH (50–79) → ACTION ADVISED (30–49) → CLEAN REQUIRED (0–29)</td></tr>
+<tr><td>State machine</td><td>GOOD (70–100) → WATCH (40–69) → ATTENTION (below 40)</td></tr>
 <tr><td>Pump control</td><td>Auto ON below LOW level, OFF above HIGH level; manual override auto-releases after 10 min; pump OFF on link loss</td></tr>
+<tr><td>Verification metrics</td><td>Four separate quantities, never interchangeable: turbidity reduction <code>R_T = (T_pre − T_post)/T_pre × 100</code> (%); estimated sediment reduction <code>R_S = (S_pre − S_post)/S_pre × 100</code> (%, from the NTU→mg/L calibration); TankScore change <code>ΔQ = Q_post − Q_pre</code> (points, positive = better); estimated sediment mass removed <code>m = (S_pre − S_post) × V</code> (g). The ratio form is valid only for reduction metrics — TankScore is higher-is-better and is reported as a point change, never as a percentage of its own baseline.</td></tr>
 <tr><td>Local server</td><td>Embedded HTTP server + mDNS (<code>tankguard.local</code>), AP or STA mode</td></tr>
 <tr><td>Dashboard</td><td>HTML5/JS single-page — gauges, trend charts (24 h / 7 d / 30 d / 90 d), TankScore banner, pump status, history</td></tr>
-<tr><td>Storage</td><td>LittleFS on flash — ring buffer of samples + event log (pre/post scores, effectiveness)</td></tr>
+<tr><td>Storage</td><td>LittleFS on flash — ring buffer of samples + event log (pre/post turbidity, pre/post TankScore, and the derived R_T, R_S, ΔQ and m)</td></tr>
 <tr><td>Connectivity</td><td>Wi-Fi only by default (no cloud); optional MQTT/e-mail/SMS alerts are notification-only, never control</td></tr>
 <tr><td>OTA</td><td>Optional over-the-air firmware update while installed</td></tr>
 <tr><td>Power management</td><td>Deep-sleep scheduler with switched sensor power rail; &lt;1 mA idle</td></tr>
@@ -224,9 +227,9 @@
 <div class="arch">
   <div class="layer"><span class="lt">LAYER 5 · PUMP CONTROL (separate indoor unit)</span><br><span class="ld">Opto-isolated relay → motor-rated AC-3 contactor → pump; fail-safe OFF on crash or link loss; ESP8266 never touches mains</span></div>
   <div class="arrow">&#8593;&#8595;</div>
-  <div class="layer"><span class="lt">LAYER 4 · EDGE COMPUTING (on-device, no cloud)</span><br><span class="ld">ESP32 dual-core MCU — sensor fusion → TankScore engine → 14-day trend regression → event classification → alert decision → embedded web server (HTTP + mDNS) → flash event log</span></div>
+  <div class="layer"><span class="lt">LAYER 4 · EDGE COMPUTING (on-device, no cloud)</span><br><span class="ld">ESP8266 — sensor fusion → TankScore engine → 14-day trend regression → event classification → alert decision → embedded web server (HTTP + mDNS) → flash event log</span></div>
   <div class="arrow">&#8593;&#8595;</div>
-  <div class="layer"><span class="lt">LAYER 3 · LOCAL COMMUNICATION (LAN only)</span><br><span class="ld">ESP32 Wi-Fi AP/STA → HTML5 dashboard to any phone/browser on the same network → no internet, no account, no subscription</span></div>
+  <div class="layer"><span class="lt">LAYER 3 · LOCAL COMMUNICATION (LAN only)</span><br><span class="ld">ESP8266 Wi-Fi AP/STA → HTML5 dashboard to any phone/browser on the same network → no internet, no account, no subscription</span></div>
   <div class="arrow">&#8593;&#8595;</div>
   <div class="layer"><span class="lt">LAYER 2 · PERCEPTION (submerged probes)</span><br><span class="ld">Turbidity (SEN0189) · TDS (SEN0244 / XKC-Y25) · pH (glass electrode + ADS1115) · Temperature (DS18B20, 1-Wire) · Level (JSN-SR04T ultrasonic)</span></div>
   <div class="arrow">&#8593;&#8595;</div>
@@ -236,11 +239,11 @@
 
 <h3>Fig. 2 — Operating Cycle (sense → compute → actuate → verify)</h3>
 <div class="flow">
-  <div class="fs"><b>Step 1 — Wake:</b> RTC timer wakes ESP32 (every 3 h); sensor power rail energised.</div>
+  <div class="fs"><b>Step 1 — Wake:</b> RTC timer wakes the ESP8266 (every 3 h); sensor power rail energised.</div>
   <div class="fs"><b>Step 2 — Acquire:</b> Read turbidity, TDS, pH, temperature, level; median-filter each.</div>
   <div class="fs"><b>Step 3 — Score:</b> Normalise + weight parameters into TankScore; append sample to 14-day buffer.</div>
   <div class="fs"><b>Step 4 — Analyse:</b> 14-day regression + classify event (degradation / source contamination / sludge resuspension).</div>
-  <div class="fs"><b>Step 5 — Decide:</b> Map score to GOOD / WATCH / ACTION ADVISED / CLEAN REQUIRED; raise a local alert.</div>
+  <div class="fs"><b>Step 5 — Decide:</b> Map the score to GOOD, WATCH or ATTENTION; raise a local alert.</div>
   <div class="fs"><b>Step 6 — Control:</b> Home unit runs the pump via opto-relay → contactor, or leaves it OFF; fail-safe OFF on crash or link loss.</div>
   <div class="fs"><b>Step 7 — Report:</b> Log event; update local dashboard (readings, TankScore, trends, pump status, battery).</div>
   <div class="fs"><b>Step 8 — Sleep:</b> De-energise sensors; deep sleep &lt;1 mA until next cycle.</div>
@@ -249,12 +252,11 @@
 
 <h3>Fig. 3 — TankScore State Diagram</h3>
 <div class="states">
-  <div class="state s-good"><div class="sn">GOOD</div><div class="sr">80–100</div></div>
-  <div class="state s-watch"><div class="sn">WATCH</div><div class="sr">50–79</div></div>
-  <div class="state s-action"><div class="sn">ACTION ADVISED</div><div class="sr">30–49</div></div>
-  <div class="state s-clean"><div class="sn">CLEAN REQUIRED</div><div class="sr">0–29</div></div>
+  <div class="state s-good"><div class="sn">GOOD</div><div class="sr">70–100</div></div>
+  <div class="state s-watch"><div class="sn">WATCH</div><div class="sr">40–69</div></div>
+  <div class="state s-clean"><div class="sn">ATTENTION</div><div class="sr">below 40</div></div>
 </div>
-<div class="stateflow">GOOD &#8594; WATCH &#8594; ACTION ADVISED &#8594; CLEAN REQUIRED &nbsp;|&nbsp; after cleaning and re-measurement, the score recovers toward GOOD; otherwise the alert persists.</div>
+<div class="stateflow">GOOD &#8594; WATCH &#8594; ATTENTION &nbsp;|&nbsp; after cleaning and re-measurement, the score recovers toward GOOD; otherwise the alert persists.</div>
 <div class="figcap">Fig. 3 — TankScore state transitions and corresponding system actions.</div>
 
 <h3>Fig. 4 — Mounting Schematic (elevation, not to scale)</h3>
