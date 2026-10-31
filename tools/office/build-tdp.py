@@ -12,12 +12,12 @@ import shutil
 import time
 
 from docx import Document
-from docx.enum.table import WD_TABLE_ALIGNMENT
+from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
 from docx.enum.text import (WD_ALIGN_PARAGRAPH, WD_BREAK, WD_TAB_ALIGNMENT,
                             WD_TAB_LEADER)
 from docx.oxml import OxmlElement
 from docx.oxml.ns import qn
-from docx.shared import Pt, RGBColor
+from docx.shared import Inches, Pt, RGBColor
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
@@ -42,7 +42,9 @@ INST = "Sree Buddha College of Engineering"
 DEPT = "Department of Electronics and Communication Engineering"
 AFFIL = INST + ", " + DEPT
 PARTNER = "Nuke Labs (industry partner)"
-THEME = "TIH IoT Technology Development Program 2026"
+PROGRAM = "TIH IoT Technology Development Program 2026"
+THEME = "Water Management"
+ASSETS = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
 BLUE = RGBColor(0x1F, 0x4E, 0x79)
 MID_BLUE = RGBColor(0x2E, 0x74, 0xB5)
 
@@ -109,16 +111,30 @@ COMMERCIAL = [
 ]
 
 HISTORY = [
-    "TankGuard started as a water-quality monitor. Five probes fed an edge-computed "
-    "score, and the ESP8266 served its own dashboard over Wi-Fi, with no cloud service.",
-    "Field trials exposed the real failure mode. Measurement alone does not clean a "
-    "tank: the sludge layer keeps feeding turbidity and biofilm, and the household "
-    "still drains and scrubs by hand. The product moved from monitoring to care, with "
-    "a home unit for the pump and an arm for the sludge.",
-    "The current design keeps the five probes, the score weights and the local-only "
-    "architecture. It replaces the abandoned drain-and-flush mechanism with the "
-    "cleaning arm described here.",
+    "Household and building tank monitoring is well covered. Singh et al. (2021) "
+    "monitored level and pH in a building tank over 2.4 GHz radio with a cloud "
+    "dashboard. Rayni et al. (2023) added turbidity and TDS on an ESP32 and displayed "
+    "them in Blynk. Irawan et al. (2024) reported a household unit with pH, TDS, "
+    "turbidity and temperature, and Nugraha (2026) added a 16-bit ADS1115 front end "
+    "with rule-based classification. Each ends at the reading: the owner is told the "
+    "water is bad and must arrange the clean.",
+    "Cleaning has been studied separately. Megalingam et al. (2022) simulated a robot "
+    "that cleans tank floors and walls in Gazebo under ROS, and wall-climbing cleaners "
+    "are sold for large tanks. Neither is a selective floor cleaner that leaves the "
+    "stored water in place, and neither reports how much of the floor it covered.",
+    "TankGuard began as a monitor in that first group. Field trials showed the gap: a "
+    "reading does not remove the sludge that keeps producing it. The design moved to a "
+    "planned arm that cleans the floor without a drain, driven by the same score.",
 ]
+
+GAP = (
+    "Previous work either measures the water or cleans the tank. Monitoring systems "
+    "(Singh 2021; Rayni 2023; Irawan 2024) stop at the reading and leave the clean to "
+    "the owner. Cleaning robots (Megalingam 2022) are simulated or built for large "
+    "walls, and none reports floor coverage or keeps the stored water. TankGuard closes "
+    "the loop: one local score decides when to clean, a planned arm cleans 90 percent "
+    "of the floor without draining, and the same score reports whether the clean worked."
+)
 
 PROBLEM = [
     "Storage tanks degrade silently. Residual chlorine disappears within 24 to 48 "
@@ -134,6 +150,7 @@ PROBLEM = [
 ]
 
 OBJECTIVES = [
+    GAP,
     "Objective 1: measure and score water quality at the edge. Five probes "
     "(turbidity, TDS, pH, temperature, level) are digitised through an ADS1115 and "
     "fused into a weighted score (40/25/25/10). Acceptance: the score repeats within "
@@ -181,7 +198,7 @@ MILESTONES = [
 
 BUDGET_ROWS = [
     ("Manpower", "12,00,000"),
-    ("Equipment (exclusive of GST)", "8,40,000"),
+    ("Equipment", "8,40,000"),
     ("Consumables", "4,40,000"),
     ("Travel", "2,00,000"),
     ("Miscellaneous", "4,40,000"),
@@ -190,16 +207,17 @@ BUDGET_ROWS = [
     ("Overhead (max 20%)", "6,55,200"),
     ("Faculty fee (max 20%)", "3,00,000"),
     ("Total (7+8+9)", "42,31,200"),
-    ("GST (18%)", "0"),
-    ("Grand total", "42,31,200"),
+    ("GST (18%, included)", "0"),
+    ("Grand total (inclusive of GST)", "42,31,200"),
 ]
 
 BUDGET_NOTE = [
-    "Manpower covers two full-time engineers at Nuke Labs for twelve months, one "
-    "mechanical and one firmware, at INR 50,000 per month each. Equipment covers "
-    "enclosure tooling (INR 4.0 lakh), a tank test rig (INR 2.0 lakh) and reference "
-    "instruments for validation (INR 2.4 lakh). Consumables cover twenty-five pilot "
-    "sets at INR 15,600 each, plus PCB fabrication and spares.",
+    "All figures are inclusive of GST at 18 percent. Manpower covers two full-time "
+    "engineers at Nuke Labs for twelve months, one mechanical and one firmware, at INR "
+    "50,000 per month each. Equipment covers enclosure tooling (INR 4.0 lakh), a tank "
+    "test rig (INR 2.0 lakh) and reference instruments for validation (INR 2.4 lakh). "
+    "Consumables cover twenty-five pilot sets at INR 15,600 each, plus PCB fabrication "
+    "and spares.",
     "Miscellaneous covers certification (INR 2.0 lakh), patent drafting and filing "
     "(INR 1.4 lakh), and market work with channel partners (INR 1.0 lakh). Travel "
     "covers the field installations and review meetings (INR 2.0 lakh). Contingency is "
@@ -341,6 +359,37 @@ def copy_template(src, dst, tries=12):
             time.sleep(1.5)
 
 
+def no_borders(t):
+    tblPr = t._tbl.tblPr
+    borders = OxmlElement("w:tblBorders")
+    for edge in ("top", "left", "bottom", "right", "insideH", "insideV"):
+        el = OxmlElement(f"w:{edge}")
+        el.set(qn("w:val"), "nil")
+        borders.append(el)
+    tblPr.append(borders)
+
+
+def cover_band(sec):
+    fp = sec.first_page_footer
+    p = fp.paragraphs[0].insert_paragraph_before()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    p.paragraph_format.space_after = Pt(0)
+    p.add_run().add_picture(os.path.join(ASSETS, "cover_band.png"),
+                            width=Inches(6.5))
+
+
+def save_retry(save_fn, tries=12):
+    """Save over a file that Office may still hold open."""
+    for attempt in range(tries):
+        try:
+            save_fn()
+            return
+        except PermissionError:
+            if attempt == tries - 1:
+                raise
+            time.sleep(1.5)
+
+
 def rebuild_docx():
     path = os.path.join(OUT, "TankGuard_Project_Proposal.docx")
     doc = Document(DOCX_SRC)
@@ -355,7 +404,7 @@ def rebuild_docx():
     para(doc, "Project Proposal", 20, True, BLUE, WD_ALIGN_PARAGRAPH.CENTER,
          4, space_before=190)
     para(doc, "For Consideration Under", 11, False, None, WD_ALIGN_PARAGRAPH.CENTER, 2)
-    para(doc, THEME, 15, True, BLUE, WD_ALIGN_PARAGRAPH.CENTER, 18)
+    para(doc, PROGRAM, 15, True, BLUE, WD_ALIGN_PARAGRAPH.CENTER, 18)
     para(doc, TITLE, 16, True, BLUE, WD_ALIGN_PARAGRAPH.CENTER, 16)
     para(doc, "Submitted by", 11, False, None, WD_ALIGN_PARAGRAPH.CENTER, 2)
     para(doc, PI, 14, True, BLUE, WD_ALIGN_PARAGRAPH.CENTER, 2)
@@ -401,7 +450,8 @@ def rebuild_docx():
             ("Designation", "Principal Investigator"),
             ("Affiliation", AFFIL),
             ("Co-investigator", "None"),
-            ("Collaborator", "Nuke Labs (build, field access, commercialisation)"),            ("Theme", THEME),
+            ("Collaborator", "Nuke Labs (build, field access, commercialisation)"),
+            ("Theme", THEME),
             ("Date of submission", DATE),
         ],
         widths=[Pt(150), Pt(300)],
@@ -432,13 +482,12 @@ def rebuild_docx():
         para(doc, t)
 
     h = heading(doc, "3.5  Project plan with major milestones", 2)
-    h.paragraph_format.page_break_before = True
     para(doc, "Twelve months from T0, with a deliverable at every gate.")
     table(doc, ["#", "Milestone", "Period", "Delivered at the gate"],
           MILESTONES, widths=[Pt(24), Pt(150), Pt(70), Pt(210)])
 
     heading(doc, "3.6  Resources and budget", 2)
-    table(doc, ["Item", "Amount (INR)"], BUDGET_ROWS,
+    table(doc, ["Item", "Amount (INR, incl. GST)"], BUDGET_ROWS,
           widths=[Pt(300), Pt(154)], right_cols=(1,))
     for t in BUDGET_NOTE:
         para(doc, t, 10)
@@ -448,8 +497,8 @@ def rebuild_docx():
     cap.paragraph_format.space_before = Pt(14)
     cap.paragraph_format.keep_with_next = True
     cap.paragraph_format.page_break_before = True
-    table(doc, ["Timeline", "Amount (INR)", "Milestone covered"],
-          TRANCHE_ROWS, widths=[Pt(110), Pt(90), Pt(254)], right_cols=(1,))
+    table(doc, ["Timeline", "Amount (INR, incl. GST)", "Milestone covered"],
+          TRANCHE_ROWS, widths=[Pt(110), Pt(110), Pt(234)], right_cols=(1,))
 
     heading(doc, "3.7  Category of new technology/product", 2)
     para(doc, CATEGORY)
@@ -483,6 +532,7 @@ def rebuild_docx():
 
     # template metadata and the placeholder author fields
     sec = doc.sections[0]
+    cover_band(sec)
     for part in (sec.header, sec.first_page_footer):
         for t in part.tables:
             for row in t.rows:
@@ -514,8 +564,8 @@ def rebuild_docx():
 
     doc.core_properties.title = TITLE
     doc.core_properties.author = PI
-    doc.core_properties.subject = THEME
-    doc.save(path)
+    doc.core_properties.subject = PROGRAM
+    save_retry(lambda: doc.save(path))
     return path
 
 # --------------------------------------------------------------------------- #
@@ -563,7 +613,7 @@ def rebuild_xlsx():
         ms.unmerge_cells(str(rng))
     wipe(ms, 40, 14)
 
-    widths = {"A": 7, "B": 29, "C": 13, "D": 2.5, "E": 5.5, "F": 31,
+    widths = {"A": 7, "B": 29, "C": 16, "D": 2.5, "E": 5.5, "F": 31,
               "G": 15, "H": 34, "I": 2.5, "J": 19, "K": 14, "L": 38}
     for col, w in widths.items():
         ms.column_dimensions[col].width = w
@@ -577,10 +627,10 @@ def rebuild_xlsx():
         cell.fill = PatternFill("solid", fgColor=NAVY)
         cell.alignment = Alignment(horizontal="center", vertical="center")
     ms.row_dimensions[1].height = 26
-    ms.row_dimensions[3].height = 34
+    ms.row_dimensions[3].height = 40
 
     heads = {
-        "A3": "Sr. No.", "B3": "Item", "C3": "Total (Rs.)",
+        "A3": "Sr. No.", "B3": "Item", "C3": "Total (Rs., incl. GST)",
         "E3": "S No", "F3": "Milestone / Deliverable", "G3": "Time period",
         "H3": "Remarks",
         "J3": "Timeline", "K3": "Amount to be released (INR)",
@@ -591,12 +641,12 @@ def rebuild_xlsx():
 
     # budget block
     budget = [
-        ("1", "Manpower", 1200000), ("2", "Equipment (exclusive of GST)", 840000),
+        ("1", "Manpower", 1200000), ("2", "Equipment", 840000),
         ("3", "Consumables", 440000), ("4", "Travel", 200000),
         ("5", "Miscellaneous expenses", 440000), ("6", "Contingency (max 5%)", 156000),
         ("7", "Sub total", 3276000), ("8", "Overhead (max 20%)", 655200),
         ("9", "Faculty fee (max 20%)", 300000), ("10", "Total (7+8+9)", 4231200),
-        ("11", "GST (18% of 10)", 0), ("12", "Grand total (10+11)", 4231200),
+        ("11", "GST (18%, included)", 0), ("12", "Grand total (10+11)", 4231200),
     ]
     for i, (no, name, amt) in enumerate(budget):
         r = 4 + i
@@ -692,12 +742,12 @@ def rebuild_xlsx():
 
     for coord, text in (("B4", "Sr. No."), ("C4", "Expenditure heads"),
                         ("D4", "Tranche 1 (T0)"), ("E4", "Tranche 2 (T0 + 6)"),
-                        ("F4", "Tranche 3 (T0 + 12)"), ("G4", "Total (INR)")):
+                        ("F4", "Tranche 3 (T0 + 12)"), ("G4", "Total (INR, incl. GST)")):
         b[coord] = text
 
     heads2 = [
         ("1", "Manpower", 360000, 480000, 360000),
-        ("2", "Equipment (exclusive of GST)", 480000, 300000, 60000),
+        ("2", "Equipment", 480000, 300000, 60000),
         ("3", "Consumables", 176000, 176000, 88000),
         ("4", "Travel", 50000, 90000, 60000),
         ("5", "Miscellaneous expenses", 100000, 160000, 180000),
@@ -706,7 +756,7 @@ def rebuild_xlsx():
         ("8", "Overhead (max 20%)", 244860, 253260, 157080),
         ("9", "Faculty fee (max 20%)", 100000, 120000, 80000),
         ("10", "Total (7+8+9)", 1569160, 1639560, 1022480),
-        ("11", "GST (18% of 10)", 0, 0, 0),
+        ("11", "GST (18%, included)", 0, 0, 0),
         ("12", "Grand total (10+11)", 1569160, 1639560, 1022480),
     ]
     for i, (no, name, t1, t2, t3) in enumerate(heads2):
@@ -731,8 +781,8 @@ def rebuild_xlsx():
 
     b.merge_cells("B18:G18")
     b["B18"] = ("80 percent of each tranche is spent before the next is claimed. "
-                "Prototype parts to date (INR 23,587) were invested before T0 and are "
-                "not part of this request.")
+                "All figures include GST at 18 percent. Prototype parts to date "
+                "(INR 23,587) were invested before T0 and are not part of this request.")
     b["B18"].font = Font(name="Calibri", size=9, italic=True, color="404040")
     b["B18"].alignment = Alignment(vertical="center", wrap_text=True)
     b.row_dimensions[18].height = 30
@@ -748,7 +798,7 @@ def rebuild_xlsx():
     b.page_margins.left = b.page_margins.right = 0.5
     b.page_margins.top = b.page_margins.bottom = 0.5
 
-    wb.save(path)
+    save_retry(lambda: wb.save(path))
     return path
 
 # --------------------------------------------------------------------------- #
@@ -948,10 +998,10 @@ def build_title(slide):
          "space_after": 4},
         {"text": "Industry partner: Nuke Labs", "size": 14, "color": GREY,
          "align": PP_ALIGN.CENTER, "space_after": 12},
-        {"text": THEME, "size": 13, "color": GREY, "align": PP_ALIGN.CENTER,
+        {"text": PROGRAM, "size": 13, "color": GREY, "align": PP_ALIGN.CENTER,
          "space_after": 4},
-        {"text": "Submission: " + DATE, "size": 13, "color": GREY,
-         "align": PP_ALIGN.CENTER},
+        {"text": "Theme: " + THEME + "   |   Submission: " + DATE, "size": 13,
+         "color": GREY, "align": PP_ALIGN.CENTER},
     ])
 
 
@@ -1191,7 +1241,7 @@ SLIDE_TEXT = {
 
     12: ("INR 42.31 lakh turns the prototype into a product.", [
         ("Requested", [
-            "INR 42,31,200 over twelve months.",
+            "INR 42,31,200 over twelve months, inclusive of GST.",
             "That is 85 percent of the programme ceiling.",
         ]),
         ("Already invested", [
@@ -1298,11 +1348,11 @@ def build_pptx():
         elif idx == 11:
             headline(slide, "The request is INR 42.31 lakh for twelve months.")
             lead = tbox(slide, 0.72, 2.02, 11.9, 0.4)
-            write(lead.text_frame, [{"text": "Six cost heads, then the programme's "
-                                             "contingency, overhead and faculty fee.",
+            write(lead.text_frame, [{"text": "Six cost heads, then contingency, overhead "
+                                             "and the faculty fee. All figures include GST.",
                                      "size": 13.5, "color": GREY}])
             add_table(slide, 0.72, 2.45, [3.3, 2.3],
-                      ["Cost head", "Amount (INR)"],
+                      ["Cost head", "Amount (INR, incl. GST)"],
                       [("Manpower", "12,00,000"),
                        ("Equipment", "8,40,000"),
                        ("Consumables", "4,40,000"),
@@ -1341,8 +1391,10 @@ def build_pptx():
         footer(slide, idx)
 
     build_title(slides[0])
+    slides[0].shapes.add_picture(os.path.join(ASSETS, "iitb.png"),
+                                 Inches(11.55), Inches(6.35), width=Inches(1.05))
 
-    prs.save(path)
+    save_retry(lambda: prs.save(path))
     return path
 
 
