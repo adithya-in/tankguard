@@ -114,7 +114,7 @@
 <tr><td><strong>Power system</strong></td><td>10 W solar panel, 4×18650 Li-ion, CN3791 MPPT, LM2596 buck + AMS1117</td><td>—</td><td>Self-sustaining off-grid power with 2–3 weeks of zero-sun autonomy; regulated 12 V / 5 V / 3.3 V rails</td></tr>
 <tr><td><strong>Enclosure</strong></td><td>IP66 ABS/polycarbonate box + IP68 cable glands + heat shield</td><td>—</td><td>Weatherproof, heat-protected housing mounted on the tank lid</td></tr>
 <tr><td><strong>Calibration set</strong></td><td>pH 4.0 / 7.0 buffer sachets + distilled water + KCl storage solution</td><td>—</td><td>Two-point pH calibration and probe conditioning</td></tr>
-<tr><td><strong>Firmware</strong></td><td>Arduino core for ESP8266 and ESP32 + LittleFS</td><td>Wi-Fi AP/STA</td><td>All edge logic and the local dashboard (software-implemented portion)</td></tr>
+<tr><td><strong>Firmware</strong></td><td>Arduino core for ESP8266 + LittleFS</td><td>Wi-Fi AP/STA</td><td>All edge logic and the local dashboard (software-implemented portion)</td></tr>
 </table>
 
 <!-- 4. FEATURES -->
@@ -167,7 +167,7 @@
 <tr class="catrow"><td colspan="2">Module H1 — Home Unit</td><td class="num">₹1,800</td></tr>
 <tr><td>ESP8266, 1.8″ TFT, opto-relay, AC-3 contactor, enclosure, MCB</td><td>Indoor pump controller with local display, override button and fail-safe OFF</td><td class="num">—</td></tr>
 <tr class="catrow"><td colspan="2">Module C1 — Cleaning Arm</td><td class="num">₹7,300</td></tr>
-<tr><td>ESP32, two 12 V planetary gearmotors, two H-bridges, submersible pump, brush head, enclosure</td><td>Two-link arm with ring brush and suction, driven by the three-ring path plan</td><td class="num">—</td></tr>
+<tr><td>ESP8266, two 12 V planetary gearmotors, two H-bridges, submersible pump, brush head, enclosure</td><td>Two-link arm with ring brush and suction, driven by the three-ring path plan</td><td class="num">—</td></tr>
 <tr class="totalrow"><td colspan="2">Total Parts Cost</td><td class="num">₹15,600</td></tr>
 </table>
 
@@ -201,7 +201,7 @@
 <h3>7.2 Software Specifications</h3>
 <table>
 <tr><th style="width:26%;">Parameter</th><th>Specification</th></tr>
-<tr><td>Firmware framework</td><td>Arduino core for ESP8266 (M1, H1) and ESP32 (C1); modular C/C++</td></tr>
+<tr><td>Firmware framework</td><td>Arduino core for ESP8266 (M1, H1 and C1); modular C/C++</td></tr>
 <tr><td>Measurement cycle</td><td>Wake every 3 hours (configurable); median-filtered multi-sample acquisition</td></tr>
 <tr><td>TankScore</td><td>0–100 weighted composite: turbidity 40%, TDS 25%, pH 25%, temperature 10%. Water level is monitored as an operating limit for pump control and is not scored.</td></tr>
 <tr><td>Trend analysis</td><td>Linear regression over 14-day window (112 samples); slope/acceleration penalties</td></tr>
