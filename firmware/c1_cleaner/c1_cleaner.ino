@@ -173,7 +173,7 @@ void setBrush(uint8_t duty) {
   setPump(duty > 0);
 }
 
-bool safetyClosed() { return digitalRead(PIN_SAFETY) == HIGH; }
+bool safetyClosed() { return digitalRead(PIN_SAFETY) == LOW; }
 bool estopOk() { return safetyClosed(); }
 bool lidClosed() { return safetyClosed(); }
 
@@ -470,10 +470,12 @@ void handleClean() {
  *  advance per burst can be measured with a protractor and put in config.h. */
 void handleJog() {
   if (phase == PH_RUNNING || phase == PH_HOMING || phase == PH_PARKING) {
+    Serial.printf("jog refused: busy (%s)\n", phaseName());
     server.send(409, "application/json", "{\"ok\":false,\"reason\":\"busy\"}");
     return;
   }
   if (!estopOk() || !lidClosed()) {
+    Serial.printf("jog refused: phase=%s safety=%d\n", phaseName(), digitalRead(PIN_SAFETY));
     server.send(409, "application/json", "{\"ok\":false,\"reason\":\"interlock\"}");
     return;
   }
@@ -657,8 +659,8 @@ void loop() {
 
   if (millis() - lastTelemetry > 5000) {
     lastTelemetry = millis();
-    Serial.printf("phase=%s ring=%u arc=%u t1=%.1f t2=%.1f level=%.0f\n", phaseName(), curRing, curArc,
-                  sh.estDeg, el.estDeg, g_levelPct);
+    Serial.printf("phase=%s ring=%u arc=%u t1=%.1f t2=%.1f level=%.0f safety=%d\n", phaseName(), curRing,
+                  curArc, sh.estDeg, el.estDeg, g_levelPct, digitalRead(PIN_SAFETY));
   }
 
   delay(5);

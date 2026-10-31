@@ -9,3 +9,6 @@ __pycache__/
 
 # Office lock files (open documents)
 ~\$*
+
+# arduino-cli build output
+.build/

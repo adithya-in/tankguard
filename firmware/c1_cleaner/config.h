@@ -44,9 +44,8 @@
 #define PUMP_ACTIVE_HIGH  0
 
 // ---- safety chain ---------------------------------------------------------
-// E-stop and lid in series from 3V3 to D3, with a 10k pull-down. Closed = HIGH
-// = safe; any open contact or a broken wire = LOW = unsafe (fail-safe).
-// D3 must be HIGH at boot, so the loop has to be closed to power up.
+// E-stop and lid in series, normally-closed, to GND. Internal pull-up: closed
+// loop = LOW = safe; any open contact or a broken wire = HIGH = unsafe.
 #define PIN_SAFETY    0    // D3
 
 // ---- drivetrain (TJX28ZRM / ZX6091 — RS395 12 V + 21.5:1 planetary) --------
