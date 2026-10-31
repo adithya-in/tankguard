@@ -261,10 +261,13 @@ dashboard reflects interlocks; it never bypasses them.
   "home1": 0,                // shoulder home switch, 1 = on the switch
   "home2": 0,                // elbow home switch
   "duty1": 0,                // last commanded duty, shoulder
-  "duty2": 0                 // last commanded duty, elbow
+  "duty2": 0,                // last commanded duty, elbow
+  "rings": 1,                // rings selected for this run
+  "arcsDone": 1              // arcs completed in the selected rings
 }
 
-// GET /clean?mode=start|stop|park|home|reset
+// GET /clean?mode=start|stop|park|home|reset|check
+// GET /clean?mode=start&rings=1&force=1   demo: one ring, no level gate
 // GET /jog?joint=sh|el&bursts=5&dir=1   calibration, max 20 bursts
 ```
 

@@ -179,7 +179,17 @@ const char *faultReason = nullptr;
 bool startRequested = false;
 uint8_t curRing = 0;
 uint8_t curArc = 0;
+uint8_t runRings = ARC_RINGS;   // demo can stop after ring 1 or 2
+uint8_t arcsDone = 0;
 uint32_t cycleStartedAt = 0;
+
+uint8_t arcCountFor(uint8_t rings) {
+  uint8_t n = 0;
+  for (uint8_t i = 0; i < ARC_COUNT; i++) {
+    if (ARCS[i].ring <= rings) n++;
+  }
+  return n;
+}
 
 const char *phaseName() {
   switch (phase) {
@@ -290,7 +300,7 @@ bool runArc(uint8_t i) {
 /** returns false on stop/fault — the caller decides which */
 bool runCycle() {
   const uint32_t t0 = millis();
-  for (uint8_t ring = 1; ring <= ARC_RINGS; ring++) {
+  for (uint8_t ring = 1; ring <= runRings; ring++) {
     if (stopRequested) return false;
     if (!doHoming()) { enterFault("home"); return false; }
 
@@ -308,6 +318,7 @@ bool runCycle() {
         else if (!lidClosed()) enterFault("lid");
         return false;
       }
+      arcsDone++;
     }
   }
   Serial.printf("cycle done in %lu s\n", (millis() - t0) / 1000);
@@ -320,13 +331,16 @@ bool runCycle() {
 WebServer server(80);
 
 String statusJson() {
+  const uint8_t total = arcCountFor(runRings);
   String s = "{";
   s += "\"openLoop\":true";
   s += ",\"phase\":\"" + String(phaseName()) + "\"";
   s += ",\"ring\":" + String(curRing);
   s += ",\"arc\":" + String(curArc);
-  s += ",\"arcCount\":" + String(ARC_COUNT);
-  s += ",\"progress\":" + String(100.0f * curArc / (float)ARC_COUNT, 1);
+  s += ",\"rings\":" + String(runRings);
+  s += ",\"arcCount\":" + String(total);
+  s += ",\"arcsDone\":" + String(arcsDone);
+  s += ",\"progress\":" + String(100.0f * arcsDone / (float)(total ? total : 1), 1);
   s += ",\"t1\":" + (isnan(sh.estDeg) ? String("null") : String(sh.estDeg, 2));
   s += ",\"t2\":" + (isnan(el.estDeg) ? String("null") : String(el.estDeg, 2));
   s += ",\"brush\":" + String(brushDuty);
@@ -351,17 +365,21 @@ String statusJson() {
 
 void handleClean() {
   const String mode = server.hasArg("mode") ? server.arg("mode") : "";
+  const bool force = server.hasArg("force") && server.arg("force") == "1";
 
   if (mode == "start") {
     if (phase == PH_FAULT) { server.send(409, "application/json", "{\"ok\":false,\"reason\":\"fault\"}"); return; }
     if (phase != PH_PARKED) { server.send(409, "application/json", "{\"ok\":false,\"reason\":\"busy\"}"); return; }
     if (!estopOk()) { server.send(409, "application/json", "{\"ok\":false,\"reason\":\"estop\"}"); return; }
     if (!lidClosed()) { server.send(409, "application/json", "{\"ok\":false,\"reason\":\"lid\"}"); return; }
-    if (!levelFresh()) { server.send(409, "application/json", "{\"ok\":false,\"reason\":\"level stale\"}"); return; }
-    if (g_levelPct >= 0 && g_levelPct < MIN_LEVEL_PCT) {
+    if (!force && !levelFresh()) { server.send(409, "application/json", "{\"ok\":false,\"reason\":\"level stale\"}"); return; }
+    if (!force && g_levelPct >= 0 && g_levelPct < MIN_LEVEL_PCT) {
       server.send(409, "application/json", "{\"ok\":false,\"reason\":\"dry\"}");
       return;
     }
+    const int rings = server.arg("rings").toInt();
+    runRings = (rings >= 1 && rings <= ARC_RINGS) ? (uint8_t)rings : ARC_RINGS;
+    arcsDone = 0;
     stopRequested = false;
     startRequested = true;
     phase = PH_BOOT; // loop() homes first, then runs
@@ -380,8 +398,26 @@ void handleClean() {
     if (phase == PH_RUNNING) { server.send(409, "application/json", "{\"ok\":false,\"reason\":\"busy\"}"); return; }
     faultReason = nullptr;
     startRequested = false;
+    arcsDone = 0;
     phase = PH_BOOT;
     server.send(200, "application/json", "{\"ok\":true,\"phase\":\"homing\"}");
+    return;
+  }
+
+  if (mode == "check") {
+    String s = "{\"ok\":true";
+    s += ",\"estop\":" + String(estopOk() ? 1 : 0);
+    s += ",\"lid\":" + String(lidClosed() ? 1 : 0);
+    s += ",\"level\":" + String(g_levelPct, 1);
+    s += ",\"levelAge\":" + String(g_levelAt ? (millis() - g_levelAt) / 1000 : -1);
+    s += ",\"levelFresh\":" + String(levelFresh() ? 1 : 0);
+    s += ",\"home1\":" + String(digitalRead(SH_HOME) == LOW ? 1 : 0);
+    s += ",\"home2\":" + String(digitalRead(EL_HOME) == LOW ? 1 : 0);
+    s += ",\"angleValid\":" + String((!isnan(sh.estDeg) && !isnan(el.estDeg)) ? 1 : 0);
+    s += ",\"phase\":\"" + String(phaseName()) + "\"";
+    s += ",\"rings\":" + String(runRings);
+    s += "}";
+    server.send(200, "application/json", s);
     return;
   }
 

@@ -179,6 +179,22 @@ works with and against gravity. Four numbers, all in `config.h`:
 coasts the bridge before a reversal. Both exist to keep the inrush off the supply
 and the gearbox, not to change the calibration.
 
+### Demo runbook
+
+1. Power on with the lid switch closed and the e-stop released. The arm homes at
+   boot; the serial log prints the two switch states.
+2. Pre-flight: `curl "http://<ip>/clean?mode=check"`. Expect `estop:0`, `lid:1`,
+   `home1:0`, `home2:0`, `angleValid:1`. `levelFresh:0` is acceptable on a bench
+   with no monitor attached.
+3. Run one ring: `curl "http://<ip>/clean?mode=start&rings=1"`. Omit `rings` for
+   the full three-ring cycle.
+4. With no monitor attached, add `force=1` to skip the level gate. The e-stop and
+   lid interlocks stay live; only the dry-run check is bypassed.
+5. `mode=stop` finishes the current burst, then parks. `mode=reset` clears a
+   latched fault and re-homes.
+6. If the arm jams, press the e-stop. Without a shunt the firmware cannot see a
+   stall, so the e-stop is the only obstruction protection on this build.
+
 ### Path
 
 Six arcs — two elbow branches on each of three rings (8.0 / 23.7 / 39.4 cm) —
@@ -198,8 +214,11 @@ same file without a headless browser.
 |---|---|
 | `GET /clean` | status: `openLoop`, phase, ring/arc, estimated t1/t2, brush, pump, level, lid, e-stop, fault, bursts, lastMoveMs, home1/2, duty1/2 |
 | `GET /clean?mode=start` | home, then run the cycle (409 with a reason if interlocked) |
+| `GET /clean?mode=start&rings=1` | run only the first ring (1..3, default 3) |
+| `GET /clean?mode=start&force=1` | bench demo: skip the level gate, keep e-stop and lid live |
 | `GET /clean?mode=stop` | stop after the current move, then park |
 | `GET /clean?mode=home` / `reset` | re-home; clears a latched fault |
+| `GET /clean?mode=check` | pre-flight: interlocks, home switches, level freshness, angle validity |
 | `GET /jog?joint=sh\|el&bursts=N&dir=1\|-1` | calibration: fire N bursts (max 20), returns the expected angle; 409 if busy or interlocked |
 | `GET /` | tiny status page |
 
