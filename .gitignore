@@ -6,3 +6,6 @@ __pycache__/
 
 # local renders and animation previews
 .review/
+
+# Office lock files (open documents)
+~\$*
