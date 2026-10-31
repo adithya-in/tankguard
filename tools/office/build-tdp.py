@@ -77,10 +77,10 @@ EXEC = [
     "The monitoring prototype is built. The M1 firmware, the dashboard and the path "
     "planner run, and INR 23,587 of parts have already been invested. The grant funds "
     "the step from that prototype to a certified product: the arm hardware, twenty-five "
-    "pilot units, certification, a patent and twelve field installations.",
+    "pilot units, certification and twelve field installations.",
 
     "The project delivers a production revision of M1 and H1, twenty-five pilot units of "
-    "the C1 cleaning arm, twelve field installations, certification, a filed patent, "
+    "the C1 cleaning arm, twelve field installations, certification, "
     "and three paying pilot customers. The target is TRL 8, with the unit cost and "
     "the service model proven before the first production run.",
 ]
@@ -105,9 +105,8 @@ COMMERCIAL = [
     "services and one in plumbing distribution; a target of 250 units in the first "
     "full year of sale.",
 
-    "The grant pays for the pilot line and the pilot units. Certification and the "
-    "patent filing are carried by Nuke Labs, which also holds the channel and the "
-    "service network.",
+    "The grant pays for the pilot line and the pilot units. Certification is carried "
+    "by Nuke Labs, which also holds the channel and the service network.",
 ]
 
 HISTORY = [
@@ -165,7 +164,7 @@ OBJECTIVES = [
     "fixed rest pose at both ends of the cycle.",
     "Objective 4: prove it in the field and take it to market. The monitor enters at "
     "TRL 6 and the arm at TRL 4; twelve months later the system is at TRL 8, with "
-    "twenty-five pilot units, twelve installations, certification, a filed patent and three "
+    "twenty-five pilot units, twelve installations, certification and three "
     "paying customers.",
 ]
 
@@ -177,7 +176,7 @@ DELIVERABLES = [
     "contactor interface, and a manual override that passes electrical safety review.",
     "D3. C1 cleaning arm, pilot build: twenty-five units with the two-link arm, ring brush, "
     "suction head and the planner-generated path, at a confirmed unit cost.",
-    "D4. Commercial pack: twelve installations, certification and patent filed, three "
+    "D4. Commercial pack: twelve installations, certification filed, three "
     "paying pilot customers, a channel agreement, and the TRL 8 evidence set.",
 ]
 
@@ -192,7 +191,7 @@ MILESTONES = [
      "Twelve installations in three cities with sixty days of continuous operation. "
      "Installation manual and service workflow complete."),
     ("4", "Commercial readiness", "T0 + 12 months",
-     "Certification filed, patent filed, three paying pilot customers, channel "
+     "Certification filed, three paying pilot customers, channel "
      "agreement signed, TRL 8 evidence pack."),
 ]
 
@@ -237,7 +236,7 @@ BUDGET_NOTE = [
     "test fixtures and the bench. Manpower covers two engineers at Nuke Labs for "
     "twelve months. Consumables cover twenty-five pilot sets and PCB fabrication.",
     "Travel covers twelve field installations. Miscellaneous covers market work and "
-    "small items; certification and the patent filing are carried by Nuke Labs. "
+    "small items; certification is carried by Nuke Labs. "
     "Contingency is 5 percent of direct cost and no overhead is claimed. The faculty "
     "fee is INR 2.0 lakh. GST at 18 percent is shown on the total.",
     "Prototype parts to date total INR 23,587, already invested and not part of this "
@@ -250,7 +249,7 @@ TRANCHE_ROWS = [
     ("T0 + 6 months", "16,23,623",
      "Pilot build, certification testing and field deployment"),
     ("T0 + 12 months", "5,13,065",
-     "Validation close-out, IP filing and commercial launch"),
+     "Validation close-out, certification and commercial launch"),
     ("Total", "47,02,910", ""),
 ]
 
@@ -701,7 +700,7 @@ def rebuild_xlsx():
     tranche = [
         ("Project start (T0)", 2566222, "Line procurement, tooling, design freeze"),
         ("T0 + 6 months", 1623623, "Pilot build, certification, field deployment"),
-        ("T0 + 12 months", 513065, "Validation, IP filing, commercial launch"),
+        ("T0 + 12 months", 513065, "Validation, certification, commercial launch"),
         ("Total", 4702910, ""),
     ]
     for i, (when, amt, what) in enumerate(tranche):
@@ -1406,7 +1405,7 @@ def build_pptx():
                        ("3", "Field deployment", "T0 + 9 months",
                         "12 sites in 3 cities, 60 days of operation"),
                        ("4", "Commercial readiness", "T0 + 12 months",
-                        "Certification and patent filed, 3 paying pilots, TRL 8")],
+                        "Certification filed, 3 paying pilots, TRL 8")],
                       row_h=0.68, align=[True, False, False, False])
             band(slide, 6.05, "The last gate is a sale: three paying customers and a signed "
                               "channel agreement, with the unit cost proven.",
@@ -1447,7 +1446,7 @@ def build_pptx():
             ], body_size=12.5)
             card(slide, 6.83, 2.32, 5.78, 2.6, "What the grant delivers", [
                 "Twenty-five pilot units and twelve installations in three cities.",
-                "Certification and a patent filed, with the unit cost proven.",
+                "Certification filed, with the unit cost proven.",
                 "Three paying pilot customers and a signed channel agreement.",
             ], body_size=12.5)
             band(slide, 5.35, "TankGuard gives a tank owner a reading, a clean, and a "
